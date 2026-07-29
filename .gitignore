@@ -1,3 +1,5 @@
 node_modules/
 .env
 data/trades.json
+user_dashboard.html
+claude.md
