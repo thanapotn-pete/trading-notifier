@@ -23,7 +23,7 @@ function startScheduler() {
 
   cron.schedule(cronExpr, async () => {
     console.log('[Scheduler] Sending daily P&L summary...');
-    const summary = getDailySummary();
+    const summary = await getDailySummary();
     if (summary.totalTrades === 0) {
       await notify('📊 วันนี้ไม่มี Trade ที่ปิดแล้ว');
       return;
