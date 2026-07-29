@@ -46,9 +46,9 @@ async function handleTradingViewAlert(payload) {
   await notify(lines.join('\n'));
 
   if (['buy', 'sell'].includes(action?.toLowerCase())) {
-    recordTrade({ action, symbol, price, tp, sl });
+    await recordTrade({ action, symbol, price, tp, sl });
   } else if (['tp', 'sl', 'close'].includes(action?.toLowerCase()) && pnl !== undefined) {
-    recordTrade({ action, symbol, price, pnl });
+    await recordTrade({ action, symbol, price, pnl });
   }
 }
 
