@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: trading-notifier
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: TIMEZONE
+        value: Asia/Bangkok
+      - key: DAILY_SUMMARY_CRON
+        value: "0 22 * * *"
+      - key: WEBHOOK_SECRET
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
