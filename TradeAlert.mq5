@@ -103,8 +103,12 @@ void SendWebhook(string action, string symbol, double price, double lot, double 
    char result[];
    string headers = "Content-Type: application/json\r\n";
    string result_headers = "";
+   PrintFormat("SendWebhook calling url=%s action=%s symbol=%s", webhook_url, action, symbol);
    int res = WebRequest("POST", webhook_url, headers, webrequest_timeout, data, result, result_headers);
-   if(res == -1) PrintFormat("SendWebhook error=%d", GetLastError());
+   if(res == -1)
+      PrintFormat("SendWebhook error=%d (4014=URL not allowed in Options)", GetLastError());
+   else
+      PrintFormat("SendWebhook ok status=%d", res);
 }
 
 bool SendTelegramToId(string id, string message)
