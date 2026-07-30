@@ -14,8 +14,7 @@ async function recordTrade(trade) {
     symbol: trade.symbol,
     price: trade.price,
     pnl: trade.pnl,
-    note: trade.note,
-    raw: trade,
+    lot: trade.lot,
   });
   if (error) throw error;
 }

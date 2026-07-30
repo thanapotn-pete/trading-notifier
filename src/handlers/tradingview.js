@@ -9,8 +9,7 @@ const { recordTrade } = require('../pnl/tracker');
 //   "price": 65000,
 //   "tp": 66000,
 //   "sl": 64000,
-//   "pnl": 150.5,        // optional, for close/tp/sl
-//   "note": "..."        // optional
+//   "pnl": 150.5        // optional, for close/tp/sl
 // }
 
 const ACTION_EMOJI = {
@@ -22,7 +21,7 @@ const ACTION_EMOJI = {
 };
 
 async function handleTradingViewAlert(payload) {
-  const { action, symbol, price, tp, sl, pnl, note } = payload;
+  const { action, symbol, price, tp, sl, pnl } = payload;
 
   const emoji = ACTION_EMOJI[action?.toLowerCase()] || '📊 ALERT';
   const lines = [
@@ -34,8 +33,6 @@ async function handleTradingViewAlert(payload) {
   if (tp)   lines.push(`TP: ${tp}`);
   if (sl)   lines.push(`SL: ${sl}`);
   if (pnl !== undefined) lines.push(`P&L: <b>${pnl > 0 ? '+' : ''}${pnl}</b>`);
-  if (note) lines.push(`Note: ${note}`);
-
   const time = new Date().toLocaleTimeString('th-TH', {
     timeZone: process.env.TIMEZONE || 'Asia/Bangkok',
     hour: '2-digit',
