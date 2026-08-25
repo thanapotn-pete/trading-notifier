@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const { getDailySummary } = require('./pnl/tracker');
 const { notify } = require('./notifications');
+const { listUsers } = require('./users');
 
 function buildSummaryMessage(summary) {
   const { date, totalTrades, wins, losses, totalPnl } = summary;
@@ -23,12 +24,15 @@ function startScheduler() {
 
   cron.schedule(cronExpr, async () => {
     console.log('[Scheduler] Sending daily P&L summary...');
-    const summary = await getDailySummary();
-    if (summary.totalTrades === 0) {
-      await notify('📊 วันนี้ไม่มี Trade ที่ปิดแล้ว');
-      return;
+    const users = await listUsers();
+    for (const user of users) {
+      const summary = await getDailySummary(user.id);
+      if (summary.totalTrades === 0) {
+        await notify('📊 วันนี้ไม่มี Trade ที่ปิดแล้ว', user.telegram_chat_id);
+        continue;
+      }
+      await notify(buildSummaryMessage(summary), user.telegram_chat_id);
     }
-    await notify(buildSummaryMessage(summary));
   }, { timezone: process.env.TIMEZONE || 'Asia/Bangkok' });
 
   console.log(`[Scheduler] Daily summary scheduled: ${cronExpr}`);

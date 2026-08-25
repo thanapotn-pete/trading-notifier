@@ -15,11 +15,12 @@ async function recordTrade(trade) {
     price: trade.price,
     pnl: trade.pnl,
     lot: trade.lot,
+    user_id: trade.user_id,
   });
   if (error) throw error;
 }
 
-async function getDailySummary() {
+async function getDailySummary(userId) {
   const supabase = getClient();
   const tz = process.env.TIMEZONE || 'Asia/Bangkok';
 
@@ -30,6 +31,7 @@ async function getDailySummary() {
   const { data, error } = await supabase
     .from('trades')
     .select('*')
+    .eq('user_id', userId)
     .gte('timestamp', startOfDay.toISOString())
     .not('pnl', 'is', null);
 

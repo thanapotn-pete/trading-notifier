@@ -9,9 +9,8 @@ function getBot() {
   return bot;
 }
 
-async function sendTelegram(message) {
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!chatId) throw new Error('TELEGRAM_CHAT_ID not set');
+async function sendTelegram(message, chatId) {
+  if (!chatId) throw new Error('chatId is required');
   await getBot().sendMessage(chatId, message, { parse_mode: 'HTML' });
 }
 

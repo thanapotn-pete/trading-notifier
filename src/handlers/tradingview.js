@@ -20,7 +20,7 @@ const ACTION_EMOJI = {
   close: '⬛ CLOSE',
 };
 
-async function handleTradingViewAlert(payload) {
+async function handleTradingViewAlert(payload, user) {
   const { action, symbol, price, tp, sl, pnl } = payload;
 
   const emoji = ACTION_EMOJI[action?.toLowerCase()] || '📊 ALERT';
@@ -40,12 +40,12 @@ async function handleTradingViewAlert(payload) {
   });
   lines.push(`Time: ${time}`);
 
-  await notify(lines.join('\n'));
+  await notify(lines.join('\n'), user.telegram_chat_id);
 
   if (['buy', 'sell'].includes(action?.toLowerCase())) {
-    await recordTrade({ action, symbol, price, tp, sl });
+    await recordTrade({ action, symbol, price, tp, sl, user_id: user.id });
   } else if (['tp', 'sl', 'close'].includes(action?.toLowerCase()) && pnl !== undefined) {
-    await recordTrade({ action, symbol, price, pnl });
+    await recordTrade({ action, symbol, price, pnl, user_id: user.id });
   }
 }
 
