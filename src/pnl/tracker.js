@@ -7,6 +7,24 @@ function getClient() {
   return createClient(url, key);
 }
 
+// Midnight of "today" in the given IANA timezone, as a UTC instant.
+// (`new Date().setHours(0,0,0,0)` uses the server's own local time, which
+// on Render is UTC — not the trader's timezone — so day boundaries were off.)
+function startOfDayInTimezone(tz) {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(now).reduce((acc, p) => ((acc[p.type] = p.value), acc), {});
+
+  const wallClockAsUTC = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  const offsetMs = wallClockAsUTC - now.getTime();
+  const midnightWallClockAsUTC = Date.UTC(parts.year, parts.month - 1, parts.day, 0, 0, 0);
+  return new Date(midnightWallClockAsUTC - offsetMs);
+}
+
 async function recordTrade(trade) {
   const supabase = getClient();
   const { error } = await supabase.from('trades').insert({
@@ -25,8 +43,7 @@ async function getDailySummary(userId) {
   const tz = process.env.TIMEZONE || 'Asia/Bangkok';
 
   const today = new Date().toLocaleDateString('th-TH', { timeZone: tz });
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  const startOfDay = startOfDayInTimezone(tz);
 
   const { data, error } = await supabase
     .from('trades')
