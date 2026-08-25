@@ -12,7 +12,7 @@ services:
       - key: TIMEZONE
         value: Asia/Bangkok
       - key: DAILY_SUMMARY_CRON
-        value: "0 22 * * *"
+        value: "0 23 * * *"
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: SUPABASE_URL
