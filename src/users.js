@@ -48,7 +48,7 @@ async function setPassword(userId, { email, passwordHash }) {
   if (error) throw error;
 }
 
-const PROFILE_FIELDS = ['first_name', 'last_name', 'email', 'mt5_account_id', 'mt5_server'];
+const PROFILE_FIELDS = ['first_name', 'last_name', 'email'];
 
 async function updateUserProfile(userId, fields) {
   const supabase = getClient();

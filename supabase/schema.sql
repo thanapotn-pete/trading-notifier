@@ -44,3 +44,8 @@ alter table users add constraint users_email_unique unique (email);
 -- used once (POST /api/setup-password) as an invite code so the user can
 -- pick their own password; POST /api/login then checks email+password.
 alter table users add column password_hash text;
+
+-- Run once: mt5_account_id/mt5_server ended up unused (informational only,
+-- never read by any backend logic) — dropped rather than left dead.
+alter table users drop column mt5_account_id;
+alter table users drop column mt5_server;
