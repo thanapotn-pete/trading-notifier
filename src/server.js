@@ -9,11 +9,14 @@ const apiRouter = require('./api');
 const app = express();
 app.use(express.json());
 
-// Dashboard API is read-only and called directly from the browser, so it
-// needs CORS (webhook routes are server-to-server and don't).
+// Dashboard API is called directly from the browser, so it needs CORS
+// (webhook routes are server-to-server and don't). PATCH /profile with a
+// JSON body triggers a preflight OPTIONS request — answer it directly.
 app.use('/api', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Methods', 'GET, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
 app.use('/api', apiRouter);

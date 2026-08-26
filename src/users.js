@@ -25,4 +25,23 @@ async function listUsers() {
   return data;
 }
 
-module.exports = { findUserBySecret, listUsers };
+const PROFILE_FIELDS = ['first_name', 'last_name', 'email', 'mt5_account_id', 'mt5_server'];
+
+async function updateUserProfile(userId, fields) {
+  const supabase = getClient();
+  const update = {};
+  for (const key of PROFILE_FIELDS) {
+    if (fields[key] !== undefined) update[key] = fields[key];
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(update)
+    .eq('id', userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+module.exports = { findUserBySecret, listUsers, updateUserProfile };

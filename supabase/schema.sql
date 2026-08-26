@@ -29,3 +29,12 @@ alter table trades add column tp numeric;
 alter table trades add column sl numeric;
 alter table trades add column status text default 'open';
 alter table trades add column closed_at timestamptz;
+
+-- Run once to support the "ตั้งค่าบัญชี" profile page — fields the user
+-- edits themselves via the frontend, separate from `name` (the internal
+-- label set by the owner in scripts/add-user.js).
+alter table users add column first_name text;
+alter table users add column last_name text;
+alter table users add column email text;
+alter table users add column mt5_account_id text;
+alter table users add column mt5_server text;

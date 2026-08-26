@@ -1,5 +1,5 @@
 const express = require('express');
-const { findUserBySecret } = require('./users');
+const { findUserBySecret, updateUserProfile } = require('./users');
 const { listTrades, getDailySummary, getStatistics } = require('./pnl/tracker');
 
 const router = express.Router();
@@ -49,6 +49,26 @@ router.get('/statistics', async (req, res) => {
     res.json(stats);
   } catch (err) {
     console.error('[API /statistics] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Never send webhook_secret back — it's this user's credential.
+function toProfile(user) {
+  const { webhook_secret, ...profile } = user;
+  return profile;
+}
+
+router.get('/profile', (req, res) => {
+  res.json(toProfile(req.user));
+});
+
+router.patch('/profile', async (req, res) => {
+  try {
+    const updated = await updateUserProfile(req.user.id, req.body || {});
+    res.json(toProfile(updated));
+  } catch (err) {
+    console.error('[API /profile] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
