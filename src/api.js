@@ -1,17 +1,55 @@
 const express = require('express');
-const { findUserBySecret, updateUserProfile } = require('./users');
+const { findUserBySecret, findUserById, findUserByEmail, setPassword, updateUserProfile } = require('./users');
+const { hashPassword, verifyPassword, createSessionToken, verifySessionToken } = require('./auth');
 const { listTrades, getDailySummary, getStatistics } = require('./pnl/tracker');
 
 const router = express.Router();
 
-// Auth for the read-only dashboard API: same webhook_secret used by
-// TradingView/MT5, passed as a query param since these are GET requests
-// called directly from the friend's frontend.
-async function lookupUserFromQuery(req, res, next) {
+// One-time setup: the admin-issued webhook_secret acts as an invite code
+// to claim a website login (email + a password the user picks themselves).
+router.post('/setup-password', async (req, res) => {
   try {
-    const secret = req.query.secret;
-    const user = secret ? await findUserBySecret(secret) : null;
+    const { secret, email, password } = req.body || {};
+    if (!secret || !email || !password) {
+      return res.status(400).json({ error: 'secret, email and password required' });
+    }
+    const user = await findUserBySecret(secret);
     if (!user) return res.status(401).json({ error: 'Invalid secret' });
+
+    const passwordHash = await hashPassword(password);
+    await setPassword(user.id, { email, passwordHash });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[API /setup-password] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+
+    const user = await findUserByEmail(email);
+    const ok = user && (await verifyPassword(password, user.password_hash));
+    if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
+
+    res.json({ token: createSessionToken(user) });
+  } catch (err) {
+    console.error('[API /login] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Everything below requires a session token from /login, sent as
+// "Authorization: Bearer <token>" — keeps webhook_secret out of the browser.
+async function requireSession(req, res, next) {
+  try {
+    const header = req.headers.authorization || '';
+    const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+    const userId = token ? verifySessionToken(token) : null;
+    const user = userId ? await findUserById(userId) : null;
+    if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
     req.user = user;
     next();
   } catch (err) {
@@ -20,7 +58,7 @@ async function lookupUserFromQuery(req, res, next) {
   }
 }
 
-router.use(lookupUserFromQuery);
+router.use(requireSession);
 
 router.get('/trades', async (req, res) => {
   try {
@@ -53,9 +91,9 @@ router.get('/statistics', async (req, res) => {
   }
 });
 
-// Never send webhook_secret back — it's this user's credential.
+// Never send credentials back to the browser.
 function toProfile(user) {
-  const { webhook_secret, ...profile } = user;
+  const { webhook_secret, password_hash, ...profile } = user;
   return profile;
 }
 

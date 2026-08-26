@@ -25,6 +25,29 @@ async function listUsers() {
   return data;
 }
 
+async function findUserById(id) {
+  const supabase = getClient();
+  const { data, error } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function findUserByEmail(email) {
+  const supabase = getClient();
+  const { data, error } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function setPassword(userId, { email, passwordHash }) {
+  const supabase = getClient();
+  const { error } = await supabase
+    .from('users')
+    .update({ email, password_hash: passwordHash })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
 const PROFILE_FIELDS = ['first_name', 'last_name', 'email', 'mt5_account_id', 'mt5_server'];
 
 async function updateUserProfile(userId, fields) {
@@ -44,4 +67,11 @@ async function updateUserProfile(userId, fields) {
   return data;
 }
 
-module.exports = { findUserBySecret, listUsers, updateUserProfile };
+module.exports = {
+  findUserBySecret,
+  findUserById,
+  findUserByEmail,
+  setPassword,
+  listUsers,
+  updateUserProfile,
+};

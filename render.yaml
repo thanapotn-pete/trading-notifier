@@ -13,6 +13,8 @@ services:
         value: Asia/Bangkok
       - key: DAILY_SUMMARY_CRON
         value: "0 23 * * *"
+      - key: JWT_SECRET
+        sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: SUPABASE_URL

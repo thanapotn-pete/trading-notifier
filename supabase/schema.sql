@@ -38,3 +38,9 @@ alter table users add column last_name text;
 alter table users add column email text;
 alter table users add column mt5_account_id text;
 alter table users add column mt5_server text;
+alter table users add constraint users_email_unique unique (email);
+
+-- Run once to support website login: the admin-issued webhook_secret is
+-- used once (POST /api/setup-password) as an invite code so the user can
+-- pick their own password; POST /api/login then checks email+password.
+alter table users add column password_hash text;
