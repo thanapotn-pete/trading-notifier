@@ -103,7 +103,17 @@ router.get('/profile', (req, res) => {
 
 router.patch('/profile', async (req, res) => {
   try {
-    const updated = await updateUserProfile(req.user.id, req.body || {});
+    const { password, current_password, ...profileFields } = req.body || {};
+
+    if (password) {
+      const ok = await verifyPassword(current_password || '', req.user.password_hash);
+      if (!ok) return res.status(401).json({ error: 'Invalid current password' });
+      await setPassword(req.user.id, { email: req.user.email, passwordHash: await hashPassword(password) });
+    }
+
+    const updated = Object.keys(profileFields).length > 0
+      ? await updateUserProfile(req.user.id, profileFields)
+      : await findUserById(req.user.id);
     res.json(toProfile(updated));
   } catch (err) {
     console.error('[API /profile] Error:', err.message);
