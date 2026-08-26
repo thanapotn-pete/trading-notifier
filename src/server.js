@@ -4,9 +4,19 @@ const { handleTradingViewAlert } = require('./handlers/tradingview');
 const { recordTrade } = require('./pnl/tracker');
 const { findUserBySecret } = require('./users');
 const { startScheduler } = require('./scheduler');
+const apiRouter = require('./api');
 
 const app = express();
 app.use(express.json());
+
+// Dashboard API is read-only and called directly from the browser, so it
+// needs CORS (webhook routes are server-to-server and don't).
+app.use('/api', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  next();
+});
+app.use('/api', apiRouter);
 
 // Look up which registered user a webhook_secret belongs to
 async function lookupUser(req, res, next) {

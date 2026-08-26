@@ -61,15 +61,43 @@ async function getDailySummary(userId) {
   return { date: today, totalTrades: data.length, wins, losses, totalPnl };
 }
 
-async function loadTrades() {
+async function listTrades(userId, limit = 100) {
   const supabase = getClient();
   const { data, error } = await supabase
     .from('trades')
     .select('*')
+    .eq('user_id', userId)
     .order('timestamp', { ascending: false })
-    .limit(100);
+    .limit(limit);
   if (error) throw error;
   return data;
 }
 
-module.exports = { recordTrade, getDailySummary, loadTrades };
+async function getStatistics(userId) {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from('trades')
+    .select('*')
+    .eq('user_id', userId)
+    .not('pnl', 'is', null);
+  if (error) throw error;
+
+  const totalTrades = data.length;
+  const wins = data.filter((t) => t.pnl > 0);
+  const losses = data.filter((t) => t.pnl < 0);
+  const totalPnl = data.reduce((sum, t) => sum + (t.pnl || 0), 0);
+  const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + t.pnl, 0) / wins.length : 0;
+  const avgLoss = losses.length > 0 ? losses.reduce((s, t) => s + t.pnl, 0) / losses.length : 0;
+
+  return {
+    totalTrades,
+    wins: wins.length,
+    losses: losses.length,
+    winRate: totalTrades > 0 ? (wins.length / totalTrades) * 100 : 0,
+    totalPnl,
+    avgWin,
+    avgLoss,
+  };
+}
+
+module.exports = { recordTrade, getDailySummary, listTrades, getStatistics };
