@@ -2,7 +2,6 @@
 <html lang="th">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -12,10 +11,11 @@
 
     <title>TradeAnalytics - บัญชีผู้ใช้งาน</title>
 
-
     <!-- Google Font -->
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
 
     <link
         rel="preconnect"
@@ -28,24 +28,19 @@
         rel="stylesheet"
     >
 
-
     <!-- CSS หลัก -->
-
     <link
         rel="stylesheet"
         href="css/style.css"
     >
 
-
     <style>
-
 
         /* =====================================================
            GENERAL
         ===================================================== */
 
         body {
-
             font-family:
                 'IBM Plex Sans Thai',
                 'Noto Sans Thai',
@@ -53,9 +48,7 @@
                 sans-serif;
 
             background: #f7f9f8;
-
             color: #1f2937;
-
         }
 
 
@@ -64,9 +57,7 @@
         ===================================================== */
 
         .profile-page {
-
             padding: 30px 28px 40px;
-
         }
 
 
@@ -75,35 +66,24 @@
         ===================================================== */
 
         .profile-header {
-
             margin-bottom: 24px;
-
         }
 
-
         .profile-header h2 {
-
             margin: 0 0 7px;
 
             font-size: 24px;
-
             font-weight: 700;
-
             line-height: 1.3;
 
             color: #111917;
-
         }
 
-
         .profile-header p {
-
             margin: 0;
 
             font-size: 13px;
-
             color: #82908c;
-
         }
 
 
@@ -112,7 +92,6 @@
         ===================================================== */
 
         .profile-grid {
-
             display: grid;
 
             grid-template-columns:
@@ -122,7 +101,6 @@
             gap: 18px;
 
             align-items: start;
-
         }
 
 
@@ -131,7 +109,6 @@
         ===================================================== */
 
         .profile-card {
-
             background: white;
 
             border:
@@ -152,14 +129,10 @@
                     42,
                     0.025
                 );
-
         }
 
-
         .profile-card:last-child {
-
             margin-bottom: 0;
-
         }
 
 
@@ -168,16 +141,11 @@
         ===================================================== */
 
         .profile-summary {
-
             text-align: center;
-
         }
 
-
         .profile-avatar-large {
-
             width: 82px;
-
             height: 82px;
 
             margin: 3px auto 15px;
@@ -196,11 +164,9 @@
             display: flex;
 
             align-items: center;
-
             justify-content: center;
 
             font-size: 27px;
-
             font-weight: 700;
 
             box-shadow:
@@ -211,36 +177,25 @@
                     104,
                     0.18
                 );
-
         }
 
-
         .profile-name {
-
             font-size: 18px;
-
             font-weight: 700;
 
             color: #1f2937;
 
             margin-bottom: 4px;
-
         }
 
-
         .profile-email {
-
             font-size: 12px;
-
             color: #8a9894;
 
             margin-bottom: 12px;
-
         }
 
-
         .account-badge {
-
             display: inline-flex;
 
             align-items: center;
@@ -252,26 +207,19 @@
             border-radius: 20px;
 
             background: #edf8f5;
-
             color: #087f68;
 
             font-size: 10px;
-
             font-weight: 600;
-
         }
 
-
         .account-dot {
-
             width: 6px;
-
             height: 6px;
 
             border-radius: 50%;
 
             background: #14b87a;
-
         }
 
 
@@ -280,7 +228,6 @@
         ===================================================== */
 
         .account-info {
-
             margin-top: 22px;
 
             padding-top: 18px;
@@ -290,40 +237,27 @@
                 #eef2f1;
 
             text-align: left;
-
         }
 
-
         .info-row {
-
             display: flex;
 
             justify-content: space-between;
-
             align-items: center;
 
             padding: 10px 0;
-
         }
-
 
         .info-label {
-
             font-size: 11px;
-
             color: #8a9894;
-
         }
 
-
         .info-value {
-
             font-size: 11px;
-
             color: #334155;
 
             font-weight: 600;
-
         }
 
 
@@ -332,11 +266,9 @@
         ===================================================== */
 
         .card-header {
-
             display: flex;
 
             justify-content: space-between;
-
             align-items: flex-start;
 
             padding-bottom: 17px;
@@ -346,40 +278,28 @@
             border-bottom:
                 1px solid
                 #eef2f1;
-
         }
 
-
         .card-header h3 {
-
             margin: 0 0 5px;
 
             font-size: 16px;
-
             font-weight: 700;
 
             color: #111917;
-
         }
 
-
         .card-header p {
-
             margin: 0;
 
             font-size: 11px;
-
             line-height: 1.5;
 
             color: #8a9894;
-
         }
 
-
         .header-icon {
-
             width: 38px;
-
             height: 38px;
 
             border-radius: 9px;
@@ -387,15 +307,12 @@
             display: flex;
 
             align-items: center;
-
             justify-content: center;
 
             background: #edf8f5;
-
             color: #087f68;
 
             font-size: 16px;
-
         }
 
 
@@ -404,7 +321,6 @@
         ===================================================== */
 
         .form-grid {
-
             display: grid;
 
             grid-template-columns:
@@ -413,43 +329,29 @@
             gap: 16px;
 
             margin-top: 18px;
-
         }
 
-
         .form-group {
-
             display: flex;
 
             flex-direction: column;
-
         }
-
 
         .form-group.full {
-
             grid-column: 1 / -1;
-
         }
 
-
         .form-label {
-
             margin-bottom: 7px;
 
             font-size: 11px;
-
             color: #64746f;
 
             font-weight: 600;
-
         }
 
-
         .form-input {
-
             width: 100%;
-
             height: 42px;
 
             padding: 0 13px;
@@ -461,11 +363,9 @@
             border-radius: 8px;
 
             background: white;
-
             color: #334155;
 
             font-family: inherit;
-
             font-size: 12px;
 
             outline: none;
@@ -474,11 +374,10 @@
                 border-color 0.2s ease,
                 box-shadow 0.2s ease;
 
+            box-sizing: border-box;
         }
 
-
         .form-input:focus {
-
             border-color: #087f68;
 
             box-shadow:
@@ -489,29 +388,22 @@
                     104,
                     0.07
                 );
-
         }
 
-
         .form-input:disabled {
-
             background: #f8faf9;
 
             color: #8a9894;
 
             cursor: not-allowed;
-
         }
 
-
         .form-hint {
-
             margin-top: 5px;
 
             font-size: 9px;
 
             color: #a0aba8;
-
         }
 
 
@@ -520,25 +412,17 @@
         ===================================================== */
 
         .password-wrapper {
-
             position: relative;
-
         }
-
 
         .password-wrapper .form-input {
-
             padding-right: 42px;
-
         }
 
-
         .password-toggle {
-
             position: absolute;
 
             right: 10px;
-
             top: 50%;
 
             transform: translateY(-50%);
@@ -552,14 +436,10 @@
             cursor: pointer;
 
             font-size: 15px;
-
         }
 
-
         .password-toggle:hover {
-
             color: #087f68;
-
         }
 
 
@@ -568,7 +448,6 @@
         ===================================================== */
 
         .form-actions {
-
             display: flex;
 
             justify-content: flex-end;
@@ -582,12 +461,9 @@
             border-top:
                 1px solid
                 #eef2f1;
-
         }
 
-
         .secondary-button {
-
             height: 40px;
 
             padding: 0 15px;
@@ -605,23 +481,16 @@
             font-family: inherit;
 
             font-size: 11px;
-
             font-weight: 600;
 
             cursor: pointer;
-
         }
-
 
         .secondary-button:hover {
-
             background: #f8faf9;
-
         }
 
-
         .primary-button {
-
             height: 40px;
 
             padding: 0 17px;
@@ -637,35 +506,28 @@
             font-family: inherit;
 
             font-size: 11px;
-
             font-weight: 600;
 
             cursor: pointer;
 
             transition: 0.2s;
-
         }
 
-
         .primary-button:hover {
-
             background: #066b58;
 
             transform: translateY(-1px);
-
         }
 
 
         /* =====================================================
-           MT5 CONNECTION
+           CONNECTION
         ===================================================== */
 
         .connection-item {
-
             display: flex;
 
             justify-content: space-between;
-
             align-items: center;
 
             padding: 15px 0;
@@ -673,87 +535,64 @@
             border-bottom:
                 1px solid
                 #f1f5f9;
-
         }
-
 
         .connection-item:last-child {
-
             border-bottom: none;
-
         }
 
-
         .connection-left {
-
             display: flex;
 
             align-items: center;
 
             gap: 12px;
-
         }
 
-
         .connection-icon {
-
             width: 39px;
-
             height: 39px;
 
             border-radius: 9px;
 
             background: #edf8f5;
-
             color: #087f68;
 
             display: flex;
 
             align-items: center;
-
             justify-content: center;
 
             font-size: 15px;
-
         }
 
-
         .connection-name {
-
             font-size: 12px;
 
             font-weight: 600;
 
             color: #334155;
-
         }
 
-
         .connection-detail {
-
             margin-top: 3px;
 
             font-size: 10px;
 
             color: #94a3b8;
-
         }
 
-
         .connected-badge {
-
             padding: 5px 9px;
 
             border-radius: 20px;
 
             background: #edf8f5;
-
             color: #087f68;
 
             font-size: 9px;
 
             font-weight: 600;
-
         }
 
 
@@ -762,11 +601,9 @@
         ===================================================== */
 
         .preference-row {
-
             display: flex;
 
             justify-content: space-between;
-
             align-items: center;
 
             padding: 14px 0;
@@ -774,41 +611,29 @@
             border-bottom:
                 1px solid
                 #f1f5f9;
-
         }
-
 
         .preference-row:last-child {
-
             border-bottom: none;
-
         }
 
-
         .preference-name {
-
             font-size: 12px;
 
             font-weight: 600;
 
             color: #334155;
-
         }
 
-
         .preference-description {
-
             margin-top: 3px;
 
             font-size: 10px;
 
             color: #94a3b8;
-
         }
 
-
         .preference-select {
-
             min-width: 135px;
 
             height: 36px;
@@ -830,14 +655,10 @@
             font-size: 11px;
 
             outline: none;
-
         }
 
-
         .preference-select:focus {
-
             border-color: #087f68;
-
         }
 
 
@@ -846,16 +667,12 @@
         ===================================================== */
 
         .danger-card {
-
             border:
                 1px solid
                 #f1d7d7;
-
         }
 
-
         .danger-header {
-
             display: flex;
 
             align-items: center;
@@ -863,14 +680,10 @@
             gap: 10px;
 
             margin-bottom: 13px;
-
         }
 
-
         .danger-icon {
-
             width: 34px;
-
             height: 34px;
 
             border-radius: 8px;
@@ -882,27 +695,20 @@
             display: flex;
 
             align-items: center;
-
             justify-content: center;
 
             font-size: 15px;
-
         }
 
-
         .danger-title {
-
             font-size: 14px;
 
             font-weight: 700;
 
             color: #334155;
-
         }
 
-
         .danger-description {
-
             font-size: 11px;
 
             line-height: 1.6;
@@ -910,12 +716,9 @@
             color: #8a9894;
 
             margin-bottom: 15px;
-
         }
 
-
         .logout-button {
-
             height: 39px;
 
             padding: 0 14px;
@@ -937,14 +740,10 @@
             font-weight: 600;
 
             cursor: pointer;
-
         }
 
-
         .logout-button:hover {
-
             background: #fff1f2;
-
         }
 
 
@@ -953,32 +752,21 @@
         ===================================================== */
 
         .logo {
-
             font-size: 17px !important;
-
         }
 
-
         .menu-item {
-
             font-size: 14px !important;
 
             padding: 11px 12px;
-
         }
-
 
         .menu-title {
-
             font-size: 12px !important;
-
         }
 
-
         .logout a {
-
             font-size: 14px !important;
-
         }
 
 
@@ -987,16 +775,11 @@
         ===================================================== */
 
         .welcome {
-
             font-size: 13px;
-
         }
 
-
         .topbar h1 {
-
             font-size: 24px;
-
         }
 
 
@@ -1007,9 +790,7 @@
         @media (max-width: 1050px) {
 
             .profile-grid {
-
                 grid-template-columns: 1fr;
-
             }
 
         }
@@ -1018,63 +799,42 @@
         @media (max-width: 700px) {
 
             .profile-page {
-
                 padding:
                     22px
                     16px
                     30px;
-
             }
-
 
             .form-grid {
-
                 grid-template-columns: 1fr;
-
             }
-
 
             .form-group.full {
-
                 grid-column: auto;
-
             }
-
 
             .form-actions {
-
                 flex-direction: column;
-
             }
-
 
             .secondary-button,
             .primary-button {
-
                 width: 100%;
-
             }
 
-
             .preference-row {
-
                 align-items: flex-start;
 
                 gap: 12px;
 
                 flex-direction: column;
-
             }
 
-
             .preference-select {
-
                 width: 100%;
-
             }
 
         }
-
 
     </style>
 
@@ -1090,13 +850,9 @@
 
 <aside class="sidebar">
 
-
     <div class="logo">
-
         <i>⌁</i>
-
         TradeAnalytics
-
     </div>
 
 
@@ -1104,11 +860,8 @@
         href="dashboard.php"
         class="menu-item"
     >
-
         <span>▦</span>
-
         Dashboard
-
     </a>
 
 
@@ -1116,11 +869,8 @@
         href="trade-history.php"
         class="menu-item"
     >
-
         <span>◷</span>
-
         ประวัติการเทรด
-
     </a>
 
 
@@ -1128,11 +878,8 @@
         href="statistics.php"
         class="menu-item"
     >
-
         <span>▥</span>
-
         สถิติการเทรด
-
     </a>
 
 
@@ -1140,18 +887,13 @@
         href="reports.php"
         class="menu-item"
     >
-
         <span>▤</span>
-
         รายงาน
-
     </a>
 
 
     <div class="menu-title">
-
         การตั้งค่า
-
     </div>
 
 
@@ -1159,11 +901,8 @@
         href="notifications.php"
         class="menu-item"
     >
-
         <span>◉</span>
-
         การแจ้งเตือน
-
     </a>
 
 
@@ -1171,11 +910,8 @@
         href="profile.php"
         class="menu-item active"
     >
-
         <span>♙</span>
-
         บัญชีผู้ใช้งาน
-
     </a>
 
 
@@ -1185,15 +921,11 @@
             href="#"
             onclick="logout()"
         >
-
             <span>↪</span>
-
             ออกจากระบบ
-
         </a>
 
     </div>
-
 
 </aside>
 
@@ -1212,27 +944,20 @@
 
     <header class="topbar">
 
-
         <div>
 
             <div class="welcome">
-
                 ยินดีต้อนรับ, ผู้ใช้งาน
-
             </div>
 
-
             <h1>
-
                 บัญชีผู้ใช้งาน
-
             </h1>
 
         </div>
 
 
         <div class="topbar-right">
-
 
             <div class="status-badge">
 
@@ -1256,21 +981,15 @@
                 class="icon-button"
                 title="การแจ้งเตือน"
             >
-
                 ♧
-
             </button>
 
 
             <div class="avatar">
-
                 U
-
             </div>
 
-
         </div>
-
 
     </header>
 
@@ -1283,26 +1002,17 @@
     <div class="content profile-page">
 
 
-        <!-- =================================================
-             PAGE HEADER
-        ================================================= -->
+        <!-- PAGE HEADER -->
 
         <div class="profile-header">
 
-
             <h2>
-
                 ตั้งค่าบัญชีผู้ใช้งาน
-
             </h2>
 
-
             <p>
-
                 จัดการข้อมูลส่วนตัว ความปลอดภัย และการตั้งค่าของบัญชี
-
             </p>
-
 
         </div>
 
@@ -1326,25 +1036,18 @@
 
                 <div class="profile-card profile-summary">
 
-
                     <div class="profile-avatar-large">
-
                         U
-
                     </div>
 
 
                     <div class="profile-name">
-
                         ผู้ใช้งาน
-
                     </div>
 
 
                     <div class="profile-email">
-
                         user@example.com
-
                     </div>
 
 
@@ -1357,92 +1060,62 @@
                     </div>
 
 
-
                     <div class="account-info">
 
 
                         <div class="info-row">
 
-
                             <span class="info-label">
-
                                 Username
-
                             </span>
 
-
                             <span class="info-value">
-
                                 user01
-
                             </span>
-
 
                         </div>
 
 
                         <div class="info-row">
 
-
                             <span class="info-label">
-
                                 Account ID
-
                             </span>
 
-
                             <span class="info-value">
-
                                 TA-000142
-
                             </span>
-
 
                         </div>
 
 
                         <div class="info-row">
 
-
                             <span class="info-label">
-
                                 วันที่สมัคร
-
                             </span>
-
 
                             <span class="info-value">
-
                                 15/08/2026
-
                             </span>
-
 
                         </div>
 
 
                         <div class="info-row">
 
-
                             <span class="info-label">
-
                                 สถานะ
-
                             </span>
-
 
                             <span class="info-value">
-
                                 Active
-
                             </span>
-
 
                         </div>
 
 
                     </div>
-
 
                 </div>
 
@@ -1455,120 +1128,88 @@
 
                     <div class="card-header">
 
-
                         <div>
 
                             <h3>
-
                                 การเชื่อมต่อ
-
                             </h3>
 
-
                             <p>
-
                                 สถานะบริการที่เชื่อมต่อกับระบบ
-
                             </p>
 
                         </div>
 
-
                     </div>
 
 
 
-                    <div class="connection-item">
+                    <!-- MT5 -->
 
+                    <div class="connection-item">
 
                         <div class="connection-left">
 
-
                             <div class="connection-icon">
-
                                 M
-
                             </div>
-
 
                             <div>
 
                                 <div class="connection-name">
-
                                     MetaTrader 5
-
                                 </div>
 
-
                                 <div class="connection-detail">
-
                                     MT5 Account · 12345678
-
                                 </div>
 
                             </div>
-
 
                         </div>
 
 
                         <span class="connected-badge">
-
                             Connected
-
                         </span>
-
 
                     </div>
 
 
 
-                    <div class="connection-item">
+                    <!-- TELEGRAM -->
 
+                    <div class="connection-item">
 
                         <div class="connection-left">
 
-
                             <div class="connection-icon">
-
                                 T
-
                             </div>
-
 
                             <div>
 
                                 <div class="connection-name">
-
                                     Telegram
-
                                 </div>
 
-
                                 <div class="connection-detail">
-
                                     Chat ID · 123456789
-
                                 </div>
 
                             </div>
-
 
                         </div>
 
 
                         <span class="connected-badge">
-
                             Connected
-
                         </span>
-
 
                     </div>
 
 
                 </div>
-
 
             </div>
 
@@ -1581,38 +1222,31 @@
             <div>
 
 
-                <!-- PERSONAL INFORMATION -->
+                <!-- =================================================
+                     PERSONAL INFORMATION
+                ================================================= -->
 
                 <div class="profile-card">
 
 
                     <div class="card-header">
 
-
                         <div>
 
                             <h3>
-
                                 ข้อมูลส่วนตัว
-
                             </h3>
 
-
                             <p>
-
                                 แก้ไขข้อมูลพื้นฐานของบัญชีผู้ใช้งาน
-
                             </p>
 
                         </div>
 
 
                         <div class="header-icon">
-
                             ♙
-
                         </div>
-
 
                     </div>
 
@@ -1621,15 +1255,15 @@
                     <div class="form-grid">
 
 
-                        <!-- NAME -->
+                        <!-- FIRST NAME -->
 
                         <div class="form-group">
 
-
-                            <label class="form-label">
-
+                            <label
+                                class="form-label"
+                                for="firstName"
+                            >
                                 ชื่อ
-
                             </label>
 
 
@@ -1637,38 +1271,31 @@
                                 type="text"
                                 class="form-input"
                                 id="firstName"
-                                value="ผู้ใช้งาน"
+                                value="Tanakorn"
                             >
 
                         </div>
 
 
 
-                        <!-- USERNAME -->
+                        <!-- LAST NAME -->
 
                         <div class="form-group">
 
-
-                            <label class="form-label">
-
-                                Username
-
+                            <label
+                                class="form-label"
+                                for="lastName"
+                            >
+                                นามสกุล
                             </label>
 
 
                             <input
                                 type="text"
                                 class="form-input"
-                                value="user01"
-                                disabled
+                                id="lastName"
+                                value="Sompong"
                             >
-
-
-                            <span class="form-hint">
-
-                                Username ไม่สามารถเปลี่ยนได้
-
-                            </span>
 
                         </div>
 
@@ -1678,11 +1305,11 @@
 
                         <div class="form-group full">
 
-
-                            <label class="form-label">
-
-                                Email
-
+                            <label
+                                class="form-label"
+                                for="email"
+                            >
+                                อีเมล
                             </label>
 
 
@@ -1690,8 +1317,47 @@
                                 type="email"
                                 class="form-input"
                                 id="email"
-                                value="user@example.com"
+                                value="tanakorn@email.com"
                             >
+
+                        </div>
+
+
+
+                        <!-- PASSWORD -->
+
+                        <div class="form-group full">
+
+                            <label
+                                class="form-label"
+                                for="profilePassword"
+                            >
+                                Password
+                            </label>
+
+
+                            <div class="password-wrapper">
+
+                                <input
+                                    type="password"
+                                    class="form-input"
+                                    id="profilePassword"
+                                    placeholder="กรอกรหัสผ่าน"
+                                >
+
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    onclick="togglePassword(
+                                        'profilePassword',
+                                        this
+                                    )"
+                                >
+                                    ◉
+                                </button>
+
+                            </div>
 
                         </div>
 
@@ -1700,6 +1366,8 @@
 
 
 
+                    <!-- ACTIONS -->
+
                     <div class="form-actions">
 
 
@@ -1707,9 +1375,7 @@
                             class="secondary-button"
                             onclick="resetProfile()"
                         >
-
                             ยกเลิก
-
                         </button>
 
 
@@ -1717,9 +1383,7 @@
                             class="primary-button"
                             onclick="saveProfile()"
                         >
-
-                            บันทึกข้อมูล
-
+                            💾 บันทึก
                         </button>
 
 
@@ -1730,38 +1394,31 @@
 
 
 
-                <!-- PASSWORD -->
+                <!-- =================================================
+                     CHANGE PASSWORD
+                ================================================= -->
 
                 <div class="profile-card">
 
 
                     <div class="card-header">
 
-
                         <div>
 
                             <h3>
-
                                 เปลี่ยนรหัสผ่าน
-
                             </h3>
 
-
                             <p>
-
                                 แนะนำให้ใช้รหัสผ่านที่คาดเดาได้ยากและไม่ซ้ำกับบริการอื่น
-
                             </p>
 
                         </div>
 
 
                         <div class="header-icon">
-
                             🔒
-
                         </div>
-
 
                     </div>
 
@@ -1770,20 +1427,19 @@
                     <div class="form-grid">
 
 
-                        <!-- OLD PASSWORD -->
+                        <!-- CURRENT PASSWORD -->
 
                         <div class="form-group full">
 
-
-                            <label class="form-label">
-
+                            <label
+                                class="form-label"
+                                for="currentPassword"
+                            >
                                 รหัสผ่านปัจจุบัน
-
                             </label>
 
 
                             <div class="password-wrapper">
-
 
                                 <input
                                     type="password"
@@ -1796,16 +1452,15 @@
                                 <button
                                     type="button"
                                     class="password-toggle"
-                                    onclick="togglePassword('currentPassword', this)"
+                                    onclick="togglePassword(
+                                        'currentPassword',
+                                        this
+                                    )"
                                 >
-
                                     ◉
-
                                 </button>
 
-
                             </div>
-
 
                         </div>
 
@@ -1815,16 +1470,15 @@
 
                         <div class="form-group">
 
-
-                            <label class="form-label">
-
+                            <label
+                                class="form-label"
+                                for="newPassword"
+                            >
                                 รหัสผ่านใหม่
-
                             </label>
 
 
                             <div class="password-wrapper">
-
 
                                 <input
                                     type="password"
@@ -1837,13 +1491,13 @@
                                 <button
                                     type="button"
                                     class="password-toggle"
-                                    onclick="togglePassword('newPassword', this)"
+                                    onclick="togglePassword(
+                                        'newPassword',
+                                        this
+                                    )"
                                 >
-
                                     ◉
-
                                 </button>
-
 
                             </div>
 
@@ -1855,16 +1509,15 @@
 
                         <div class="form-group">
 
-
-                            <label class="form-label">
-
+                            <label
+                                class="form-label"
+                                for="confirmPassword"
+                            >
                                 ยืนยันรหัสผ่านใหม่
-
                             </label>
 
 
                             <div class="password-wrapper">
-
 
                                 <input
                                     type="password"
@@ -1877,13 +1530,13 @@
                                 <button
                                     type="button"
                                     class="password-toggle"
-                                    onclick="togglePassword('confirmPassword', this)"
+                                    onclick="togglePassword(
+                                        'confirmPassword',
+                                        this
+                                    )"
                                 >
-
                                     ◉
-
                                 </button>
-
 
                             </div>
 
@@ -1896,16 +1549,12 @@
 
                     <div class="form-actions">
 
-
                         <button
                             class="primary-button"
                             onclick="changePassword()"
                         >
-
                             เปลี่ยนรหัสผ่าน
-
                         </button>
-
 
                     </div>
 
@@ -1914,38 +1563,31 @@
 
 
 
-                <!-- PREFERENCES -->
+                <!-- =================================================
+                     PREFERENCES
+                ================================================= -->
 
                 <div class="profile-card">
 
 
                     <div class="card-header">
 
-
                         <div>
 
                             <h3>
-
                                 การตั้งค่าระบบ
-
                             </h3>
 
-
                             <p>
-
                                 ตั้งค่าการแสดงผลและรูปแบบข้อมูลของระบบ
-
                             </p>
 
                         </div>
 
 
                         <div class="header-icon">
-
                             ⚙
-
                         </div>
-
 
                     </div>
 
@@ -1955,20 +1597,14 @@
 
                     <div class="preference-row">
 
-
                         <div>
 
                             <div class="preference-name">
-
                                 Timezone
-
                             </div>
 
-
                             <div class="preference-description">
-
                                 เขตเวลาที่ใช้แสดงวันที่และเวลา
-
                             </div>
 
                         </div>
@@ -1977,25 +1613,18 @@
                         <select class="preference-select">
 
                             <option selected>
-
                                 Asia/Bangkok
-
                             </option>
 
                             <option>
-
                                 Asia/Tokyo
-
                             </option>
 
                             <option>
-
                                 UTC
-
                             </option>
 
                         </select>
-
 
                     </div>
 
@@ -2005,20 +1634,14 @@
 
                     <div class="preference-row">
 
-
                         <div>
 
                             <div class="preference-name">
-
                                 สกุลเงิน
-
                             </div>
 
-
                             <div class="preference-description">
-
                                 สกุลเงินที่ใช้แสดงกำไรและขาดทุน
-
                             </div>
 
                         </div>
@@ -2027,25 +1650,18 @@
                         <select class="preference-select">
 
                             <option selected>
-
                                 USD ($)
-
                             </option>
 
                             <option>
-
                                 THB (฿)
-
                             </option>
 
                             <option>
-
                                 EUR (€)
-
                             </option>
 
                         </select>
-
 
                     </div>
 
@@ -2055,20 +1671,14 @@
 
                     <div class="preference-row">
 
-
                         <div>
 
                             <div class="preference-name">
-
                                 ภาษา
-
                             </div>
 
-
                             <div class="preference-description">
-
                                 ภาษาที่ใช้ในหน้าเว็บไซต์
-
                             </div>
 
                         </div>
@@ -2077,19 +1687,14 @@
                         <select class="preference-select">
 
                             <option selected>
-
                                 ภาษาไทย
-
                             </option>
 
                             <option>
-
                                 English
-
                             </option>
 
                         </select>
-
 
                     </div>
 
@@ -2098,27 +1703,23 @@
 
 
 
-                <!-- DANGER ZONE -->
+                <!-- =================================================
+                     DANGER ZONE
+                ================================================= -->
 
                 <div class="profile-card danger-card">
 
 
                     <div class="danger-header">
 
-
                         <div class="danger-icon">
-
                             !
-
                         </div>
 
 
                         <div class="danger-title">
-
                             ออกจากระบบ
-
                         </div>
-
 
                     </div>
 
@@ -2134,9 +1735,7 @@
                         class="logout-button"
                         onclick="logout()"
                     >
-
                         ↪ ออกจากระบบ
-
                     </button>
 
 
@@ -2169,43 +1768,60 @@
 
     function saveProfile() {
 
-        const name =
+        const firstName =
             document
-                .getElementById(
-                    'firstName'
-                )
+                .getElementById('firstName')
+                .value
+                .trim();
+
+
+        const lastName =
+            document
+                .getElementById('lastName')
                 .value
                 .trim();
 
 
         const email =
             document
-                .getElementById(
-                    'email'
-                )
+                .getElementById('email')
                 .value
                 .trim();
 
 
-        if (!name) {
+        const password =
+            document
+                .getElementById('profilePassword')
+                .value;
+
+
+        if (!firstName) {
 
             alert(
                 'กรุณากรอกชื่อ'
             );
 
             return;
+        }
 
+
+        if (!lastName) {
+
+            alert(
+                'กรุณากรอกนามสกุล'
+            );
+
+            return;
         }
 
 
         if (!email) {
 
             alert(
-                'กรุณากรอก Email'
+                'กรุณากรอกอีเมล'
             );
 
             return;
-
         }
 
 
@@ -2224,19 +1840,27 @@
     function resetProfile() {
 
         document
-            .getElementById(
-                'firstName'
-            )
+            .getElementById('firstName')
             .value =
-                'ผู้ใช้งาน';
+                'Tanakorn';
 
 
         document
-            .getElementById(
-                'email'
-            )
+            .getElementById('lastName')
             .value =
-                'user@example.com';
+                'Sompong';
+
+
+        document
+            .getElementById('email')
+            .value =
+                'tanakorn@email.com';
+
+
+        document
+            .getElementById('profilePassword')
+            .value =
+                '';
 
     }
 
@@ -2253,9 +1877,7 @@
 
         const input =
             document
-                .getElementById(
-                    inputId
-                );
+                .getElementById(inputId);
 
 
         if (
@@ -2305,7 +1927,7 @@
                 .value;
 
 
-        const confirm =
+        const confirmPassword =
             document
                 .getElementById(
                     'confirmPassword'
@@ -2320,7 +1942,6 @@
             );
 
             return;
-
         }
 
 
@@ -2331,7 +1952,6 @@
             );
 
             return;
-
         }
 
 
@@ -2344,13 +1964,12 @@
             );
 
             return;
-
         }
 
 
         if (
             newPassword !==
-            confirm
+            confirmPassword
         ) {
 
             alert(
@@ -2358,7 +1977,6 @@
             );
 
             return;
-
         }
 
 

@@ -1,21 +1,154 @@
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'https://trading-notifier-vrdb.onrender.com';
 
-async function getTrades() {
-    const response = await fetch(`${API_BASE_URL}/api/trades`);
 
-    if (!response.ok) {
-        throw new Error('Failed to fetch trades');
+// =========================
+// API REQUEST
+// =========================
+
+async function apiRequest(endpoint, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+        }
+    });
+
+    let data;
+
+    try {
+        data = await response.json();
+    } catch {
+        data = {};
     }
 
-    return await response.json();
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+            data.error ||
+            `API Error: ${response.status}`
+        );
+    }
+
+    return data;
 }
 
-async function getSummary() {
-    const response = await fetch(`${API_BASE_URL}/api/summary`);
 
-    if (!response.ok) {
-        throw new Error('Failed to fetch summary');
+// =========================
+// LOGIN
+// =========================
+
+async function login(email, password) {
+    return await apiRequest('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({
+            email,
+            password
+        })
+    });
+}
+
+
+// =========================
+// SETUP PASSWORD
+// =========================
+
+async function setupPassword(email, password) {
+    return await apiRequest('/api/setup-password', {
+        method: 'POST',
+        body: JSON.stringify({
+            email,
+            password
+        })
+    });
+}
+
+
+// =========================
+// TOKEN
+// =========================
+
+function saveToken(token) {
+    localStorage.setItem('authToken', token);
+}
+
+function getToken() {
+    return localStorage.getItem('authToken');
+}
+
+function removeToken() {
+    localStorage.removeItem('authToken');
+}
+
+
+// =========================
+// AUTHENTICATED REQUEST
+// =========================
+
+async function authenticatedRequest(endpoint, options = {}) {
+    const token = getToken();
+
+    if (!token) {
+        throw new Error('Please login first');
     }
 
-    return await response.json();
+    return await apiRequest(endpoint, {
+        ...options,
+        headers: {
+            ...(options.headers || {}),
+            Authorization: `Bearer ${token}`
+        }
+    });
+}
+
+
+// =========================
+// PROFILE
+// =========================
+
+async function getProfile() {
+    return await authenticatedRequest('/api/profile');
+}
+
+async function updateProfile(profileData) {
+    return await authenticatedRequest('/api/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(profileData)
+    });
+}
+
+
+// =========================
+// TRADES
+// =========================
+
+async function getTrades() {
+    return await authenticatedRequest('/api/trades');
+}
+
+
+// =========================
+// SUMMARY
+// =========================
+
+async function getSummary() {
+    return await authenticatedRequest('/api/summary');
+}
+
+
+// =========================
+// STATISTICS
+// =========================
+
+async function getStatistics() {
+    return await authenticatedRequest('/api/statistics');
+}
+
+
+// =========================
+// NOTIFICATIONS
+// =========================
+
+async function getNotifications() {
+    return await authenticatedRequest('/api/notifications');
 }
