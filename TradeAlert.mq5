@@ -87,7 +87,8 @@ string JSONEscape(string s)
    return(s);
 }
 
-void SendWebhook(string action, string symbol, double price, double lot, double pnl = 0.0)
+void SendWebhook(string action, string symbol, double price, double lot, double pnl = 0.0,
+                  ulong position_id = 0, double tp = 0.0, double sl = 0.0)
 {
    if(StringLen(webhook_url) == 0) return;
    string pnl_str = DoubleToString(pnl, 2);
@@ -96,7 +97,10 @@ void SendWebhook(string action, string symbol, double price, double lot, double 
                + "\"symbol\":\"" + symbol + "\","
                + "\"price\":" + DoubleToString(price, _Digits) + ","
                + "\"lot\":" + DoubleToString(lot, 2) + ","
-               + "\"pnl\":" + pnl_str + "}";
+               + "\"pnl\":" + pnl_str + ","
+               + "\"position_id\":" + (string)position_id + ","
+               + "\"tp\":" + DoubleToString(tp, _Digits) + ","
+               + "\"sl\":" + DoubleToString(sl, _Digits) + "}";
    uchar data[];
    int dlen = StringToCharArray(body, data, 0, -1, CP_UTF8);
    ArrayResize(data, dlen - 1);
@@ -414,7 +418,15 @@ void OnTradeTransaction(
       msg += "🎯 TP       " + tp_str + "\n";
       msg += "🛑 SL       " + sl_str;
       SendTelegram(WithDisclaimer(msg));
-      SendWebhook(typ == "BUY" ? "buy" : "sell", symbol, deal_price, deal_volume);
+      // raw SL/TP for Supabase (selected by position ticket, not symbol,
+      // so it's correct even with multiple positions on the same symbol)
+      double raw_sl = 0.0, raw_tp = 0.0;
+      if(PositionSelectByTicket(pos_id))
+      {
+         raw_sl = PositionGetDouble(POSITION_SL);
+         raw_tp = PositionGetDouble(POSITION_TP);
+      }
+      SendWebhook(typ == "BUY" ? "buy" : "sell", symbol, deal_price, deal_volume, 0.0, pos_id, raw_tp, raw_sl);
       return;
    }
 
@@ -434,7 +446,7 @@ void OnTradeTransaction(
       msg += "💵 Exit     " + DoubleToString(deal_price, digits) + "\n";
       msg += "💰 Profit   <b>" + profit_str + "$</b>";
       SendTelegram(WithDisclaimer(msg));
-      SendWebhook("close", symbol, deal_price, deal_volume, deal_profit);
+      SendWebhook("close", symbol, deal_price, deal_volume, deal_profit, pos_id);
       // ปิดสนิทแล้ว (ไม่มี position เหลือ) → คืนเลขลำดับ กัน GlobalVariable สะสม
       if(!PositionSelectByTicket(pos_id)) ReleaseOrderSeq(pos_id);
       return;

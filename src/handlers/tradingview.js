@@ -1,5 +1,4 @@
 const { notify } = require('../notifications');
-const { recordTrade } = require('../pnl/tracker');
 
 // TradingView alert payload format:
 // {
@@ -41,12 +40,6 @@ async function handleTradingViewAlert(payload, user) {
   lines.push(`Time: ${time}`);
 
   await notify(lines.join('\n'), user.telegram_chat_id);
-
-  if (['buy', 'sell'].includes(action?.toLowerCase())) {
-    await recordTrade({ action, symbol, price, tp, sl, user_id: user.id });
-  } else if (['tp', 'sl', 'close'].includes(action?.toLowerCase()) && pnl !== undefined) {
-    await recordTrade({ action, symbol, price, pnl, user_id: user.id });
-  }
 }
 
 module.exports = { handleTradingViewAlert };

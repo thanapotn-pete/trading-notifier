@@ -4,9 +4,22 @@ const { handleTradingViewAlert } = require('./handlers/tradingview');
 const { recordTrade } = require('./pnl/tracker');
 const { findUserBySecret } = require('./users');
 const { startScheduler } = require('./scheduler');
+const apiRouter = require('./api');
 
 const app = express();
 app.use(express.json());
+
+// Dashboard API is called directly from the browser, so it needs CORS
+// (webhook routes are server-to-server and don't). PATCH /profile with a
+// JSON body triggers a preflight OPTIONS request — answer it directly.
+app.use('/api', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+app.use('/api', apiRouter);
 
 // Look up which registered user a webhook_secret belongs to
 async function lookupUser(req, res, next) {
@@ -36,9 +49,11 @@ app.post('/webhook/tradingview', lookupUser, async (req, res) => {
 // MT5 webhook — save to Supabase only (Telegram handled by MT5 directly)
 app.post('/webhook/mt5', lookupUser, async (req, res) => {
   try {
-    const { action, symbol, price, pnl, lot } = req.body;
-    if (!action || !symbol) return res.status(400).json({ error: 'action and symbol required' });
-    await recordTrade({ action, symbol, price, pnl, lot, user_id: req.user.id });
+    const { action, symbol, price, pnl, lot, position_id, tp, sl } = req.body;
+    if (!action || !symbol || !position_id) {
+      return res.status(400).json({ error: 'action, symbol and position_id required' });
+    }
+    await recordTrade({ action, symbol, price, pnl, lot, position_id, tp, sl, user_id: req.user.id });
     res.json({ ok: true });
   } catch (err) {
     console.error('[MT5 Webhook] Error:', err.message);

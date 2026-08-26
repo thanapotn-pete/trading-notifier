@@ -19,3 +19,33 @@ alter table trades add column user_id uuid references users(id);
 -- returning id;
 --
 -- update trades set user_id = '<id from above>' where user_id is null;
+
+-- Run once to move `trades` from "one row per event" to "one row per
+-- position, updated on close" so a trade's open+close+TP/SL can be shown
+-- together (needed for the frontend's trade-history table).
+alter table trades add column position_id bigint;
+alter table trades add column close_price numeric;
+alter table trades add column tp numeric;
+alter table trades add column sl numeric;
+alter table trades add column status text default 'open';
+alter table trades add column closed_at timestamptz;
+
+-- Run once to support the "ตั้งค่าบัญชี" profile page — fields the user
+-- edits themselves via the frontend, separate from `name` (the internal
+-- label set by the owner in scripts/add-user.js).
+alter table users add column first_name text;
+alter table users add column last_name text;
+alter table users add column email text;
+alter table users add column mt5_account_id text;
+alter table users add column mt5_server text;
+alter table users add constraint users_email_unique unique (email);
+
+-- Run once to support website login: the admin-issued webhook_secret is
+-- used once (POST /api/setup-password) as an invite code so the user can
+-- pick their own password; POST /api/login then checks email+password.
+alter table users add column password_hash text;
+
+-- Run once: mt5_account_id/mt5_server ended up unused (informational only,
+-- never read by any backend logic) — dropped rather than left dead.
+alter table users drop column mt5_account_id;
+alter table users drop column mt5_server;
