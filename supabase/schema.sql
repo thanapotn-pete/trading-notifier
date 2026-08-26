@@ -19,3 +19,13 @@ alter table trades add column user_id uuid references users(id);
 -- returning id;
 --
 -- update trades set user_id = '<id from above>' where user_id is null;
+
+-- Run once to move `trades` from "one row per event" to "one row per
+-- position, updated on close" so a trade's open+close+TP/SL can be shown
+-- together (needed for the frontend's trade-history table).
+alter table trades add column position_id bigint;
+alter table trades add column close_price numeric;
+alter table trades add column tp numeric;
+alter table trades add column sl numeric;
+alter table trades add column status text default 'open';
+alter table trades add column closed_at timestamptz;

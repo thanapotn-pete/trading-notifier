@@ -54,11 +54,11 @@ router.get('/statistics', async (req, res) => {
 });
 
 function notificationMessage(trade) {
-  if (trade.action === 'buy' || trade.action === 'sell') {
-    return `${trade.action.toUpperCase()} ${trade.symbol} @ ${trade.price}`;
+  if (trade.status === 'closed') {
+    const pnl = trade.pnl != null ? ` (${trade.pnl >= 0 ? '+' : ''}${trade.pnl})` : '';
+    return `${trade.action.toUpperCase()} ${trade.symbol} closed${pnl}`;
   }
-  const pnl = trade.pnl != null ? ` (${trade.pnl >= 0 ? '+' : ''}${trade.pnl})` : '';
-  return `${trade.symbol} closed${pnl}`;
+  return `${trade.action.toUpperCase()} ${trade.symbol} @ ${trade.price}`;
 }
 
 router.get('/notifications', async (req, res) => {
@@ -67,9 +67,10 @@ router.get('/notifications', async (req, res) => {
     const trades = await listTrades(req.user.id, limit);
     const notifications = trades.map((t) => ({
       type: t.action,
+      status: t.status,
       symbol: t.symbol,
       message: notificationMessage(t),
-      timestamp: t.timestamp,
+      timestamp: t.status === 'closed' ? t.closed_at : t.timestamp,
     }));
     res.json({ notifications });
   } catch (err) {

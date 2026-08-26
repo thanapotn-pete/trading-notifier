@@ -46,9 +46,11 @@ app.post('/webhook/tradingview', lookupUser, async (req, res) => {
 // MT5 webhook — save to Supabase only (Telegram handled by MT5 directly)
 app.post('/webhook/mt5', lookupUser, async (req, res) => {
   try {
-    const { action, symbol, price, pnl, lot } = req.body;
-    if (!action || !symbol) return res.status(400).json({ error: 'action and symbol required' });
-    await recordTrade({ action, symbol, price, pnl, lot, user_id: req.user.id });
+    const { action, symbol, price, pnl, lot, position_id, tp, sl } = req.body;
+    if (!action || !symbol || !position_id) {
+      return res.status(400).json({ error: 'action, symbol and position_id required' });
+    }
+    await recordTrade({ action, symbol, price, pnl, lot, position_id, tp, sl, user_id: req.user.id });
     res.json({ ok: true });
   } catch (err) {
     console.error('[MT5 Webhook] Error:', err.message);

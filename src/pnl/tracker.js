@@ -25,16 +25,38 @@ function startOfDayInTimezone(tz) {
   return new Date(midnightWallClockAsUTC - offsetMs);
 }
 
+// A position is one row, inserted on open and updated in place on close
+// (matched by position_id) so open/close/TP/SL can be shown together.
 async function recordTrade(trade) {
   const supabase = getClient();
-  const { error } = await supabase.from('trades').insert({
-    action: trade.action,
-    symbol: trade.symbol,
-    price: trade.price,
-    pnl: trade.pnl,
-    lot: trade.lot,
-    user_id: trade.user_id,
-  });
+
+  if (trade.action === 'buy' || trade.action === 'sell') {
+    const { error } = await supabase.from('trades').insert({
+      action: trade.action,
+      symbol: trade.symbol,
+      price: trade.price,
+      lot: trade.lot,
+      tp: trade.tp,
+      sl: trade.sl,
+      position_id: trade.position_id,
+      status: 'open',
+      user_id: trade.user_id,
+    });
+    if (error) throw error;
+    return;
+  }
+
+  const { error } = await supabase
+    .from('trades')
+    .update({
+      close_price: trade.price,
+      pnl: trade.pnl,
+      status: 'closed',
+      closed_at: new Date().toISOString(),
+    })
+    .eq('position_id', trade.position_id)
+    .eq('user_id', trade.user_id)
+    .eq('status', 'open');
   if (error) throw error;
 }
 
@@ -49,7 +71,7 @@ async function getDailySummary(userId) {
     .from('trades')
     .select('*')
     .eq('user_id', userId)
-    .gte('timestamp', startOfDay.toISOString())
+    .gte('closed_at', startOfDay.toISOString())
     .not('pnl', 'is', null);
 
   if (error) throw error;
