@@ -10,12 +10,12 @@ function buildSummaryMessage(summary) {
   const resultEmoji = totalPnl >= 0 ? '📈' : '📉';
 
   return [
-    `${resultEmoji} <b>สรุปผลการเทรดวันนี้</b>`,
-    `วันที่: ${date}`,
-    `จำนวน Trade: ${totalTrades}`,
-    `ชนะ: ${wins} | แพ้: ${losses}`,
+    `${resultEmoji} <b>Daily Trading Summary</b>`,
+    `Date: ${date}`,
+    `Trades: ${totalTrades}`,
+    `Wins: ${wins} | Losses: ${losses}`,
     `Win Rate: ${winRate}%`,
-    `P&L รวม: <b>${pnlSign}${totalPnl.toFixed(2)}</b>`,
+    `Total P&L: <b>${pnlSign}${totalPnl.toFixed(2)}</b>`,
   ].join('\n');
 }
 
@@ -28,7 +28,7 @@ function startScheduler() {
     for (const user of users) {
       const summary = await getDailySummary(user.id);
       if (summary.totalTrades === 0) {
-        await notify('📊 วันนี้ไม่มี Trade ที่ปิดแล้ว', user.telegram_chat_id);
+        await notify('📊 No closed trades today', user.telegram_chat_id);
         continue;
       }
       await notify(buildSummaryMessage(summary), user.telegram_chat_id);

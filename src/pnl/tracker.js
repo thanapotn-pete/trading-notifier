@@ -64,7 +64,7 @@ async function getDailySummary(userId) {
   const supabase = getClient();
   const tz = process.env.TIMEZONE || 'Asia/Bangkok';
 
-  const today = new Date().toLocaleDateString('th-TH', { timeZone: tz });
+  const today = new Date().toLocaleDateString('en-GB', { timeZone: tz });
   const startOfDay = startOfDayInTimezone(tz);
 
   const { data, error } = await supabase
