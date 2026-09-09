@@ -1238,1569 +1238,197 @@
 
     <div class="content report-page">
 
-
-        <!-- =================================================
-             HEADER
-        ================================================= -->
-
         <div class="report-header">
-
-
             <div class="report-title">
-
-
-                <h2>
-
-                    รายงานการเทรด
-
-                </h2>
-
-
-                <p>
-
-                    สรุปผลการเทรดและประสิทธิภาพการลงทุน
-
-                </p>
-
-
+                <h2>รายงานการเทรด</h2>
+                <p>สรุปผลการเทรดและประสิทธิภาพการลงทุนจากข้อมูลจริง</p>
             </div>
-
-
             <div class="report-actions">
-
-
-                <select
-                    class="date-select"
-                    id="periodSelect"
-                    onchange="changePeriod()"
-                >
-
-                    <option value="today">
-                        วันนี้
-                    </option>
-
-                    <option value="7">
-                        7 วันที่ผ่านมา
-                    </option>
-
-                    <option
-                        value="30"
-                        selected
-                    >
-                        30 วันที่ผ่านมา
-                    </option>
-
-                    <option value="90">
-                        90 วันที่ผ่านมา
-                    </option>
-
+                <select class="date-select" id="periodSelect" onchange="changePeriod()">
+                    <option value="today">วันนี้</option>
+                    <option value="7">7 วันที่ผ่านมา</option>
+                    <option value="30" selected>30 วันที่ผ่านมา</option>
+                    <option value="90">90 วันที่ผ่านมา</option>
+                    <option value="all">ทั้งหมด</option>
                 </select>
-
-
-                <button
-                    class="export-button"
-                    onclick="exportReport()"
-                >
-
-                    ↓
-
-                    Export รายงาน
-
-                </button>
-
-
+                <button class="export-button" onclick="exportReport()">↓ Export รายงาน</button>
             </div>
-
-
         </div>
-
-
-
-        <!-- =================================================
-             SUMMARY
-        ================================================= -->
 
         <div class="summary-grid">
-
-
-            <!-- NET PROFIT -->
-
             <div class="summary-card">
-
-
-                <div>
-
-                    <div class="summary-label">
-
-                        กำไรสุทธิ
-
-                    </div>
-
-
-                    <div class="summary-value green">
-
-                        +$2,430
-
-                    </div>
-
-
-                    <div class="summary-description">
-
-                        ↑ 12.4% จากช่วงก่อนหน้า
-
-                    </div>
-
-                </div>
-
-
-                <div class="summary-icon">
-
-                    $
-
-                </div>
-
-
+                <div><div class="summary-label">กำไรสุทธิ</div><div id="netProfit" class="summary-value green">$0.00</div><div id="profitDescription" class="summary-description">จากข้อมูลการเทรด</div></div>
+                <div class="summary-icon">$</div>
             </div>
-
-
-
-            <!-- TOTAL TRADES -->
-
             <div class="summary-card">
-
-
-                <div>
-
-                    <div class="summary-label">
-
-                        จำนวนการเทรด
-
-                    </div>
-
-
-                    <div class="summary-value">
-
-                        200
-
-                    </div>
-
-
-                    <div class="summary-description">
-
-                        รายการทั้งหมด
-
-                    </div>
-
-                </div>
-
-
-                <div class="summary-icon blue">
-
-                    ⇄
-
-                </div>
-
-
+                <div><div class="summary-label">จำนวนการเทรด</div><div id="totalTrades" class="summary-value">0</div><div class="summary-description">รายการทั้งหมด</div></div>
+                <div class="summary-icon blue">⇄</div>
             </div>
-
-
-
-            <!-- WIN RATE -->
-
             <div class="summary-card">
-
-
-                <div>
-
-                    <div class="summary-label">
-
-                        Win Rate
-
-                    </div>
-
-
-                    <div class="summary-value green">
-
-                        68.5%
-
-                    </div>
-
-
-                    <div class="summary-description">
-
-                        ชนะ 137 ครั้ง
-
-                    </div>
-
-                </div>
-
-
-                <div class="summary-icon">
-
-                    %
-
-                </div>
-
-
+                <div><div class="summary-label">Win Rate</div><div id="winRate" class="summary-value green">0.0%</div><div id="winDescription" class="summary-description">ชนะ 0 ครั้ง</div></div>
+                <div class="summary-icon">%</div>
             </div>
-
-
-
-            <!-- PROFIT FACTOR -->
-
             <div class="summary-card">
-
-
-                <div>
-
-                    <div class="summary-label">
-
-                        Profit Factor
-
-                    </div>
-
-
-                    <div class="summary-value">
-
-                        2.14
-
-                    </div>
-
-
-                    <div class="summary-description">
-
-                        ประสิทธิภาพของระบบ
-
-                    </div>
-
-                </div>
-
-
-                <div class="summary-icon">
-
-                    ↗
-
-                </div>
-
-
+                <div><div class="summary-label">Profit Factor</div><div id="profitFactor" class="summary-value">0.00</div><div class="summary-description">จากข้อมูลการเทรด</div></div>
+                <div class="summary-icon">↗</div>
             </div>
-
-
         </div>
-
-
-
-        <!-- =================================================
-             CHART + BREAKDOWN
-        ================================================= -->
 
         <div class="report-grid">
-
-
-            <!-- PROFIT CHART -->
-
             <div class="report-card">
-
-
-                <div class="card-heading">
-
-
-                    <div>
-
-                        <h3>
-
-                            กำไรสะสม
-
-                        </h3>
-
-
-                        <p>
-
-                            การเปลี่ยนแปลงของกำไรตามช่วงเวลา
-
-                        </p>
-
-                    </div>
-
-
-                </div>
-
-
-                <div class="chart-container">
-
-                    <canvas id="profitChart"></canvas>
-
-                </div>
-
-
+                <div class="card-heading"><div><h3>กำไรสะสม</h3><p>การเปลี่ยนแปลงของกำไรตามช่วงเวลา</p></div></div>
+                <div class="chart-container"><canvas id="profitChart"></canvas></div>
             </div>
-
-
-
-            <!-- BREAKDOWN -->
-
             <div class="report-card">
-
-
-                <div class="card-heading">
-
-
-                    <div>
-
-                        <h3>
-
-                            สรุปผลการเทรด
-
-                        </h3>
-
-
-                        <p>
-
-                            ภาพรวมกำไรและขาดทุน
-
-                        </p>
-
-                    </div>
-
-
-                </div>
-
-
+                <div class="card-heading"><div><h3>สรุปผลการเทรด</h3><p>ภาพรวมกำไรและขาดทุน</p></div></div>
                 <div class="profit-breakdown">
-
-
-                    <div class="breakdown-item">
-
-
-                        <div class="breakdown-left">
-
-                            <span class="breakdown-dot"></span>
-
-                            <span class="breakdown-name">
-                                Winning Trades
-                            </span>
-
-                        </div>
-
-
-                        <span class="breakdown-value green">
-                            137
-                        </span>
-
-
-                    </div>
-
-
-
-                    <div class="breakdown-item">
-
-
-                        <div class="breakdown-left">
-
-                            <span class="breakdown-dot loss"></span>
-
-                            <span class="breakdown-name">
-                                Losing Trades
-                            </span>
-
-                        </div>
-
-
-                        <span class="breakdown-value red">
-                            63
-                        </span>
-
-
-                    </div>
-
-
-
-                    <div class="breakdown-item">
-
-
-                        <div class="breakdown-left">
-
-                            <span class="breakdown-dot"></span>
-
-                            <span class="breakdown-name">
-                                Average Win
-                            </span>
-
-                        </div>
-
-
-                        <span class="breakdown-value green">
-                            +$42.80
-                        </span>
-
-
-                    </div>
-
-
-
-                    <div class="breakdown-item">
-
-
-                        <div class="breakdown-left">
-
-                            <span class="breakdown-dot loss"></span>
-
-                            <span class="breakdown-name">
-                                Average Loss
-                            </span>
-
-                        </div>
-
-
-                        <span class="breakdown-value red">
-                            -$18.40
-                        </span>
-
-
-                    </div>
-
-
-
-                    <div class="progress-section">
-
-
-                        <div class="progress-header">
-
-
-                            <span class="progress-label">
-
-                                Win Rate
-
-                            </span>
-
-
-                            <span class="progress-percent">
-
-                                68.5%
-
-                            </span>
-
-
-                        </div>
-
-
-                        <div class="progress-bar">
-
-                            <div
-                                class="progress-fill"
-                                style="width:68.5%"
-                            ></div>
-
-                        </div>
-
-
-                    </div>
-
-
+                    <div class="breakdown-item"><div class="breakdown-left"><span class="breakdown-dot"></span><span class="breakdown-name">Winning Trades</span></div><span id="winningTrades" class="breakdown-value green">0</span></div>
+                    <div class="breakdown-item"><div class="breakdown-left"><span class="breakdown-dot loss"></span><span class="breakdown-name">Losing Trades</span></div><span id="losingTrades" class="breakdown-value red">0</span></div>
+                    <div class="breakdown-item"><div class="breakdown-left"><span class="breakdown-dot"></span><span class="breakdown-name">Average Win</span></div><span id="avgWin" class="breakdown-value green">$0.00</span></div>
+                    <div class="breakdown-item"><div class="breakdown-left"><span class="breakdown-dot loss"></span><span class="breakdown-name">Average Loss</span></div><span id="avgLoss" class="breakdown-value red">$0.00</span></div>
+                    <div class="progress-section"><div class="progress-header"><span class="progress-label">Win Rate</span><span id="progressPercent" class="progress-percent">0.0%</span></div><div class="progress-bar"><div id="progressFill" class="progress-fill" style="width:0%"></div></div></div>
                 </div>
-
-
             </div>
-
-
         </div>
 
-
-
-        <!-- =================================================
-             SYMBOL PERFORMANCE
-        ================================================= -->
-
         <div class="table-card">
-
-
-            <div class="table-card-header">
-
-
-                <div>
-
-                    <h3>
-
-                        Performance by Symbol
-
-                    </h3>
-
-
-                    <p>
-
-                        ประสิทธิภาพแยกตามคู่เงินและสินทรัพย์
-
-                    </p>
-
-                </div>
-
-
-                <span class="table-count">
-
-                    5 Symbols
-
-                </span>
-
-
-            </div>
-
-
+            <div class="table-card-header"><div><h3>Performance by Symbol</h3><p>ประสิทธิภาพแยกตามคู่เงินและสินทรัพย์</p></div><span id="symbolCount" class="table-count">0 Symbols</span></div>
             <table>
-
-
-                <thead>
-
-                    <tr>
-
-                        <th>
-                            SYMBOL
-                        </th>
-
-                        <th>
-                            TRADES
-                        </th>
-
-                        <th>
-                            WIN RATE
-                        </th>
-
-                        <th>
-                            AVG. WIN
-                        </th>
-
-                        <th>
-                            AVG. LOSS
-                        </th>
-
-                        <th>
-                            P/L
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-
-                    <tr>
-
-                        <td>
-
-                            <span class="symbol-name">
-                                EURUSD
-                            </span>
-
-                            <span class="symbol-sub">
-                                Forex / Trading
-                            </span>
-
-                        </td>
-
-                        <td>
-                            52
-                        </td>
-
-                        <td>
-
-                            <span class="win-badge">
-                                72%
-                            </span>
-
-                        </td>
-
-                        <td>
-                            +$38.40
-                        </td>
-
-                        <td>
-                            -$16.20
-                        </td>
-
-                        <td class="profit-text">
-                            +$820
-                        </td>
-
-                    </tr>
-
-
-
-                    <tr>
-
-                        <td>
-
-                            <span class="symbol-name">
-                                GBPUSD
-                            </span>
-
-                            <span class="symbol-sub">
-                                Forex / Trading
-                            </span>
-
-                        </td>
-
-                        <td>
-                            38
-                        </td>
-
-                        <td>
-
-                            <span class="win-badge">
-                                61%
-                            </span>
-
-                        </td>
-
-                        <td>
-                            +$35.10
-                        </td>
-
-                        <td>
-                            -$19.80
-                        </td>
-
-                        <td class="profit-text">
-                            +$340
-                        </td>
-
-                    </tr>
-
-
-
-                    <tr>
-
-                        <td>
-
-                            <span class="symbol-name">
-                                XAUUSD
-                            </span>
-
-                            <span class="symbol-sub">
-                                Gold / Trading
-                            </span>
-
-                        </td>
-
-                        <td>
-                            45
-                        </td>
-
-                        <td>
-
-                            <span class="win-badge">
-                                69%
-                            </span>
-
-                        </td>
-
-                        <td>
-                            +$52.30
-                        </td>
-
-                        <td>
-                            -$22.40
-                        </td>
-
-                        <td class="profit-text">
-                            +$760
-                        </td>
-
-                    </tr>
-
-
-
-                    <tr>
-
-                        <td>
-
-                            <span class="symbol-name">
-                                USDJPY
-                            </span>
-
-                            <span class="symbol-sub">
-                                Forex / Trading
-                            </span>
-
-                        </td>
-
-                        <td>
-                            35
-                        </td>
-
-                        <td>
-
-                            <span class="win-badge">
-                                66%
-                            </span>
-
-                        </td>
-
-                        <td>
-                            +$41.20
-                        </td>
-
-                        <td>
-                            -$17.90
-                        </td>
-
-                        <td class="profit-text">
-                            +$420
-                        </td>
-
-                    </tr>
-
-
-
-                    <tr>
-
-                        <td>
-
-                            <span class="symbol-name">
-                                GBPJPY
-                            </span>
-
-                            <span class="symbol-sub">
-                                Forex / Trading
-                            </span>
-
-                        </td>
-
-                        <td>
-                            30
-                        </td>
-
-                        <td>
-
-                            <span class="win-badge">
-                                57%
-                            </span>
-
-                        </td>
-
-                        <td>
-                            +$32.80
-                        </td>
-
-                        <td>
-                            -$21.50
-                        </td>
-
-                        <td class="profit-text">
-                            +$90
-                        </td>
-
-                    </tr>
-
-
-                </tbody>
-
-
+                <thead><tr><th>SYMBOL</th><th>TRADES</th><th>WIN RATE</th><th>AVG. WIN</th><th>AVG. LOSS</th><th>P/L</th></tr></thead>
+                <tbody id="symbolStatsBody"><tr><td colspan="6" style="text-align:center;padding:25px;color:#9aa7a3">กำลังโหลดข้อมูล...</td></tr></tbody>
             </table>
-
-
         </div>
-
-
-
-        <!-- =================================================
-             TRADE REPORT
-        ================================================= -->
 
         <div class="table-card">
-
-
-            <div class="table-card-header">
-
-
-                <div>
-
-                    <h3>
-
-                        รายการเทรดในรายงาน
-
-                    </h3>
-
-
-                    <p>
-
-                        รายละเอียดการเทรดล่าสุด
-
-                    </p>
-
-                </div>
-
-
-                <span class="table-count">
-
-                    8 รายการ
-
-                </span>
-
-
-            </div>
-
-
+            <div class="table-card-header"><div><h3>รายการเทรดในรายงาน</h3><p>รายละเอียดการเทรดจากข้อมูลจริง</p></div><span id="tradeCount" class="table-count">0 รายการ</span></div>
             <div class="trade-table-wrapper">
-
-
                 <table>
-
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                SYMBOL
-                            </th>
-
-                            <th>
-                                ACTION
-                            </th>
-
-                            <th>
-                                PRICE
-                            </th>
-
-                            <th>
-                                LOT
-                            </th>
-
-                            <th>
-                                P/L
-                            </th>
-
-                            <th>
-                                STATUS
-                            </th>
-
-                            <th>
-                                DATE / TIME
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-
-                        <tr>
-
-                            <td>
-
-                                <span class="symbol-name">
-                                    EURUSD
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <span class="action-badge action-buy">
-                                    BUY
-                                </span>
-
-                            </td>
-
-                            <td>
-                                1.08520
-                            </td>
-
-                            <td>
-                                0.10
-                            </td>
-
-                            <td class="profit-text">
-                                +$48.20
-                            </td>
-
-                            <td class="status-text">
-                                TP Hit
-                            </td>
-
-                            <td class="date-text">
-                                26/08/2026 09:42
-                            </td>
-
-                        </tr>
-
-
-
-                        <tr>
-
-                            <td>
-
-                                <span class="symbol-name">
-                                    GBPUSD
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <span class="action-badge action-sell">
-                                    SELL
-                                </span>
-
-                            </td>
-
-                            <td>
-                                1.27450
-                            </td>
-
-                            <td>
-                                0.05
-                            </td>
-
-                            <td class="loss-text">
-                                -$12.50
-                            </td>
-
-                            <td class="status-text">
-                                SL Hit
-                            </td>
-
-                            <td class="date-text">
-                                26/08/2026 08:35
-                            </td>
-
-                        </tr>
-
-
-
-                        <tr>
-
-                            <td>
-
-                                <span class="symbol-name">
-                                    XAUUSD
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <span class="action-badge action-buy">
-                                    BUY
-                                </span>
-
-                            </td>
-
-                            <td>
-                                2430.50
-                            </td>
-
-                            <td>
-                                0.02
-                            </td>
-
-                            <td class="profit-text">
-                                +$31.00
-                            </td>
-
-                            <td class="status-text">
-                                Manual
-                            </td>
-
-                            <td class="date-text">
-                                25/08/2026 16:20
-                            </td>
-
-                        </tr>
-
-
-
-                        <tr>
-
-                            <td>
-
-                                <span class="symbol-name">
-                                    USDJPY
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <span class="action-badge action-sell">
-                                    SELL
-                                </span>
-
-                            </td>
-
-                            <td>
-                                148.205
-                            </td>
-
-                            <td>
-                                0.08
-                            </td>
-
-                            <td class="profit-text">
-                                +$22.40
-                            </td>
-
-                            <td class="status-text">
-                                TP Hit
-                            </td>
-
-                            <td class="date-text">
-                                25/08/2026 14:15
-                            </td>
-
-                        </tr>
-
-
-
-                        <tr>
-
-                            <td>
-
-                                <span class="symbol-name">
-                                    EURUSD
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <span class="action-badge action-buy">
-                                    BUY
-                                </span>
-
-                            </td>
-
-                            <td>
-                                1.08210
-                            </td>
-
-                            <td>
-                                0.10
-                            </td>
-
-                            <td class="profit-text">
-                                +$36.80
-                            </td>
-
-                            <td class="status-text">
-                                TP Hit
-                            </td>
-
-                            <td class="date-text">
-                                25/08/2026 11:40
-                            </td>
-
-                        </tr>
-
-
-
-                        <tr>
-
-                            <td>
-
-                                <span class="symbol-name">
-                                    GBPJPY
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <span class="action-badge action-sell">
-                                    SELL
-                                </span>
-
-                            </td>
-
-                            <td>
-                                198.420
-                            </td>
-
-                            <td>
-                                0.05
-                            </td>
-
-                            <td class="loss-text">
-                                -$18.30
-                            </td>
-
-                            <td class="status-text">
-                                SL Hit
-                            </td>
-
-                            <td class="date-text">
-                                24/08/2026 17:05
-                            </td>
-
-                        </tr>
-
-
-
-                        <tr>
-
-                            <td>
-
-                                <span class="symbol-name">
-                                    XAUUSD
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <span class="action-badge action-buy">
-                                    BUY
-                                </span>
-
-                            </td>
-
-                            <td>
-                                2422.80
-                            </td>
-
-                            <td>
-                                0.03
-                            </td>
-
-                            <td class="profit-text">
-                                +$54.60
-                            </td>
-
-                            <td class="status-text">
-                                TP Hit
-                            </td>
-
-                            <td class="date-text">
-                                24/08/2026 13:22
-                            </td>
-
-                        </tr>
-
-
-
-                        <tr>
-
-                            <td>
-
-                                <span class="symbol-name">
-                                    USDJPY
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <span class="action-badge action-buy">
-                                    BUY
-                                </span>
-
-                            </td>
-
-                            <td>
-                                147.850
-                            </td>
-
-                            <td>
-                                0.05
-                            </td>
-
-                            <td class="profit-text">
-                                +$15.70
-                            </td>
-
-                            <td class="status-text">
-                                Manual
-                            </td>
-
-                            <td class="date-text">
-                                23/08/2026 10:18
-                            </td>
-
-                        </tr>
-
-
-                    </tbody>
-
-
+                    <thead><tr><th>SYMBOL</th><th>ACTION</th><th>PRICE</th><th>LOT</th><th>P/L</th><th>STATUS</th><th>DATE / TIME</th></tr></thead>
+                    <tbody id="tradeReportBody"><tr><td colspan="7" style="text-align:center;padding:25px;color:#9aa7a3">กำลังโหลดข้อมูล...</td></tr></tbody>
                 </table>
-
-
             </div>
-
-
         </div>
-
-
     </div>
-
-
-</main>
-
-
 
 <!-- =========================================================
      JAVASCRIPT
 ========================================================= -->
 
 <script>
-
-
-    /* =====================================================
-       PROFIT CHART
-    ===================================================== */
-
-    const chartCanvas =
-        document.getElementById(
-            'profitChart'
-        );
-
-
-    new Chart(
-        chartCanvas,
-        {
-
-            type: 'line',
-
-            data: {
-
-                labels: [
-
-                    '1 มิ.ย.',
-
-                    '3 มิ.ย.',
-
-                    '6 มิ.ย.',
-
-                    '9 มิ.ย.',
-
-                    '12 มิ.ย.',
-
-                    '15 มิ.ย.',
-
-                    '18 มิ.ย.',
-
-                    '21 มิ.ย.',
-
-                    '24 มิ.ย.',
-
-                    '27 มิ.ย.',
-
-                    '30 มิ.ย.'
-
-                ],
-
-                datasets: [
-
-                    {
-
-                        label: 'กำไรสะสม',
-
-                        data: [
-
-                            1000,
-
-                            1075,
-
-                            1155,
-
-                            1245,
-
-                            1320,
-
-                            1380,
-
-                            1450,
-
-                            1510,
-
-                            1595,
-
-                            1685,
-
-                            1780
-
-                        ],
-
-                        borderWidth: 2,
-
-                        pointRadius: 3,
-
-                        pointHoverRadius: 5,
-
-                        tension: 0.35,
-
-                        fill: true,
-
-                        borderColor: '#087f68',
-
-                        backgroundColor:
-                            'rgba(8,127,104,0.10)'
-
-                    }
-
-                ]
-
-            },
-
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-
-                plugins: {
-
-                    legend: {
-
-                        display: false
-
-                    }
-
-                },
-
-
-                scales: {
-
-                    x: {
-
-                        grid: {
-
-                            display: false
-
-                        },
-
-                        ticks: {
-
-                            color: '#94a3b8',
-
-                            font: {
-
-                                family:
-                                    'IBM Plex Sans Thai',
-
-                                size: 10
-
-                            }
-
-                        }
-
-                    },
-
-
-                    y: {
-
-                        grid: {
-
-                            color: '#edf1ef'
-
-                        },
-
-                        ticks: {
-
-                            color: '#94a3b8',
-
-                            font: {
-
-                                family:
-                                    'IBM Plex Sans Thai',
-
-                                size: 10
-
-                            },
-
-                            callback:
-                                function(value) {
-
-                                    return '$' + value;
-
-                                }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-    );
-
-
-
-    /* =====================================================
-       PERIOD
-    ===================================================== */
-
-    function changePeriod() {
-
-        const value =
-            document.getElementById(
-                'periodSelect'
-            ).value;
-
-
-        console.log(
-            'Selected period:',
-            value
-        );
-
-
-        /*
-         * ตอนนี้เป็น UI ก่อน
-         * หลังเชื่อม Supabase
-         * ค่อยเอาค่านี้ไป query วันที่จริง
-         */
-
-    }
-
-
-
-    /* =====================================================
-       EXPORT CSV
-    ===================================================== */
-
-    function exportReport() {
-
-
-        const rows = [
-
-            [
-                'Symbol',
-                'Action',
-                'Price',
-                'Lot',
-                'P/L',
-                'Status',
-                'Date'
-            ],
-
-
-            [
-                'EURUSD',
-                'BUY',
-                '1.08520',
-                '0.10',
-                '+48.20',
-                'TP Hit',
-                '26/08/2026 09:42'
-            ],
-
-
-            [
-                'GBPUSD',
-                'SELL',
-                '1.27450',
-                '0.05',
-                '-12.50',
-                'SL Hit',
-                '26/08/2026 08:35'
-            ],
-
-
-            [
-                'XAUUSD',
-                'BUY',
-                '2430.50',
-                '0.02',
-                '+31.00',
-                'Manual',
-                '25/08/2026 16:20'
-            ],
-
-
-            [
-                'USDJPY',
-                'SELL',
-                '148.205',
-                '0.08',
-                '+22.40',
-                'TP Hit',
-                '25/08/2026 14:15'
-            ],
-
-
-            [
-                'EURUSD',
-                'BUY',
-                '1.08210',
-                '0.10',
-                '+36.80',
-                'TP Hit',
-                '25/08/2026 11:40'
-            ]
-
-        ];
-
-
-        const csv =
-            rows
-                .map(
-                    row =>
-                        row
-                            .map(
-                                value =>
-                                    `"${value}"`
-                            )
-                            .join(',')
-                )
-                .join('\n');
-
-
-        const blob =
-            new Blob(
-                [
-                    '\uFEFF' + csv
-                ],
-                {
-                    type:
-                        'text/csv;charset=utf-8;'
-                }
-            );
-
-
-        const url =
-            URL.createObjectURL(blob);
-
-
-        const link =
-            document.createElement(
-                'a'
-            );
-
-
-        link.href = url;
-
-        link.download =
-            'trade-report.csv';
-
-
-        document.body.appendChild(
-            link
-        );
-
-
-        link.click();
-
-
-        document.body.removeChild(
-            link
-        );
-
-
-        URL.revokeObjectURL(
-            url
-        );
-
-    }
-
-
+const API_BASE_URL = 'http://localhost:3000';
+const TOKEN_KEY = 'auth_token';
+let allTrades = [];
+let filteredTrades = [];
+let profitChart = null;
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function escapeHtml(value) { return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function num(v) { const n=Number(v); return Number.isFinite(n) ? n : 0; }
+function formatMoney(v) { const n=num(v); return (n>=0?'+$':'-$') + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function getPnl(t) { return t?.pnl == null ? null : num(t.pnl); }
+function getTradeDate(t) { const raw=t?.closed_at || t?.timestamp || t?.created_at || t?.opened_at || t?.date || t?.time; const d=raw ? new Date(raw) : null; return d && !Number.isNaN(d.getTime()) ? d : null; }
+function getAction(t) { return String(t?.action || t?.type || t?.side || t?.direction || '').toUpperCase(); }
+function getPrice(t) { return t?.price ?? t?.open_price ?? t?.entry_price ?? t?.entryPrice ?? ''; }
+function getLot(t) { return t?.volume ?? t?.lot ?? t?.lots ?? ''; }
+function getStatus(t) { return t?.status || t?.close_reason || t?.reason || (getPnl(t) == null ? 'OPEN' : 'CLOSED'); }
+
+async function apiFetch(path) {
+    const token=getToken();
+    if(!token) { window.location.href='login.php'; throw new Error('ไม่พบ token กรุณาเข้าสู่ระบบ'); }
+    const res=await fetch(API_BASE_URL+path,{headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}});
+    if(res.status===401){ localStorage.removeItem(TOKEN_KEY); window.location.href='login.php'; throw new Error('Session หมดอายุ'); }
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
+    return data;
+}
+
+function filterByPeriod(trades) {
+    const period=document.getElementById('periodSelect').value;
+    if(period==='all') return [...trades];
+    const now=new Date();
+    let start=new Date(now); start.setHours(0,0,0,0);
+    if(period==='today') return trades.filter(t=>{const d=getTradeDate(t); return d && d>=start;});
+    start.setDate(start.getDate()-Number(period)+1);
+    return trades.filter(t=>{const d=getTradeDate(t); return d && d>=start && d<=now;});
+}
+
+function calculateStats(trades) {
+    const completed=trades.filter(t=>getPnl(t)!==null);
+    const wins=completed.filter(t=>getPnl(t)>0);
+    const losses=completed.filter(t=>getPnl(t)<0);
+    const totalPnl=completed.reduce((s,t)=>s+getPnl(t),0);
+    const grossProfit=wins.reduce((s,t)=>s+getPnl(t),0);
+    const grossLoss=Math.abs(losses.reduce((s,t)=>s+getPnl(t),0));
+    return { totalTrades:completed.length, wins:wins.length, losses:losses.length, totalPnl, grossProfit, grossLoss,
+        winRate:completed.length ? wins.length/completed.length*100 : 0,
+        profitFactor:grossLoss ? grossProfit/grossLoss : (grossProfit ? Infinity : 0),
+        avgWin:wins.length ? grossProfit/wins.length : 0,
+        avgLoss:losses.length ? -grossLoss/losses.length : 0 };
+}
+
+function updateSummary(stats) {
+    const net=document.getElementById('netProfit'); net.textContent=formatMoney(stats.totalPnl); net.className='summary-value '+(stats.totalPnl<0?'red':'green');
+    document.getElementById('totalTrades').textContent=stats.totalTrades.toLocaleString('en-US');
+    document.getElementById('winRate').textContent=stats.winRate.toFixed(1)+'%';
+    document.getElementById('winDescription').textContent=`ชนะ ${stats.wins} ครั้ง`;
+    document.getElementById('profitFactor').textContent=Number.isFinite(stats.profitFactor)?stats.profitFactor.toFixed(2):'∞';
+    document.getElementById('winningTrades').textContent=stats.wins;
+    document.getElementById('losingTrades').textContent=stats.losses;
+    document.getElementById('avgWin').textContent=formatMoney(stats.avgWin);
+    document.getElementById('avgLoss').textContent=formatMoney(stats.avgLoss);
+    document.getElementById('progressPercent').textContent=stats.winRate.toFixed(1)+'%';
+    document.getElementById('progressFill').style.width=Math.min(100,Math.max(0,stats.winRate))+'%';
+}
+
+function updateSymbolTable(trades) {
+    const map={};
+    trades.filter(t=>getPnl(t)!==null).forEach(t=>{
+        const symbol=t.symbol || t.instrument || 'UNKNOWN';
+        if(!map[symbol]) map[symbol]={symbol,trades:0,wins:0,pnl:0,winsPnl:0,lossPnl:0,losses:0};
+        const x=map[symbol], pnl=getPnl(t); x.trades++; x.pnl+=pnl;
+        if(pnl>0){x.wins++;x.winsPnl+=pnl;} else if(pnl<0){x.losses++;x.lossPnl+=pnl;}
+    });
+    const rows=Object.values(map).sort((a,b)=>b.pnl-a.pnl);
+    document.getElementById('symbolCount').textContent=rows.length+' Symbols';
+    const body=document.getElementById('symbolStatsBody');
+    if(!rows.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:25px;color:#9aa7a3">ยังไม่มีข้อมูลการเทรด</td></tr>';return;}
+    body.innerHTML=rows.map(x=>{const wr=x.trades?x.wins/x.trades*100:0;const aw=x.wins?x.winsPnl/x.wins:0;const al=x.losses?x.lossPnl/x.losses:0;return `<tr><td><span class="symbol-name">${escapeHtml(x.symbol)}</span><span class="symbol-sub">Trading Symbol</span></td><td>${x.trades.toLocaleString('en-US')}</td><td><span class="win-badge">${wr.toFixed(1)}%</span></td><td>${formatMoney(aw)}</td><td class="${al<0?'loss-text':''}">${formatMoney(al)}</td><td class="${x.pnl>=0?'profit-text':'loss-text'}">${formatMoney(x.pnl)}</td></tr>`;}).join('');
+}
+
+function updateTradeTable(trades) {
+    const body=document.getElementById('tradeReportBody'); document.getElementById('tradeCount').textContent=trades.length+' รายการ';
+    if(!trades.length){body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:25px;color:#9aa7a3">ยังไม่มีข้อมูลการเทรด</td></tr>';return;}
+    body.innerHTML=[...trades].sort((a,b)=>(getTradeDate(b)?.getTime()||0)-(getTradeDate(a)?.getTime()||0)).map(t=>{
+        const action=getAction(t), pnl=getPnl(t), d=getTradeDate(t); const actionClass=action==='SELL'?'action-sell':'action-buy';
+        const date=d?d.toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
+        return `<tr><td><span class="symbol-name">${escapeHtml(t.symbol||t.instrument||'-')}</span></td><td><span class="action-badge ${actionClass}">${escapeHtml(action||'-')}</span></td><td>${escapeHtml(getPrice(t))}</td><td>${escapeHtml(getLot(t))}</td><td class="${pnl!==null&&pnl<0?'loss-text':'profit-text'}">${pnl===null?'-':formatMoney(pnl)}</td><td class="status-text">${escapeHtml(getStatus(t))}</td><td class="date-text">${date}</td></tr>`;
+    }).join('');
+}
+
+function updateChart(trades) {
+    const completed=trades.filter(t=>getPnl(t)!==null && getTradeDate(t)).sort((a,b)=>getTradeDate(a)-getTradeDate(b));
+    let cumulative=0; const labels=[],values=[];
+    completed.forEach(t=>{cumulative+=getPnl(t);labels.push(getTradeDate(t).toLocaleDateString('th-TH',{day:'numeric',month:'short'}));values.push(Number(cumulative.toFixed(2)));});
+    if(profitChart) profitChart.destroy();
+    profitChart=new Chart(document.getElementById('profitChart'),{type:'line',data:{labels:labels.length?labels:['ไม่มีข้อมูล'],datasets:[{label:'กำไรสะสม',data:values.length?values:[0],borderWidth:2,pointRadius:3,pointHoverRadius:5,tension:.35,fill:true,borderColor:'#087f68',backgroundColor:'rgba(8,127,104,.10)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'IBM Plex Sans Thai',size:10}}},y:{grid:{color:'#edf1ef'},ticks:{color:'#94a3b8',font:{family:'IBM Plex Sans Thai',size:10},callback:v=>'$'+v}}}}});
+}
+
+function render(){ filteredTrades=filterByPeriod(allTrades); const stats=calculateStats(filteredTrades); updateSummary(stats); updateSymbolTable(filteredTrades); updateTradeTable(filteredTrades); updateChart(filteredTrades); }
+function changePeriod(){ render(); }
+
+function csvEscape(v){return `"${String(v??'').replace(/"/g,'""')}"`;}
+function exportReport(){
+    const rows=[['Symbol','Action','Price','Lot','P/L','Status','Date']];
+    filteredTrades.forEach(t=>{const d=getTradeDate(t);rows.push([t.symbol||t.instrument||'',getAction(t),getPrice(t),getLot(t),getPnl(t)??'',getStatus(t),d?d.toLocaleString('th-TH'):'' ]);});
+    const csv='\uFEFF'+rows.map(r=>r.map(csvEscape).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='trade-report.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+async function loadReport(){
+    try { const data=await apiFetch('/api/trades?limit=1000'); allTrades=Array.isArray(data)?data:(data.trades||[]); render(); console.log('[Reports] Loaded trades:',allTrades.length); }
+    catch(err){ console.error('[Reports]',err); document.getElementById('tradeReportBody').innerHTML=`<tr><td colspan="7" style="text-align:center;padding:25px;color:#dc2626">โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(err.message)}</td></tr>`; }
+}
+
+document.addEventListener('DOMContentLoaded',loadReport);
 </script>
 
 

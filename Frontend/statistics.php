@@ -1,65 +1,4 @@
-<?php
 
-/*
-|--------------------------------------------------------------------------
-| Statistics
-|--------------------------------------------------------------------------
-| ตอนนี้ใช้ Mock Data สำหรับทำ UI
-| ภายหลังจะเปลี่ยนเป็นข้อมูลจริงจาก Supabase
-|--------------------------------------------------------------------------
-*/
-
-
-/* ================= SUMMARY DATA ================= */
-
-$totalTrades = 200;
-
-$winRate = 68.5;
-
-$profitFactor = 2.14;
-
-$netProfit = 2430;
-
-$winningTrades = 137;
-
-$losingTrades = 63;
-
-
-/* ================= SYMBOL DATA ================= */
-
-$symbolStats = [
-
-    [
-        'symbol' => 'EURUSD',
-        'trades' => 52,
-        'winRate' => 72,
-        'pnl' => 820
-    ],
-
-    [
-        'symbol' => 'GBPUSD',
-        'trades' => 38,
-        'winRate' => 61,
-        'pnl' => 340
-    ],
-
-    [
-        'symbol' => 'XAUUSD',
-        'trades' => 64,
-        'winRate' => 75,
-        'pnl' => 1120
-    ],
-
-    [
-        'symbol' => 'USDJPY',
-        'trades' => 46,
-        'winRate' => 63,
-        'pnl' => 150
-    ]
-
-];
-
-?>
 
 <!DOCTYPE html>
 
@@ -1060,7 +999,7 @@ $symbolStats = [
 
 
                             <div class="statistics-value">
-                                <?= number_format($totalTrades) ?>
+                                <span id="totalTrades">0</span>
                             </div>
 
 
@@ -1099,12 +1038,12 @@ $symbolStats = [
 
 
                             <div class="statistics-value green">
-                                <?= number_format($winRate, 1) ?>%
+                                <span id="winRate">0.0</span>%
                             </div>
 
 
                             <div class="statistics-description">
-                                <?= $winningTrades ?> ครั้งที่ชนะ
+                                <span id="winningTrades">0</span> ครั้งที่ชนะ
                             </div>
 
                         </div>
@@ -1138,7 +1077,7 @@ $symbolStats = [
 
 
                             <div class="statistics-value green">
-                                +$<?= number_format($netProfit) ?>
+                                <span id="netProfitSign">+$</span><span id="netProfit">0.00</span>
                             </div>
 
 
@@ -1177,7 +1116,7 @@ $symbolStats = [
 
 
                             <div class="statistics-value">
-                                <?= number_format($profitFactor, 2) ?>
+                                <span id="profitFactor">0.00</span>
                             </div>
 
 
@@ -1294,7 +1233,7 @@ $symbolStats = [
 
 
                             <div class="winloss-main">
-                                <?= number_format($winRate, 1) ?>%
+                                <span id="winRateCenter">0.0</span>%
                             </div>
 
 
@@ -1310,7 +1249,7 @@ $symbolStats = [
 
                                     <span class="legend-dot win"></span>
 
-                                    ชนะ <?= $winningTrades ?>
+                                    ชนะ <span id="winningTradesLegend">0</span>
 
                                 </div>
 
@@ -1319,7 +1258,7 @@ $symbolStats = [
 
                                     <span class="legend-dot loss"></span>
 
-                                    แพ้ <?= $losingTrades ?>
+                                    แพ้ <span id="losingTrades">0</span>
 
                                 </div>
 
@@ -1410,118 +1349,12 @@ $symbolStats = [
                                 </thead>
 
 
-                                <tbody>
-
-
-                                    <?php foreach ($symbolStats as $item): ?>
-
-
-                                        <tr>
-
-
-                                            <!-- SYMBOL -->
-
-                                            <td>
-
-                                                <span class="symbol-name">
-
-                                                    <?= $item['symbol'] ?>
-
-                                                </span>
-
-
-                                                <span class="symbol-subtitle">
-
-                                                    Trading Symbol
-
-                                                </span>
-
-                                            </td>
-
-
-
-                                            <!-- TRADES -->
-
-                                            <td>
-
-                                                <?= $item['trades'] ?>
-
-                                            </td>
-
-
-
-                                            <!-- WIN RATE -->
-
-                                            <td>
-
-                                                <span class="winrate-value">
-
-                                                    <?= $item['winRate'] ?>%
-
-                                                </span>
-
-                                            </td>
-
-
-
-                                            <!-- PROGRESS -->
-
-                                            <td>
-
-
-                                                <div class="progress-wrapper">
-
-
-                                                    <div class="progress-bar-bg">
-
-
-                                                        <div
-                                                            class="progress-bar-fill"
-                                                            style="width: <?= $item['winRate'] ?>%;"
-                                                        ></div>
-
-
-                                                    </div>
-
-
-                                                    <span
-                                                        style="
-                                                            font-size:10px;
-                                                            color:#82908c;
-                                                        "
-                                                    >
-
-                                                        <?= $item['winRate'] ?>%
-
-                                                    </span>
-
-
-                                                </div>
-
-
-                                            </td>
-
-
-
-                                            <!-- PNL -->
-
-                                            <td>
-
-                                                <span class="pnl-positive">
-
-                                                    +$<?= number_format($item['pnl']) ?>
-
-                                                </span>
-
-                                            </td>
-
-
-                                        </tr>
-
-
-                                    <?php endforeach; ?>
-
-
+                                <tbody id="symbolStatsBody">
+                                    <tr>
+                                        <td colspan="5" style="text-align:center; color:#9aa7a3; padding:25px;">
+                                            กำลังโหลดข้อมูล...
+                                        </td>
+                                    </tr>
                                 </tbody>
 
 
@@ -1580,7 +1413,7 @@ $symbolStats = [
 
 
                                 <div class="performance-value green">
-                                    <?= $winningTrades ?>
+                                    <span id="winningTradesDetails">0</span>
                                 </div>
 
 
@@ -1599,7 +1432,7 @@ $symbolStats = [
 
 
                                 <div class="performance-value red">
-                                    <?= $losingTrades ?>
+                                    <span id="losingTrades">0</span>
                                 </div>
 
 
@@ -1618,7 +1451,7 @@ $symbolStats = [
 
 
                                 <div class="performance-value green">
-                                    +$42.80
+                                    <span id="avgWin">+$0.00</span>
                                 </div>
 
 
@@ -1637,7 +1470,7 @@ $symbolStats = [
 
 
                                 <div class="performance-value red">
-                                    -$18.40
+                                    <span id="avgLoss">-$0.00</span>
                                 </div>
 
 
@@ -1656,7 +1489,7 @@ $symbolStats = [
 
 
                                 <div class="performance-value green">
-                                    +$186.50
+                                    <span id="bestTrade">+$0.00</span>
                                 </div>
 
 
@@ -1675,7 +1508,7 @@ $symbolStats = [
 
 
                                 <div class="performance-value red">
-                                    -$72.30
+                                    <span id="worstTrade">-$0.00</span>
                                 </div>
 
 
@@ -1714,295 +1547,589 @@ $symbolStats = [
 
 
 <script>
+    const API_BASE_URL = 'http://localhost:3000';
 
+    let performanceChart = null;
+    let winLossChart = null;
+    let allTrades = [];
+    let allStatistics = null;
 
-    /* =========================================================
-       PERFORMANCE CHART
-    ========================================================= */
+    function getToken() {
+        return localStorage.getItem('auth_token');
+    }
 
-    const performanceCanvas =
-        document.getElementById(
-            'performanceChart'
+    async function apiFetch(url) {
+        const token = getToken();
+
+        if (!token) {
+            throw new Error('ไม่พบ session กรุณาเข้าสู่ระบบใหม่');
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || data.message || `HTTP ${response.status}`);
+        }
+
+        return data;
+    }
+
+    function formatNumber(value, decimals = 2) {
+        const number = Number(value || 0);
+        return number.toLocaleString('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        });
+    }
+
+    function formatMoney(value) {
+        const number = Number(value || 0);
+        const sign = number >= 0 ? '+$' : '-$';
+        return sign + formatNumber(Math.abs(number), 2);
+    }
+
+    function getTradeDate(trade) {
+        const value = trade.closed_at || trade.timestamp || trade.created_at;
+        if (!value) return null;
+
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function getFilteredTrades(period) {
+        if (period === 'all') {
+            return [...allTrades];
+        }
+
+        const days = Number(period);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+
+        return allTrades.filter((trade) => {
+            const date = getTradeDate(trade);
+            return date && date >= cutoff;
+        });
+    }
+
+    function calculateStatistics(trades) {
+        const completedTrades = trades.filter(
+            (trade) => trade.pnl !== null && trade.pnl !== undefined
         );
 
+        const totalTrades = completedTrades.length;
 
-    const performanceChart =
-        new Chart(
-            performanceCanvas,
+        const wins = completedTrades.filter(
+            (trade) => Number(trade.pnl || 0) > 0
+        );
+
+        const losses = completedTrades.filter(
+            (trade) => Number(trade.pnl || 0) < 0
+        );
+
+        const totalProfit = wins.reduce(
+            (sum, trade) => sum + Number(trade.pnl || 0),
+            0
+        );
+
+        const totalLoss = losses.reduce(
+            (sum, trade) => sum + Number(trade.pnl || 0),
+            0
+        );
+
+        const totalPnl = completedTrades.reduce(
+            (sum, trade) => sum + Number(trade.pnl || 0),
+            0
+        );
+
+        const winRate = totalTrades > 0
+            ? (wins.length / totalTrades) * 100
+            : 0;
+
+        const profitFactor = totalLoss < 0
+            ? totalProfit / Math.abs(totalLoss)
+            : (totalProfit > 0 ? Infinity : 0);
+
+        const avgWin = wins.length > 0
+            ? totalProfit / wins.length
+            : 0;
+
+        const avgLoss = losses.length > 0
+            ? totalLoss / losses.length
+            : 0;
+
+        const bestTrade = completedTrades.length > 0
+            ? completedTrades.reduce((best, trade) =>
+                Number(trade.pnl || 0) > Number(best.pnl || 0)
+                    ? trade
+                    : best
+            )
+            : null;
+
+        const worstTrade = completedTrades.length > 0
+            ? completedTrades.reduce((worst, trade) =>
+                Number(trade.pnl || 0) < Number(worst.pnl || 0)
+                    ? trade
+                    : worst
+            )
+            : null;
+
+        const symbolMap = {};
+
+        completedTrades.forEach((trade) => {
+            const symbol = trade.symbol || 'Unknown';
+            const pnl = Number(trade.pnl || 0);
+
+            if (!symbolMap[symbol]) {
+                symbolMap[symbol] = {
+                    symbol,
+                    trades: 0,
+                    wins: 0,
+                    losses: 0,
+                    totalPnl: 0
+                };
+            }
+
+            symbolMap[symbol].trades += 1;
+            symbolMap[symbol].totalPnl += pnl;
+
+            if (pnl > 0) {
+                symbolMap[symbol].wins += 1;
+            } else if (pnl < 0) {
+                symbolMap[symbol].losses += 1;
+            }
+        });
+
+        const bySymbol = Object.values(symbolMap).map((item) => ({
+            symbol: item.symbol,
+            trades: item.trades,
+            wins: item.wins,
+            losses: item.losses,
+            winRate: item.trades > 0
+                ? (item.wins / item.trades) * 100
+                : 0,
+            totalPnl: item.totalPnl
+        }));
+
+        return {
+            totalTrades,
+            wins: wins.length,
+            losses: losses.length,
+            totalProfit,
+            totalLoss,
+            totalPnl,
+            winRate,
+            profitFactor,
+            avgWin,
+            avgLoss,
+            bestTrade,
+            worstTrade,
+            bySymbol
+        };
+    }
+
+    function updateSummary(stats) {
+        document.getElementById('totalTrades').textContent =
+            Number(stats.totalTrades || 0).toLocaleString('en-US');
+
+        document.getElementById('winRate').textContent =
+            Number(stats.winRate || 0).toFixed(1);
+
+        document.getElementById('winningTrades').textContent =
+            Number(stats.wins || 0).toLocaleString('en-US');
+
+        document.getElementById('losingTrades').textContent =
+            Number(stats.losses || 0).toLocaleString('en-US');
+
+        const netProfit = Number(stats.totalPnl || 0);
+        const netProfitSign = document.getElementById('netProfitSign');
+
+        netProfitSign.textContent = netProfit >= 0 ? '+$' : '-$';
+        document.getElementById('netProfit').textContent =
+            formatNumber(Math.abs(netProfit), 2);
+
+        const profitFactor = Number(stats.profitFactor);
+        document.getElementById('profitFactor').textContent =
+            Number.isFinite(profitFactor)
+                ? profitFactor.toFixed(2)
+                : '∞';
+
+        document.getElementById('avgWin').textContent =
+            formatMoney(stats.avgWin);
+
+        document.getElementById('avgLoss').textContent =
+            formatMoney(stats.avgLoss);
+
+        document.getElementById('bestTrade').textContent =
+            stats.bestTrade
+                ? formatMoney(stats.bestTrade.pnl)
+                : '$0.00';
+
+        document.getElementById('worstTrade').textContent =
+            stats.worstTrade
+                ? formatMoney(stats.worstTrade.pnl)
+                : '$0.00';
+
+        document.querySelector('.winloss-main').textContent =
+            `${Number(stats.winRate || 0).toFixed(1)}%`;
+
+        const legendItems = document.querySelectorAll('.legend-item');
+
+        if (legendItems[0]) {
+            legendItems[0].innerHTML =
+                `<span class="legend-dot win"></span> ชนะ ${stats.wins || 0}`;
+        }
+
+        if (legendItems[1]) {
+            legendItems[1].innerHTML =
+                `<span class="legend-dot loss"></span> แพ้ ${stats.losses || 0}`;
+        }
+
+        const winningDetails = document.getElementById('winningTradesDetails');
+        if (winningDetails) {
+            winningDetails.textContent =
+                Number(stats.wins || 0).toLocaleString('en-US');
+        }
+
+        const winningLegend = document.getElementById('winningTradesLegend');
+        if (winningLegend) {
+            winningLegend.textContent =
+                Number(stats.wins || 0).toLocaleString('en-US');
+        }
+    }
+
+    function updateSymbolTable(symbolStats) {
+        const body = document.getElementById('symbolStatsBody');
+
+        if (!symbolStats || symbolStats.length === 0) {
+            body.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align:center; color:#9aa7a3; padding:25px;">
+                        ยังไม่มีข้อมูลการเทรด
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        body.innerHTML = symbolStats.map((item) => {
+            const winRate = Number(item.winRate || 0);
+            const pnl = Number(item.totalPnl || 0);
+
+            return `
+                <tr>
+                    <td>
+                        <span class="symbol-name">
+                            ${escapeHtml(item.symbol)}
+                        </span>
+                        <span class="symbol-subtitle">
+                            Trading Symbol
+                        </span>
+                    </td>
+
+                    <td>
+                        ${Number(item.trades || 0).toLocaleString('en-US')}
+                    </td>
+
+                    <td>
+                        <span class="winrate-value">
+                            ${winRate.toFixed(1)}%
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="progress-wrapper">
+                            <div class="progress-bar-bg">
+                                <div
+                                    class="progress-bar-fill"
+                                    style="width: ${Math.min(100, Math.max(0, winRate))}%;"
+                                ></div>
+                            </div>
+
+                            <span style="font-size:10px; color:#82908c;">
+                                ${winRate.toFixed(1)}%
+                            </span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="${pnl >= 0 ? 'pnl-positive' : 'performance-value red'}">
+                            ${formatMoney(pnl)}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function buildPerformanceData(trades) {
+        const completed = trades
+            .filter((trade) => trade.pnl !== null && trade.pnl !== undefined)
+            .map((trade) => ({
+                ...trade,
+                date: getTradeDate(trade)
+            }))
+            .filter((trade) => trade.date)
+            .sort((a, b) => a.date - b.date);
+
+        let cumulative = 0;
+
+        const labels = [];
+        const values = [];
+
+        completed.forEach((trade) => {
+            cumulative += Number(trade.pnl || 0);
+
+            labels.push(
+                trade.date.toLocaleDateString('th-TH', {
+                    day: 'numeric',
+                    month: 'short'
+                })
+            );
+
+            values.push(Number(cumulative.toFixed(2)));
+        });
+
+        return { labels, values };
+    }
+
+    function updatePerformanceChart(trades) {
+        const { labels, values } = buildPerformanceData(trades);
+
+        if (performanceChart) {
+            performanceChart.destroy();
+        }
+
+        performanceChart = new Chart(
+            document.getElementById('performanceChart'),
             {
-
                 type: 'line',
 
                 data: {
+                    labels: labels.length ? labels : ['ไม่มีข้อมูล'],
 
-                    labels: [
-
-                        '1 มิ.ย.',
-                        '3 มิ.ย.',
-                        '6 มิ.ย.',
-                        '9 มิ.ย.',
-                        '12 มิ.ย.',
-                        '15 มิ.ย.',
-                        '18 มิ.ย.',
-                        '21 มิ.ย.',
-                        '24 มิ.ย.',
-                        '27 มิ.ย.',
-                        '30 มิ.ย.'
-
-                    ],
-
-                    datasets: [
-
-                        {
-
-                            label: 'กำไรสะสม',
-
-                            data: [
-
-                                1000,
-                                1080,
-                                1160,
-                                1250,
-                                1320,
-                                1380,
-                                1450,
-                                1510,
-                                1600,
-                                1690,
-                                1780
-
-                            ],
-
-                            borderColor: '#087f68',
-
-                            backgroundColor:
-                                'rgba(8, 127, 104, 0.10)',
-
-                            borderWidth: 2,
-
-                            pointRadius: 3,
-
-                            pointHoverRadius: 5,
-
-                            tension: 0.35,
-
-                            fill: true
-
-                        }
-
-                    ]
-
+                    datasets: [{
+                        label: 'กำไรสะสม',
+                        data: values.length ? values : [0],
+                        borderColor: '#087f68',
+                        backgroundColor: 'rgba(8, 127, 104, 0.10)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        tension: 0.35,
+                        fill: true
+                    }]
                 },
 
                 options: {
-
                     responsive: true,
-
                     maintainAspectRatio: false,
 
                     interaction: {
-
                         intersect: false,
-
                         mode: 'index'
-
                     },
 
                     plugins: {
-
                         legend: {
-
                             display: false
-
                         },
 
                         tooltip: {
-
                             backgroundColor: '#17211f',
-
                             titleFont: {
-
-                                family:
-                                    'IBM Plex Sans Thai'
-
+                                family: 'IBM Plex Sans Thai'
                             },
-
                             bodyFont: {
-
-                                family:
-                                    'IBM Plex Sans Thai'
-
+                                family: 'IBM Plex Sans Thai'
                             },
-
                             padding: 10,
+                            displayColors: false,
 
-                            displayColors: false
-
+                            callbacks: {
+                                label: function(context) {
+                                    return 'กำไรสะสม: $' +
+                                        formatNumber(context.parsed.y, 2);
+                                }
+                            }
                         }
-
                     },
 
                     scales: {
-
                         x: {
-
                             grid: {
-
                                 display: false
-
                             },
 
                             ticks: {
-
                                 font: {
-
-                                    family:
-                                        'IBM Plex Sans Thai',
-
+                                    family: 'IBM Plex Sans Thai',
                                     size: 10
-
                                 },
-
                                 color: '#8a9793'
-
                             }
-
                         },
 
                         y: {
-
                             grid: {
-
-                                color:
-                                    '#eef2f1'
-
+                                color: '#eef2f1'
                             },
 
                             ticks: {
-
                                 font: {
-
-                                    family:
-                                        'IBM Plex Sans Thai',
-
+                                    family: 'IBM Plex Sans Thai',
                                     size: 10
-
                                 },
 
                                 color: '#8a9793',
 
                                 callback: function(value) {
-
                                     return '$' + value;
-
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
         );
+    }
 
+    function updateWinLossChart(stats) {
+        if (winLossChart) {
+            winLossChart.destroy();
+        }
 
-
-    /* =========================================================
-       WIN / LOSS CHART
-    ========================================================= */
-
-    const winLossCanvas =
-        document.getElementById(
-            'winLossChart'
-        );
-
-
-    const winLossChart =
-        new Chart(
-            winLossCanvas,
+        winLossChart = new Chart(
+            document.getElementById('winLossChart'),
             {
-
                 type: 'doughnut',
 
                 data: {
+                    labels: ['ชนะ', 'แพ้'],
 
-                    labels: [
+                    datasets: [{
+                        data: [
+                            Number(stats.wins || 0),
+                            Number(stats.losses || 0)
+                        ],
 
-                        'ชนะ',
+                        backgroundColor: [
+                            '#087f68',
+                            '#dc2626'
+                        ],
 
-                        'แพ้'
-
-                    ],
-
-                    datasets: [
-
-                        {
-
-                            data: [
-
-                                <?= $winningTrades ?>,
-
-                                <?= $losingTrades ?>
-
-                            ],
-
-                            backgroundColor: [
-
-                                '#087f68',
-
-                                '#dc2626'
-
-                            ],
-
-                            borderWidth: 0,
-
-                            hoverOffset: 4
-
-                        }
-
-                    ]
-
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
                 },
 
                 options: {
-
                     responsive: true,
-
                     maintainAspectRatio: false,
-
                     cutout: '72%',
 
                     plugins: {
-
                         legend: {
-
                             display: false
-
                         },
 
                         tooltip: {
-
                             backgroundColor: '#17211f',
-
                             padding: 10,
-
                             displayColors: false
-
                         }
-
                     }
-
                 }
-
             }
-
         );
+    }
 
+    async function loadStatistics() {
+        try {
+            const trades = await apiFetch(
+                `${API_BASE_URL}/api/trades?limit=1000`
+            );
 
+            allTrades = Array.isArray(trades)
+                ? trades
+                : (trades.trades || trades.data || []);
+
+            allStatistics = null;
+
+            const filter = document.getElementById('periodFilter');
+
+            // ค่าเริ่มต้นของหน้าเป็น 30 วัน
+            const filteredTrades = getFilteredTrades(filter.value === '7 วันที่ผ่านมา'
+                ? '7'
+                : filter.value === '3 เดือน'
+                    ? '90'
+                    : filter.value === 'ทั้งหมด'
+                        ? 'all'
+                        : '30'
+            );
+
+            const stats = calculateStatistics(filteredTrades);
+
+            updateSummary(stats);
+            updateSymbolTable(stats.bySymbol);
+            updatePerformanceChart(filteredTrades);
+            updateWinLossChart(stats);
+
+        } catch (error) {
+            console.error('Statistics API Error:', error);
+
+            const message =
+                error.message || 'ไม่สามารถโหลดข้อมูลสถิติได้';
+
+            document.getElementById('symbolStatsBody').innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align:center; color:#dc2626; padding:25px;">
+                        ${escapeHtml(message)}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    function getPeriodValue() {
+        const value = document.getElementById('periodFilter').value;
+
+        if (value === '7 วันที่ผ่านมา') return '7';
+        if (value === '3 เดือน') return '90';
+        if (value === 'ทั้งหมด') return 'all';
+
+        return '30';
+    }
+
+    document.getElementById('periodFilter').addEventListener(
+        'change',
+        function() {
+            const filteredTrades = getFilteredTrades(getPeriodValue());
+            const stats = calculateStatistics(filteredTrades);
+
+            updateSummary(stats);
+            updateSymbolTable(stats.bySymbol);
+            updatePerformanceChart(filteredTrades);
+            updateWinLossChart(stats);
+        }
+    );
+
+    document.addEventListener('DOMContentLoaded', loadStatistics);
 </script>
 
 

@@ -1,118 +1,19 @@
 <?php
-
 /*
 |--------------------------------------------------------------------------
 | Trade History
 |--------------------------------------------------------------------------
-| ตอนนี้ใช้ข้อมูลตัวอย่างเพื่อทำ UI ก่อน
-| ภายหลังสามารถเปลี่ยนส่วน $trades ให้ดึงข้อมูลจาก Supabase ได้
+| ข้อมูลการเทรดจะถูกโหลดจาก Node.js API ตามผู้ใช้งานที่ Login อยู่
 |--------------------------------------------------------------------------
 */
-
-$trades = [
-    [
-        'symbol' => 'EURUSD',
-        'action' => 'BUY',
-        'price' => '1.08520',
-        'lot' => '0.10',
-        'pnl' => 48.20,
-        'status' => 'TP Hit',
-        'timestamp' => '26/08/2026 09:42'
-    ],
-    [
-        'symbol' => 'GBPUSD',
-        'action' => 'SELL',
-        'price' => '1.27450',
-        'lot' => '0.05',
-        'pnl' => -12.50,
-        'status' => 'SL Hit',
-        'timestamp' => '26/08/2026 08:35'
-    ],
-    [
-        'symbol' => 'XAUUSD',
-        'action' => 'BUY',
-        'price' => '2430.50',
-        'lot' => '0.02',
-        'pnl' => 31.00,
-        'status' => 'Manual',
-        'timestamp' => '25/08/2026 16:20'
-    ],
-    [
-        'symbol' => 'USDJPY',
-        'action' => 'SELL',
-        'price' => '148.205',
-        'lot' => '0.08',
-        'pnl' => 22.40,
-        'status' => 'TP Hit',
-        'timestamp' => '25/08/2026 14:15'
-    ],
-    [
-        'symbol' => 'EURUSD',
-        'action' => 'BUY',
-        'price' => '1.08210',
-        'lot' => '0.10',
-        'pnl' => 36.80,
-        'status' => 'TP Hit',
-        'timestamp' => '25/08/2026 11:40'
-    ],
-    [
-        'symbol' => 'GBPJPY',
-        'action' => 'SELL',
-        'price' => '198.420',
-        'lot' => '0.05',
-        'pnl' => -18.30,
-        'status' => 'SL Hit',
-        'timestamp' => '24/08/2026 17:05'
-    ],
-    [
-        'symbol' => 'XAUUSD',
-        'action' => 'BUY',
-        'price' => '2422.80',
-        'lot' => '0.03',
-        'pnl' => 54.60,
-        'status' => 'TP Hit',
-        'timestamp' => '24/08/2026 13:22'
-    ],
-    [
-        'symbol' => 'USDJPY',
-        'action' => 'BUY',
-        'price' => '147.850',
-        'lot' => '0.05',
-        'pnl' => 15.70,
-        'status' => 'Manual',
-        'timestamp' => '23/08/2026 10:18'
-    ],
-];
-
-
-// คำนวณ Summary
-$totalTrades = count($trades);
-
+$trades = [];
+$totalTrades = 0;
 $winningTrades = 0;
 $losingTrades = 0;
 $totalProfit = 0;
 $totalLoss = 0;
 $totalPnl = 0;
-
-foreach ($trades as $trade) {
-
-    $totalPnl += $trade['pnl'];
-
-    if ($trade['pnl'] > 0) {
-        $winningTrades++;
-        $totalProfit += $trade['pnl'];
-    }
-
-    if ($trade['pnl'] < 0) {
-        $losingTrades++;
-        $totalLoss += abs($trade['pnl']);
-    }
-}
-
-$winRate = $totalTrades > 0
-    ? ($winningTrades / $totalTrades) * 100
-    : 0;
-
+$winRate = 0;
 ?>
 
 <!DOCTYPE html>
@@ -1638,102 +1539,738 @@ $winRate = $totalTrades > 0
 ========================================================= -->
 
 <script>
+/*
+|--------------------------------------------------------------------------
+| Trade History - Real API
+|--------------------------------------------------------------------------
+| Frontend -> Node.js API -> Supabase
+| ใช้ token ของผู้ใช้งานที่ login อยู่จาก localStorage.auth_token
+|--------------------------------------------------------------------------
+*/
 
-    function filterTrades() {
+const TRADE_HISTORY_API_BASE_URL = 'http://localhost:3000';
+const TRADE_HISTORY_TOKEN_KEY = 'auth_token';
 
-        const search =
-            document
-                .getElementById('tradeSearch')
-                .value
-                .toLowerCase()
-                .trim();
+let allTrades = [];
+let filteredTrades = [];
+let currentPage = 1;
+const rowsPerPage = 10;
 
+/* =========================
+   Helper
+========================= */
 
-        const action =
-            document
-                .getElementById('actionFilter')
-                .value;
+function getAuthToken() {
+    return localStorage.getItem(TRADE_HISTORY_TOKEN_KEY);
+}
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
-        const rows =
-            document.querySelectorAll(
-                '#tradeTableBody tr'
+function toNumber(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function getSymbol(trade) {
+    return trade.symbol ?? trade.instrument ?? trade.ticker ?? '-';
+}
+
+function getAction(trade) {
+    const value = trade.action ?? trade.side ?? trade.type ?? trade.direction ?? '';
+    const normalized = String(value).toUpperCase();
+
+    if (normalized.includes('SELL')) return 'SELL';
+    if (normalized.includes('BUY')) return 'BUY';
+
+    return normalized || '-';
+}
+
+function getPrice(trade) {
+    return trade.close_price ??
+           trade.closePrice ??
+           trade.price ??
+           trade.open_price ??
+           trade.openPrice ??
+           '-';
+}
+
+function getLot(trade) {
+    return trade.lot ??
+           trade.volume ??
+           trade.quantity ??
+           trade.lots ??
+           '-';
+}
+
+function getPnl(trade) {
+    return toNumber(
+        trade.pnl ??
+        trade.profit ??
+        trade.net_profit ??
+        trade.netProfit ??
+        0
+    );
+}
+
+function getStatus(trade) {
+    return trade.status ??
+           trade.close_reason ??
+           trade.closeReason ??
+           trade.reason ??
+           '-';
+}
+
+function getTimestamp(trade) {
+    return trade.closed_at ??
+           trade.closedAt ??
+           trade.timestamp ??
+           trade.created_at ??
+           trade.createdAt ??
+           trade.opened_at ??
+           trade.openedAt ??
+           '-';
+}
+
+function formatNumber(value, decimals = 2) {
+    return toNumber(value).toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+function formatPrice(value) {
+    if (value === '-' || value === null || value === undefined || value === '') {
+        return '-';
+    }
+
+    const n = Number(value);
+
+    if (!Number.isFinite(n)) {
+        return String(value);
+    }
+
+    return n.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 5
+    });
+}
+
+function formatTimestamp(value) {
+    if (!value || value === '-') return '-';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+
+    return date.toLocaleString('th-TH', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function getTradeDate(value) {
+    if (!value || value === '-') return null;
+
+    const date = new Date(value);
+
+    if (!Number.isNaN(date.getTime())) {
+        return date;
+    }
+
+    // รองรับวันที่รูปแบบ DD/MM/YYYY
+    const match = String(value).match(
+        /^(\d{1,2})\/(\d{1,2})\/(\d{4})/
+    );
+
+    if (match) {
+        const [, day, month, year] = match;
+        return new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day)
+        );
+    }
+
+    return null;
+}
+
+/* =========================
+   API
+========================= */
+
+async function loadTrades() {
+    const token = getAuthToken();
+
+    if (!token) {
+        window.location.href = 'login.php';
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${TRADE_HISTORY_API_BASE_URL}/api/trades?limit=1000`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem(TRADE_HISTORY_TOKEN_KEY);
+            window.location.href = 'login.php';
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        allTrades = Array.isArray(data)
+            ? data
+            : (Array.isArray(data.trades) ? data.trades : []);
+
+        filteredTrades = [...allTrades];
+
+        currentPage = 1;
+
+        updateSummary(allTrades);
+        renderTable();
+        updateTableCount();
+        updatePagination();
+
+        console.log(
+            `[Trade History] Loaded ${allTrades.length} trades`
+        );
+
+    } catch (error) {
+        console.error('[Trade History] Failed to load trades:', error);
+
+        allTrades = [];
+        filteredTrades = [];
+
+        updateSummary([]);
+        renderTable();
+        updateTableCount();
+        updatePagination();
+
+        showEmptyState('ไม่สามารถโหลดข้อมูลการเทรดได้');
+    }
+}
+
+/* =========================
+   Summary
+========================= */
+
+function updateSummary(trades) {
+    const total = trades.length;
+
+    let wins = 0;
+    let losses = 0;
+    let totalProfit = 0;
+    let totalLoss = 0;
+
+    trades.forEach(trade => {
+        const pnl = getPnl(trade);
+
+        if (pnl > 0) {
+            wins++;
+            totalProfit += pnl;
+        } else if (pnl < 0) {
+            losses++;
+            totalLoss += Math.abs(pnl);
+        }
+    });
+
+    const winRate = total > 0
+        ? (wins / total) * 100
+        : 0;
+
+    const summaryValues =
+        document.querySelectorAll('.history-summary-value');
+
+    if (summaryValues.length >= 4) {
+        summaryValues[0].textContent = total;
+        summaryValues[1].textContent = wins;
+        summaryValues[2].textContent = losses;
+        summaryValues[3].textContent = `${winRate.toFixed(1)}%`;
+    }
+}
+
+/* =========================
+   Table
+========================= */
+
+function renderTable() {
+    const tbody = document.getElementById('tradeTableBody');
+
+    if (!tbody) return;
+
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredTrades.length / rowsPerPage)
+    );
+
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
+    }
+
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const pageTrades = filteredTrades.slice(
+        startIndex,
+        startIndex + rowsPerPage
+    );
+
+    if (pageTrades.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7"
+                    style="
+                        text-align:center;
+                        padding:40px 16px;
+                        color:#94a19d;
+                    ">
+                    <i class="bi bi-inbox"
+                       style="font-size:28px;display:block;margin-bottom:8px;"></i>
+                    ไม่พบข้อมูลการเทรด
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = pageTrades.map(trade => {
+        const symbol = getSymbol(trade);
+        const action = getAction(trade);
+        const price = getPrice(trade);
+        const lot = getLot(trade);
+        const pnl = getPnl(trade);
+        const status = getStatus(trade);
+        const timestamp = getTimestamp(trade);
+
+        const actionClass =
+            action === 'BUY'
+                ? 'action-buy'
+                : 'action-sell';
+
+        const pnlClass =
+            pnl >= 0
+                ? 'pnl-positive'
+                : 'pnl-negative';
+
+        const pnlText =
+            pnl >= 0
+                ? `+$${formatNumber(pnl)}`
+                : `-$${formatNumber(Math.abs(pnl))}`;
+
+        return `
+            <tr
+                data-symbol="${escapeHtml(symbol)}"
+                data-action="${escapeHtml(action)}"
+            >
+                <td>
+                    <span class="symbol-name">
+                        ${escapeHtml(symbol)}
+                    </span>
+                    <span class="symbol-type">
+                        Forex / Trading
+                    </span>
+                </td>
+
+                <td>
+                    <span class="action-badge ${actionClass}">
+                        ${escapeHtml(action)}
+                    </span>
+                </td>
+
+                <td>
+                    ${escapeHtml(formatPrice(price))}
+                </td>
+
+                <td>
+                    ${escapeHtml(lot)}
+                </td>
+
+                <td>
+                    <span class="${pnlClass}">
+                        ${pnlText}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="trade-status">
+                        ${escapeHtml(status)}
+                    </span>
+                </td>
+
+                <td>
+                    ${escapeHtml(formatTimestamp(timestamp))}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function showEmptyState(message) {
+    const tbody = document.getElementById('tradeTableBody');
+
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7"
+                style="
+                    text-align:center;
+                    padding:40px 16px;
+                    color:#94a19d;
+                ">
+                <i class="bi bi-inbox"
+                   style="font-size:28px;display:block;margin-bottom:8px;"></i>
+                ${escapeHtml(message)}
+            </td>
+        </tr>
+    `;
+}
+
+function updateTableCount() {
+    const count = document.querySelector('.table-count');
+    const footerInfo = document.querySelector('.table-footer-info');
+
+    if (count) {
+        count.textContent = `${filteredTrades.length} รายการ`;
+    }
+
+    if (footerInfo) {
+        if (filteredTrades.length === 0) {
+            footerInfo.textContent = 'ไม่พบรายการ';
+        } else {
+            const start =
+                ((currentPage - 1) * rowsPerPage) + 1;
+
+            const end = Math.min(
+                currentPage * rowsPerPage,
+                filteredTrades.length
             );
 
+            footerInfo.textContent =
+                `แสดง ${start}-${end} จาก ${filteredTrades.length} รายการ`;
+        }
+    }
+}
 
-        rows.forEach(row => {
+/* =========================
+   Filter
+========================= */
 
-            const symbol =
-                row
-                    .getAttribute('data-symbol')
-                    .toLowerCase();
+function filterTrades() {
+    const searchInput =
+        document.getElementById('tradeSearch');
 
+    const actionInput =
+        document.getElementById('actionFilter');
 
-            const rowAction =
-                row.getAttribute('data-action');
+    const dateInput =
+        document.getElementById('dateFilter');
 
+    const search =
+        searchInput?.value.toLowerCase().trim() || '';
 
-            const searchMatch =
-                symbol.includes(search);
+    const action =
+        actionInput?.value.toUpperCase() || '';
 
+    const selectedDate =
+        dateInput?.value || '';
 
-            const actionMatch =
-                action === ''
-                || rowAction === action;
+    filteredTrades = allTrades.filter(trade => {
+        const symbol =
+            String(getSymbol(trade)).toLowerCase();
 
+        const tradeAction =
+            getAction(trade).toUpperCase();
 
-            if (searchMatch && actionMatch) {
+        const symbolMatch =
+            symbol.includes(search);
 
-                row.style.display = '';
+        const actionMatch =
+            action === '' ||
+            tradeAction === action;
 
+        let dateMatch = true;
+
+        if (selectedDate) {
+            const tradeDate =
+                getTradeDate(getTimestamp(trade));
+
+            if (!tradeDate) {
+                dateMatch = false;
             } else {
+                const year =
+                    tradeDate.getFullYear();
 
-                row.style.display = 'none';
+                const month =
+                    String(tradeDate.getMonth() + 1)
+                        .padStart(2, '0');
 
+                const day =
+                    String(tradeDate.getDate())
+                        .padStart(2, '0');
+
+                const tradeDateString =
+                    `${year}-${month}-${day}`;
+
+                dateMatch =
+                    tradeDateString === selectedDate;
             }
+        }
 
-        });
+        return (
+            symbolMatch &&
+            actionMatch &&
+            dateMatch
+        );
+    });
 
+    currentPage = 1;
+
+    updateSummary(filteredTrades);
+    renderTable();
+    updateTableCount();
+    updatePagination();
+}
+
+function resetFilters() {
+    const searchInput =
+        document.getElementById('tradeSearch');
+
+    const actionInput =
+        document.getElementById('actionFilter');
+
+    const dateInput =
+        document.getElementById('dateFilter');
+
+    if (searchInput) searchInput.value = '';
+    if (actionInput) actionInput.value = '';
+    if (dateInput) dateInput.value = '';
+
+    filteredTrades = [...allTrades];
+    currentPage = 1;
+
+    updateSummary(filteredTrades);
+    renderTable();
+    updateTableCount();
+    updatePagination();
+}
+
+/* =========================
+   Pagination
+========================= */
+
+function updatePagination() {
+    const pagination =
+        document.querySelector('.pagination');
+
+    if (!pagination) return;
+
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredTrades.length / rowsPerPage)
+    );
+
+    let html = '';
+
+    html += `
+        <button
+            type="button"
+            class="page-button ${currentPage === 1 ? 'disabled' : ''}"
+            onclick="goToPage(${currentPage - 1})"
+            ${currentPage === 1 ? 'disabled' : ''}
+        >
+            <i class="bi bi-chevron-left"></i>
+        </button>
+    `;
+
+    const maxButtons = 5;
+
+    let startPage =
+        Math.max(1, currentPage - 2);
+
+    let endPage =
+        Math.min(totalPages, startPage + maxButtons - 1);
+
+    if (endPage - startPage < maxButtons - 1) {
+        startPage =
+            Math.max(1, endPage - maxButtons + 1);
     }
 
-
-
-    function resetFilters() {
-
-        document.getElementById('tradeSearch').value = '';
-
-        document.getElementById('actionFilter').value = '';
-
-        const rows =
-            document.querySelectorAll(
-                '#tradeTableBody tr'
-            );
-
-
-        rows.forEach(row => {
-
-            row.style.display = '';
-
-        });
-
+    for (let page = startPage; page <= endPage; page++) {
+        html += `
+            <button
+                type="button"
+                class="page-button ${page === currentPage ? 'active' : ''}"
+                onclick="goToPage(${page})"
+            >
+                ${page}
+            </button>
+        `;
     }
 
+    html += `
+        <button
+            type="button"
+            class="page-button ${currentPage === totalPages ? 'disabled' : ''}"
+            onclick="goToPage(${currentPage + 1})"
+            ${currentPage === totalPages ? 'disabled' : ''}
+        >
+            <i class="bi bi-chevron-right"></i>
+        </button>
+    `;
 
+    pagination.innerHTML = html;
+}
 
-    // กด Enter ในช่องค้นหา
+function goToPage(page) {
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredTrades.length / rowsPerPage)
+    );
 
-    document
-        .getElementById('tradeSearch')
-        .addEventListener('keydown', function(event) {
+    if (page < 1 || page > totalPages) {
+        return;
+    }
 
-            if (event.key === 'Enter') {
+    currentPage = page;
 
-                filterTrades();
+    renderTable();
+    updateTableCount();
+    updatePagination();
+}
 
+/* =========================
+   Export CSV
+========================= */
+
+function exportTradesCSV() {
+    if (filteredTrades.length === 0) {
+        alert('ไม่มีข้อมูลการเทรดสำหรับ Export');
+        return;
+    }
+
+    const headers = [
+        'Symbol',
+        'Action',
+        'Price',
+        'Lot',
+        'P/L',
+        'Status',
+        'Date/Time'
+    ];
+
+    const rows = filteredTrades.map(trade => [
+        getSymbol(trade),
+        getAction(trade),
+        getPrice(trade),
+        getLot(trade),
+        getPnl(trade),
+        getStatus(trade),
+        getTimestamp(trade)
+    ]);
+
+    const csv = [
+        headers,
+        ...rows
+    ]
+        .map(row =>
+            row.map(value =>
+                `"${String(value ?? '')
+                    .replace(/"/g, '""')}"`
+            ).join(',')
+        )
+        .join('\n');
+
+    const blob = new Blob(
+        ['\uFEFF' + csv],
+        {
+            type: 'text/csv;charset=utf-8;'
+        }
+    );
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const link =
+        document.createElement('a');
+
+    link.href = url;
+    link.download =
+        `trade-history-${new Date()
+            .toISOString()
+            .slice(0, 10)}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+}
+
+/* =========================
+   Events
+========================= */
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const exportButton =
+        document.querySelector('.btn-export');
+
+    if (exportButton) {
+        exportButton.addEventListener(
+            'click',
+            exportTradesCSV
+        );
+    }
+
+    const searchInput =
+        document.getElementById('tradeSearch');
+
+    if (searchInput) {
+        searchInput.addEventListener(
+            'keydown',
+            event => {
+                if (event.key === 'Enter') {
+                    filterTrades();
+                }
             }
+        );
+    }
 
-        });
+    const dateInput =
+        document.getElementById('dateFilter');
 
+    if (dateInput) {
+        dateInput.addEventListener(
+            'change',
+            filterTrades
+        );
+    }
+
+    loadTrades();
+});
 </script>
 
 

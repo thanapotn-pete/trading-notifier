@@ -1279,11 +1279,11 @@
             </div>
 
 
-            <div class="connection-status">
+            <div class="connection-status" id="telegramConnectionStatus">
 
-                <span class="connection-dot"></span>
+                <span class="connection-dot" id="connectionDot"></span>
 
-                Telegram เชื่อมต่อแล้ว
+                <span id="connectionText">กำลังตรวจสอบ...</span>
 
             </div>
 
@@ -1325,6 +1325,7 @@
 
             <button
                 class="telegram-button"
+                id="testConnectionButton"
                 onclick="testTelegram()"
             >
 
@@ -1721,7 +1722,7 @@
                                 type="text"
                                 class="text-input"
                                 id="chatId"
-                                value="123456789"
+                                value=""
                                 placeholder="กรอก Telegram Chat ID"
                             >
 
@@ -2043,144 +2044,578 @@
 ========================================================= -->
 
 <script>
+/* =========================================================
+   NOTIFICATION PAGE - API
+   ========================================================= */
 
+const API_BASE_URL = 'http://localhost:3000';
+const TOKEN_KEY = 'auth_token';
 
-    /* =====================================================
-       MASTER SWITCH
-    ===================================================== */
+function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+}
 
-    function toggleAllNotifications() {
+function apiFetch(path, options = {}) {
+    const token = getToken();
 
-        const master =
-            document.getElementById(
-                'masterSwitch'
-            );
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+    };
 
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
 
-        const switches =
-            document.querySelectorAll(
-                '.notification-switch'
-            );
+    return fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers
+    });
+}
 
+/* =========================================================
+   MASTER SWITCH
+   ========================================================= */
 
-        switches.forEach(
-            function (item) {
+function toggleAllNotifications() {
+    const master = document.getElementById('masterSwitch');
+    const switches = document.querySelectorAll('.notification-switch');
+    const label = document.getElementById('masterLabel');
 
-                item.checked =
-                    master.checked;
+    if (!master) return;
 
-                item.disabled =
-                    !master.checked;
+    switches.forEach(item => {
+        item.disabled = !master.checked;
 
+        if (!master.checked) {
+            item.checked = false;
+        }
+    });
+
+    if (label) {
+        label.textContent = master.checked
+            ? 'เปิดใช้งาน'
+            : 'ปิดใช้งาน';
+    }
+
+    saveNotificationSettings();
+}
+
+/* =========================================================
+   SAVE SETTINGS
+   ========================================================= */
+
+function saveNotificationSettings() {
+    const master = document.getElementById('masterSwitch');
+
+    const switches = Array.from(
+        document.querySelectorAll('.notification-switch')
+    );
+
+    const settings = {
+        master: master ? master.checked : false,
+        events: switches.map(item => item.checked)
+    };
+
+    localStorage.setItem(
+        'notification_settings',
+        JSON.stringify(settings)
+    );
+}
+
+function loadNotificationSettings() {
+    const raw = localStorage.getItem('notification_settings');
+
+    if (!raw) {
+        toggleAllNotifications();
+        return;
+    }
+
+    try {
+        const settings = JSON.parse(raw);
+        const master = document.getElementById('masterSwitch');
+        const switches = document.querySelectorAll('.notification-switch');
+
+        if (master && typeof settings.master === 'boolean') {
+            master.checked = settings.master;
+        }
+
+        switches.forEach((item, index) => {
+            if (Array.isArray(settings.events) &&
+                typeof settings.events[index] === 'boolean') {
+                item.checked = settings.events[index];
             }
+        });
+
+        const label = document.getElementById('masterLabel');
+
+        switches.forEach(item => {
+            item.disabled = !master.checked;
+        });
+
+        if (label) {
+            label.textContent = master.checked
+                ? 'เปิดใช้งาน'
+                : 'ปิดใช้งาน';
+        }
+    } catch (error) {
+        console.error('Cannot load notification settings:', error);
+        toggleAllNotifications();
+    }
+}
+
+/* Save individual switch changes */
+document.addEventListener('change', function (event) {
+    if (event.target.classList.contains('notification-switch')) {
+        const master = document.getElementById('masterSwitch');
+
+        const allOff = Array.from(
+            document.querySelectorAll('.notification-switch')
+        ).every(item => !item.checked);
+
+        if (master && allOff) {
+            master.checked = false;
+        }
+
+        saveNotificationSettings();
+    }
+});
+
+/* =========================================================
+   CHAT ID
+   ========================================================= */
+
+function loadChatId() {
+    const chatId = localStorage.getItem('telegram_chat_id');
+
+    if (chatId) {
+        document.getElementById('chatId').value = chatId;
+    }
+}
+
+function saveChatId() {
+    const input = document.getElementById('chatId');
+    const chatId = input.value.trim();
+
+    if (!chatId) {
+        alert('กรุณากรอก Telegram Chat ID');
+        input.focus();
+        return;
+    }
+
+    if (!/^-?\d+$/.test(chatId)) {
+        alert('Telegram Chat ID ต้องเป็นตัวเลข');
+        input.focus();
+        return;
+    }
+
+    localStorage.setItem('telegram_chat_id', chatId);
+
+    alert('บันทึก Telegram Chat ID เรียบร้อยแล้ว');
+}
+
+/* =========================================================
+   TELEGRAM / API CONNECTION TEST
+   ========================================================= */
+
+async function testTelegram() {
+    const button = document.getElementById('testConnectionButton');
+    const originalText = button ? button.textContent : '';
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'กำลังตรวจสอบ...';
+    }
+
+    try {
+        const token = getToken();
+
+        if (!token) {
+            alert('ไม่พบ Session กรุณาเข้าสู่ระบบใหม่');
+            window.location.href = 'login.php';
+            return;
+        }
+
+        const response = await apiFetch('/api/notifications');
+
+        if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+            window.location.href = 'login.php';
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        setConnectionStatus(
+            true,
+            'ระบบแจ้งเตือนเชื่อมต่อแล้ว'
         );
 
+        alert('เชื่อมต่อระบบแจ้งเตือนสำเร็จ ✓');
+    } catch (error) {
+        console.error('Notification connection test failed:', error);
 
-        const label =
-            document.getElementById(
-                'masterLabel'
+        setConnectionStatus(
+            false,
+            'ไม่สามารถเชื่อมต่อระบบแจ้งเตือน'
+        );
+
+        alert(
+            'ไม่สามารถเชื่อมต่อระบบแจ้งเตือนได้\n' +
+            'กรุณาตรวจสอบว่า Node.js Backend กำลังทำงานอยู่'
+        );
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = originalText || 'ทดสอบการเชื่อมต่อ';
+        }
+    }
+}
+
+function setConnectionStatus(connected, text) {
+    const status = document.getElementById('telegramConnectionStatus');
+    const dot = document.getElementById('connectionDot');
+    const label = document.getElementById('connectionText');
+
+    if (label) {
+        label.textContent = text;
+    }
+
+    if (status) {
+        status.style.background = connected
+            ? '#edf8f5'
+            : '#fff1f2';
+
+        status.style.color = connected
+            ? '#087f68'
+            : '#dc2626';
+    }
+
+    if (dot) {
+        dot.style.background = connected
+            ? '#14b87a'
+            : '#dc2626';
+    }
+}
+
+/* =========================================================
+   SEND TEST MESSAGE
+   ========================================================= */
+
+async function sendTestMessage() {
+    const chatId = document.getElementById('chatId').value.trim();
+
+    if (!chatId) {
+        alert('กรุณากรอก Telegram Chat ID ก่อน');
+        document.getElementById('chatId').focus();
+        return;
+    }
+
+    if (!/^-?\d+$/.test(chatId)) {
+        alert('Telegram Chat ID ต้องเป็นตัวเลข');
+        return;
+    }
+
+    /*
+     * ปัจจุบัน Backend มี GET /api/notifications
+     * แต่ยังไม่มี endpoint สำหรับส่งข้อความทดสอบโดยตรง
+     * จึงยังไม่ยิง POST ปลอมไปหา API
+     */
+    localStorage.setItem('telegram_chat_id', chatId);
+
+    alert(
+        'บันทึก Chat ID แล้ว ✓\n\n' +
+        'ตอนนี้ Backend ยังไม่มี API สำหรับส่งข้อความทดสอบโดยตรง\n' +
+        'จึงยังไม่สามารถยืนยันการส่งข้อความไป Telegram จากหน้านี้ได้'
+    );
+}
+
+/* =========================================================
+   LOAD RECENT NOTIFICATIONS
+   ========================================================= */
+
+async function loadRecentNotifications() {
+    const container = document.getElementById('recentNotifications');
+
+    if (!container) return;
+
+    try {
+        const response = await apiFetch('/api/notifications');
+
+        if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            window.location.href = 'login.php';
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        const notifications = Array.isArray(data)
+            ? data
+            : Array.isArray(data.notifications)
+                ? data.notifications
+                : [];
+
+        renderRecentNotifications(notifications);
+    } catch (error) {
+        console.error('Load notifications failed:', error);
+
+        container.innerHTML = `
+            <div class="recent-item">
+                <div class="recent-icon warning">!</div>
+                <div>
+                    <div class="recent-name">ไม่สามารถโหลดการแจ้งเตือนได้</div>
+                    <div class="recent-message">
+                        ตรวจสอบการเชื่อมต่อกับ Backend
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function renderRecentNotifications(notifications) {
+    const container = document.getElementById('recentNotifications');
+
+    if (!container) return;
+
+    if (!notifications.length) {
+        container.innerHTML = `
+            <div class="recent-item">
+                <div class="recent-icon">i</div>
+                <div>
+                    <div class="recent-name">ยังไม่มีการแจ้งเตือน</div>
+                    <div class="recent-message">
+                        เมื่อระบบมีการแจ้งเตือน รายการจะแสดงที่นี่
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const latest = notifications.slice(0, 5);
+
+    container.innerHTML = latest.map(item => {
+        const title =
+            item.title ||
+            item.name ||
+            item.event ||
+            item.type ||
+            'การแจ้งเตือน';
+
+        const message =
+            item.message ||
+            item.description ||
+            item.text ||
+            '';
+
+        const time =
+            item.created_at ||
+            item.createdAt ||
+            item.timestamp ||
+            item.time ||
+            '';
+
+        const lower = `${title} ${message}`.toLowerCase();
+
+        let icon = 'i';
+        let iconClass = '';
+
+        if (
+            lower.includes('loss') ||
+            lower.includes('sl') ||
+            lower.includes('แพ้') ||
+            lower.includes('ขาดทุน')
+        ) {
+            icon = '↓';
+            iconClass = 'loss';
+        } else if (
+            lower.includes('risk') ||
+            lower.includes('drawdown') ||
+            lower.includes('เสี่ยง')
+        ) {
+            icon = '!';
+            iconClass = 'warning';
+        } else if (
+            lower.includes('profit') ||
+            lower.includes('tp') ||
+            lower.includes('ชนะ') ||
+            lower.includes('กำไร')
+        ) {
+            icon = '✓';
+        } else if (
+            lower.includes('open') ||
+            lower.includes('เปิด')
+        ) {
+            icon = '↑';
+        }
+
+        return `
+            <div class="recent-item">
+                <div class="recent-icon ${iconClass}">${escapeHtml(icon)}</div>
+                <div>
+                    <div class="recent-name">
+                        ${escapeHtml(title)}
+                    </div>
+
+                    <div class="recent-message">
+                        ${escapeHtml(message)}
+                    </div>
+
+                    <div class="recent-time">
+                        ${formatNotificationTime(time)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/* =========================================================
+   PROFILE / USER DISPLAY
+   ========================================================= */
+
+async function loadProfile() {
+    try {
+        const response = await apiFetch('/api/profile');
+
+        if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            window.location.href = 'login.php';
+            return;
+        }
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const profile = data.user || data.profile || data;
+
+        const name =
+            profile.name ||
+            profile.full_name ||
+            profile.fullName ||
+            profile.email ||
+            'ผู้ใช้งาน';
+
+        document.querySelectorAll('.welcome').forEach(element => {
+            element.textContent = `ยินดีต้อนรับ, ${name}`;
+        });
+
+        const avatar = document.querySelector('.avatar');
+
+        if (avatar) {
+            avatar.textContent = name.charAt(0).toUpperCase();
+        }
+    } catch (error) {
+        console.error('Load profile failed:', error);
+    }
+}
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.logout a').forEach(link => {
+        link.addEventListener('click', function (event) {
+            event.preventDefault();
+
+            localStorage.removeItem(TOKEN_KEY);
+
+            window.location.href = 'login.php';
+        });
+    });
+});
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function formatNotificationTime(value) {
+    if (!value) return '';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return escapeHtml(value);
+    }
+
+    return date.toLocaleString('th-TH', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    });
+}
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
+async function initializeNotificationPage() {
+    if (!getToken()) {
+        window.location.href = 'login.php';
+        return;
+    }
+
+    loadChatId();
+    loadNotificationSettings();
+    loadProfile();
+    loadRecentNotifications();
+
+    /*
+     * ตรวจสอบว่า Backend API ใช้งานได้
+     * ไม่แสดงข้อความปลอมว่า Telegram connected
+     */
+    try {
+        const response = await apiFetch('/api/notifications');
+
+        if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            window.location.href = 'login.php';
+            return;
+        }
+
+        if (response.ok) {
+            setConnectionStatus(
+                true,
+                'ระบบแจ้งเตือนพร้อมใช้งาน'
             );
-
-
-        if (master.checked) {
-
-            label.textContent =
-                'เปิดใช้งาน';
-
         } else {
-
-            label.textContent =
-                'ปิดใช้งาน';
-
-        }
-
-    }
-
-
-
-    /* =====================================================
-       SAVE CHAT ID
-    ===================================================== */
-
-    function saveChatId() {
-
-        const chatId =
-            document.getElementById(
-                'chatId'
-            ).value.trim();
-
-
-        if (!chatId) {
-
-            alert(
-                'กรุณากรอก Telegram Chat ID'
+            setConnectionStatus(
+                false,
+                'ระบบแจ้งเตือนยังไม่พร้อม'
             );
-
-            return;
-
         }
+    } catch (error) {
+        console.error('Initial notification API check failed:', error);
 
-
-        alert(
-            'บันทึก Telegram Chat ID เรียบร้อยแล้ว'
+        setConnectionStatus(
+            false,
+            'ไม่สามารถเชื่อมต่อ Backend'
         );
-
     }
+}
 
-
-
-    /* =====================================================
-       TEST TELEGRAM
-    ===================================================== */
-
-    function testTelegram() {
-
-        alert(
-            'Telegram เชื่อมต่อเรียบร้อยแล้ว ✓'
-        );
-
-    }
-
-
-
-    /* =====================================================
-       SEND TEST MESSAGE
-    ===================================================== */
-
-    function sendTestMessage() {
-
-        const chatId =
-            document.getElementById(
-                'chatId'
-            ).value.trim();
-
-
-        if (!chatId) {
-
-            alert(
-                'กรุณากรอก Telegram Chat ID ก่อน'
-            );
-
-            return;
-
-        }
-
-
-        alert(
-            'ส่งข้อความทดสอบไปยัง Telegram แล้ว ✓'
-        );
-
-    }
-
-
-
-    /* =====================================================
-       INITIAL STATE
-    ===================================================== */
-
-    toggleAllNotifications();
-
-
+document.addEventListener(
+    'DOMContentLoaded',
+    initializeNotificationPage
+);
 </script>
 
 

@@ -251,7 +251,7 @@
      * เปลี่ยนเป็น:
      * http://localhost:3000
      */
-    const API_BASE_URL = 'https://trading-notifier-vrdb.onrender.com';
+    const API_BASE_URL = 'http://localhost:3000';
 
     const loginForm = document.getElementById('loginForm');
     const loginButton = document.getElementById('loginButton');
@@ -356,7 +356,7 @@
 
 
             // เก็บ token เอาไว้ใช้เรียก API อื่น
-            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('auth_token', data.token);
 
 
             showSuccess('เข้าสู่ระบบสำเร็จ กำลังเข้าสู่ระบบ...');

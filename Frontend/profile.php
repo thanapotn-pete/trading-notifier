@@ -946,7 +946,7 @@
 
         <div>
 
-            <div class="welcome">
+            <div class="welcome" id="welcomeText">
                 ยินดีต้อนรับ, ผู้ใช้งาน
             </div>
 
@@ -985,7 +985,7 @@
             </button>
 
 
-            <div class="avatar">
+            <div class="avatar" id="topAvatar">
                 U
             </div>
 
@@ -1036,18 +1036,18 @@
 
                 <div class="profile-card profile-summary">
 
-                    <div class="profile-avatar-large">
+                    <div class="profile-avatar-large" id="profileAvatar">
                         U
                     </div>
 
 
-                    <div class="profile-name">
-                        ผู้ใช้งาน
+                    <div class="profile-name" id="profileName">
+                        กำลังโหลด...
                     </div>
 
 
-                    <div class="profile-email">
-                        user@example.com
+                    <div class="profile-email" id="profileEmail">
+                        กำลังโหลด...
                     </div>
 
 
@@ -1069,8 +1069,8 @@
                                 Username
                             </span>
 
-                            <span class="info-value">
-                                user01
+                            <span class="info-value" id="usernameValue">
+                                -
                             </span>
 
                         </div>
@@ -1082,8 +1082,8 @@
                                 Account ID
                             </span>
 
-                            <span class="info-value">
-                                TA-000142
+                            <span class="info-value" id="accountIdValue">
+                                -
                             </span>
 
                         </div>
@@ -1095,8 +1095,8 @@
                                 วันที่สมัคร
                             </span>
 
-                            <span class="info-value">
-                                15/08/2026
+                            <span class="info-value" id="createdAtValue">
+                                -
                             </span>
 
                         </div>
@@ -1108,8 +1108,8 @@
                                 สถานะ
                             </span>
 
-                            <span class="info-value">
-                                Active
+                            <span class="info-value" id="statusValue">
+                                -
                             </span>
 
                         </div>
@@ -1271,7 +1271,7 @@
                                 type="text"
                                 class="form-input"
                                 id="firstName"
-                                value="Tanakorn"
+                                value=""
                             >
 
                         </div>
@@ -1294,7 +1294,7 @@
                                 type="text"
                                 class="form-input"
                                 id="lastName"
-                                value="Sompong"
+                                value=""
                             >
 
                         </div>
@@ -1317,7 +1317,7 @@
                                 type="email"
                                 class="form-input"
                                 id="email"
-                                value="tanakorn@email.com"
+                                value=""
                             >
 
                         </div>
@@ -1760,280 +1760,301 @@
 ========================================================= -->
 
 <script>
+    /* =====================================================
+       API CONFIG
+       Node/Express backend runs on port 3000.
+    ===================================================== */
+    const API_BASE_URL = 'http://localhost:3000/api';
 
+    function getAuthToken() {
+        return localStorage.getItem('authToken') || localStorage.getItem('auth_token');
+    }
+
+    function authHeaders(json = false) {
+        const token = getAuthToken();
+        const headers = {};
+        if (json) headers['Content-Type'] = 'application/json';
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        return headers;
+    }
+
+    async function apiRequest(path, options = {}) {
+        const token = getAuthToken();
+        if (!token) {
+            window.location.href = 'login.php';
+            throw new Error('ไม่พบ session token');
+        }
+
+        const response = await fetch(`${API_BASE_URL}${path}`, {
+            ...options,
+            headers: {
+                ...authHeaders(Boolean(options.body)),
+                ...(options.headers || {})
+            }
+        });
+
+        let data = {};
+        try {
+            data = await response.json();
+        } catch (_) {
+            data = {};
+        }
+
+        if (response.status === 401) {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('auth_token');
+            alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+            window.location.href = 'login.php';
+            throw new Error('Unauthorized');
+        }
+
+        if (!response.ok) {
+            throw new Error(data.error || `Request failed (${response.status})`);
+        }
+
+        return data;
+    }
+
+    function getFullName(user) {
+        const first = user.first_name ?? user.firstName ?? user.name ?? '';
+        const last = user.last_name ?? user.lastName ?? user.surname ?? '';
+        return `${first} ${last}`.trim() || user.username || user.email || 'ผู้ใช้งาน';
+    }
+
+    function getInitial(user) {
+        const fullName = getFullName(user).trim();
+        return fullName ? fullName.charAt(0).toUpperCase() : 'U';
+    }
+
+    function formatDate(value) {
+        if (!value) return '-';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value);
+        return date.toLocaleDateString('th-TH', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    }
+
+    function setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value ?? '-';
+    }
+
+    function setUserToPage(user) {
+        const firstName = user.first_name ?? user.firstName ?? user.name ?? '';
+        const lastName = user.last_name ?? user.lastName ?? user.surname ?? '';
+        const email = user.email ?? '';
+        const fullName = getFullName(user);
+        const initial = getInitial(user);
+
+        document.getElementById('firstName').value = firstName;
+        document.getElementById('lastName').value = lastName;
+        document.getElementById('email').value = email;
+
+        setText('profileName', fullName);
+        setText('profileEmail', email || '-');
+        setText('usernameValue', user.username ?? '-');
+        setText('accountIdValue', user.account_id ?? user.accountId ?? user.id ?? '-');
+        setText('createdAtValue', formatDate(user.created_at ?? user.createdAt));
+        setText('statusValue', user.status ?? 'Active');
+        setText('welcomeText', `ยินดีต้อนรับ, ${fullName}`);
+        setText('topAvatar', initial);
+        setText('profileAvatar', initial);
+
+        window.originalProfile = {
+            firstName,
+            lastName,
+            email
+        };
+    }
+
+    /* =====================================================
+       LOAD PROFILE
+    ===================================================== */
+    async function loadProfile() {
+        try {
+            const data = await apiRequest('/profile');
+            setUserToPage(data);
+        } catch (error) {
+            if (error.message !== 'Unauthorized') {
+                console.error('[Profile] Load error:', error);
+                alert(`โหลดข้อมูลโปรไฟล์ไม่สำเร็จ\n${error.message}`);
+            }
+        }
+    }
 
     /* =====================================================
        SAVE PROFILE
     ===================================================== */
-
-    function saveProfile() {
-
-        const firstName =
-            document
-                .getElementById('firstName')
-                .value
-                .trim();
-
-
-        const lastName =
-            document
-                .getElementById('lastName')
-                .value
-                .trim();
-
-
-        const email =
-            document
-                .getElementById('email')
-                .value
-                .trim();
-
-
-        const password =
-            document
-                .getElementById('profilePassword')
-                .value;
-
+    async function saveProfile() {
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const button = document.querySelector('.primary-button[onclick="saveProfile()"]');
 
         if (!firstName) {
-
-            alert(
-                'กรุณากรอกชื่อ'
-            );
-
+            alert('กรุณากรอกชื่อ');
             return;
         }
-
 
         if (!lastName) {
-
-            alert(
-                'กรุณากรอกนามสกุล'
-            );
-
+            alert('กรุณากรอกนามสกุล');
             return;
         }
-
 
         if (!email) {
-
-            alert(
-                'กรุณากรอกอีเมล'
-            );
-
+            alert('กรุณากรอกอีเมล');
             return;
         }
 
+        if (!/^\S+@\S+\.\S+$/.test(email)) {
+            alert('รูปแบบอีเมลไม่ถูกต้อง');
+            return;
+        }
 
-        alert(
-            'บันทึกข้อมูลบัญชีเรียบร้อยแล้ว ✓'
-        );
+        try {
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'กำลังบันทึก...';
+            }
 
+            const data = await apiRequest('/profile', {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName,
+                    email
+                })
+            });
+
+            setUserToPage(data);
+            document.getElementById('profilePassword').value = '';
+            alert('บันทึกข้อมูลบัญชีเรียบร้อยแล้ว ✓');
+        } catch (error) {
+            console.error('[Profile] Save error:', error);
+            alert(`บันทึกข้อมูลไม่สำเร็จ\n${error.message}`);
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = '💾 บันทึก';
+            }
+        }
     }
-
-
 
     /* =====================================================
        RESET PROFILE
     ===================================================== */
-
     function resetProfile() {
+        const original = window.originalProfile || {
+            firstName: '',
+            lastName: '',
+            email: ''
+        };
 
-        document
-            .getElementById('firstName')
-            .value =
-                'Tanakorn';
-
-
-        document
-            .getElementById('lastName')
-            .value =
-                'Sompong';
-
-
-        document
-            .getElementById('email')
-            .value =
-                'tanakorn@email.com';
-
-
-        document
-            .getElementById('profilePassword')
-            .value =
-                '';
-
+        document.getElementById('firstName').value = original.firstName;
+        document.getElementById('lastName').value = original.lastName;
+        document.getElementById('email').value = original.email;
+        document.getElementById('profilePassword').value = '';
     }
-
-
 
     /* =====================================================
        TOGGLE PASSWORD
     ===================================================== */
+    function togglePassword(inputId, button) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
 
-    function togglePassword(
-        inputId,
-        button
-    ) {
-
-        const input =
-            document
-                .getElementById(inputId);
-
-
-        if (
-            input.type ===
-            'password'
-        ) {
-
-            input.type =
-                'text';
-
-            button.textContent =
-                '◉';
-
+        if (input.type === 'password') {
+            input.type = 'text';
+            button.textContent = '◉';
         } else {
-
-            input.type =
-                'password';
-
-            button.textContent =
-                '◉';
-
+            input.type = 'password';
+            button.textContent = '◉';
         }
-
     }
-
-
 
     /* =====================================================
        CHANGE PASSWORD
     ===================================================== */
-
-    function changePassword() {
-
-        const current =
-            document
-                .getElementById(
-                    'currentPassword'
-                )
-                .value;
-
-
-        const newPassword =
-            document
-                .getElementById(
-                    'newPassword'
-                )
-                .value;
-
-
-        const confirmPassword =
-            document
-                .getElementById(
-                    'confirmPassword'
-                )
-                .value;
-
+    async function changePassword() {
+        const current = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const button = document.querySelector('.primary-button[onclick="changePassword()"]');
 
         if (!current) {
-
-            alert(
-                'กรุณากรอกรหัสผ่านปัจจุบัน'
-            );
-
+            alert('กรุณากรอกรหัสผ่านปัจจุบัน');
             return;
         }
-
 
         if (!newPassword) {
-
-            alert(
-                'กรุณากรอกรหัสผ่านใหม่'
-            );
-
+            alert('กรุณากรอกรหัสผ่านใหม่');
             return;
         }
 
-
-        if (
-            newPassword.length < 6
-        ) {
-
-            alert(
-                'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร'
-            );
-
+        if (newPassword.length < 6) {
+            alert('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร');
             return;
         }
 
-
-        if (
-            newPassword !==
-            confirmPassword
-        ) {
-
-            alert(
-                'รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน'
-            );
-
+        if (newPassword !== confirmPassword) {
+            alert('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
             return;
         }
 
+        if (current === newPassword) {
+            alert('รหัสผ่านใหม่ต้องไม่เหมือนรหัสผ่านปัจจุบัน');
+            return;
+        }
 
-        alert(
-            'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว ✓'
-        );
+        try {
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'กำลังเปลี่ยนรหัสผ่าน...';
+            }
 
+            await apiRequest('/profile', {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    current_password: current,
+                    password: newPassword
+                })
+            });
 
-        document
-            .getElementById(
-                'currentPassword'
-            )
-            .value = '';
-
-
-        document
-            .getElementById(
-                'newPassword'
-            )
-            .value = '';
-
-
-        document
-            .getElementById(
-                'confirmPassword'
-            )
-            .value = '';
-
+            alert('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว ✓');
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        } catch (error) {
+            console.error('[Profile] Password error:', error);
+            alert(`เปลี่ยนรหัสผ่านไม่สำเร็จ\n${error.message}`);
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'เปลี่ยนรหัสผ่าน';
+            }
+        }
     }
-
-
 
     /* =====================================================
        LOGOUT
     ===================================================== */
-
     function logout() {
+        const confirmLogout = confirm('คุณต้องการออกจากระบบใช่หรือไม่?');
 
-        const confirmLogout =
-            confirm(
-                'คุณต้องการออกจากระบบใช่หรือไม่?'
-            );
+        if (!confirmLogout) return;
 
-
-        if (
-            confirmLogout
-        ) {
-
-            alert(
-                'ออกจากระบบเรียบร้อยแล้ว'
-            );
-
-        }
-
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('auth_token');
+        window.location.href = 'login.php';
     }
 
-
+    /* =====================================================
+       INITIALIZE
+    ===================================================== */
+    document.addEventListener('DOMContentLoaded', loadProfile);
 </script>
 
 

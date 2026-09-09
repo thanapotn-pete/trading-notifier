@@ -269,12 +269,12 @@
                                 กำไรสุทธิ
                             </div>
 
-                            <div class="stat-value profit">
-                                +$2,430
+                            <div class="stat-value profit" id="netProfit">
+                                +$0.00
                             </div>
 
-                            <div class="stat-description">
-                                ↑ 12.4% เดือนนี้
+                            <div class="stat-description" id="profitDescription">
+                                ยังไม่มีข้อมูลการเทรด
                             </div>
 
                         </div>
@@ -304,12 +304,12 @@
                                 WIN RATE
                             </div>
 
-                            <div class="stat-value">
-                                68.5%
+                            <div class="stat-value" id="winRate">
+                                0.0%
                             </div>
 
-                            <div class="stat-description">
-                                จาก 200 ออเดอร์
+                            <div class="stat-description" id="tradeCountDescription">
+                                จาก 0 ออเดอร์
                             </div>
 
                         </div>
@@ -339,12 +339,12 @@
                                 PROFIT FACTOR
                             </div>
 
-                            <div class="stat-value">
-                                2.14
+                            <div class="stat-value" id="profitFactor">
+                                0.00
                             </div>
 
                             <div class="stat-description">
-                                ดีกว่าค่าเฉลี่ย
+                                จากข้อมูลการเทรด
                             </div>
 
                         </div>
@@ -374,12 +374,12 @@
                                 RISK SCORE
                             </div>
 
-                            <div class="stat-value risk">
-                                MEDIUM
+                            <div class="stat-value risk" id="riskScore">
+                                LOW
                             </div>
 
-                            <div class="stat-description">
-                                Max DD 8.2%
+                            <div class="stat-description" id="riskDescription">
+                                ยังไม่มีข้อมูล
                             </div>
 
                         </div>
@@ -426,6 +426,7 @@
                                 <button
                                     type="button"
                                     class="period active"
+                                    data-period="7"
                                 >
                                     1W
                                 </button>
@@ -434,6 +435,7 @@
                                 <button
                                     type="button"
                                     class="period"
+                                    data-period="30"
                                 >
                                     1M
                                 </button>
@@ -442,6 +444,7 @@
                                 <button
                                     type="button"
                                     class="period"
+                                    data-period="90"
                                 >
                                     3M
                                 </button>
@@ -486,107 +489,11 @@
                         </div>
 
 
-                        <div class="trade-list">
+                        <div class="trade-list" id="recentTrades">
 
-
-                            <!-- EURUSD -->
-
-                            <div class="trade-item">
-
-                                <div>
-
-                                    <strong>
-                                        EURUSD
-                                    </strong>
-
-                                    <small>
-                                        Buy · 0.10 lot · TP hit
-                                    </small>
-
-                                </div>
-
-
-                                <strong class="profit">
-                                    +$48.20
-                                </strong>
-
+                            <div class="text-center py-4 text-muted">
+                                กำลังโหลดข้อมูล...
                             </div>
-
-
-
-                            <!-- GBPUSD -->
-
-                            <div class="trade-item">
-
-                                <div>
-
-                                    <strong>
-                                        GBPUSD
-                                    </strong>
-
-                                    <small>
-                                        Sell · 0.05 lot · SL hit
-                                    </small>
-
-                                </div>
-
-
-                                <strong class="loss">
-                                    -$12.50
-                                </strong>
-
-                            </div>
-
-
-
-                            <!-- XAUUSD -->
-
-                            <div class="trade-item">
-
-                                <div>
-
-                                    <strong>
-                                        XAUUSD
-                                    </strong>
-
-                                    <small>
-                                        Buy · 0.02 lot · Manual
-                                    </small>
-
-                                </div>
-
-
-                                <strong class="profit">
-                                    +$31.00
-                                </strong>
-
-                            </div>
-
-
-
-                            <!-- USDJPY -->
-
-                            <div class="trade-item">
-
-                                <div>
-
-                                    <strong>
-                                        USDJPY
-                                    </strong>
-
-                                    <small>
-                                        Sell · 0.08 lot · TP hit
-                                    </small>
-
-                                </div>
-
-
-                                <strong class="profit">
-                                    +$22.40
-                                </strong>
-
-                            </div>
-
 
                         </div>
 
@@ -734,6 +641,877 @@
 
 <script src="./js/script.js"></script>
 
+
+
+<script>
+
+const DASHBOARD_API_BASE_URL = 'http://localhost:3000';
+
+let dashboardTrades = [];
+let dashboardEquityChart = null;
+let currentPeriod = 7;
+
+
+// =====================================================
+// GET TOKEN
+// =====================================================
+
+function getAuthToken() {
+    return localStorage.getItem('auth_token');
+}
+
+
+// =====================================================
+// LOAD DASHBOARD DATA
+// =====================================================
+
+async function loadDashboard() {
+
+    const token = getAuthToken();
+
+    if (!token) {
+        window.location.href = 'login.php';
+        return;
+    }
+
+    try {
+
+        console.log('[Dashboard] Loading trades...');
+
+        const response = await fetch(
+            `${DASHBOARD_API_BASE_URL}/api/trades?limit=1000`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        if (response.status === 401) {
+
+            console.warn('[Dashboard] Session expired');
+
+            localStorage.removeItem('auth_token');
+            window.location.href = 'login.php';
+
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        dashboardTrades =
+            Array.isArray(data.trades)
+                ? data.trades
+                : [];
+
+        console.log(
+            '[Dashboard] Trades:',
+            dashboardTrades.length
+        );
+
+        updateDashboard();
+
+    } catch (error) {
+
+        console.error(
+            '[Dashboard] API Error:',
+            error
+        );
+
+        document.getElementById(
+            'recentTrades'
+        ).innerHTML = `
+            <div class="text-center py-4 text-danger">
+                ไม่สามารถโหลดข้อมูลการเทรดได้
+            </div>
+        `;
+    }
+}
+
+
+// =====================================================
+// GET PNL
+// =====================================================
+
+function getPnl(trade) {
+
+    const value =
+        trade.pnl ??
+        trade.profit ??
+        trade.net_pnl ??
+        trade.netProfit ??
+        0;
+
+    const number = Number(value);
+
+    return Number.isFinite(number)
+        ? number
+        : 0;
+}
+
+
+// =====================================================
+// GET SYMBOL
+// =====================================================
+
+function getSymbol(trade) {
+
+    return (
+        trade.symbol ??
+        trade.instrument ??
+        trade.ticker ??
+        '-'
+    );
+}
+
+
+// =====================================================
+// GET ACTION
+// =====================================================
+
+function getAction(trade) {
+
+    const action =
+        trade.action ??
+        trade.type ??
+        trade.side ??
+        trade.order_type ??
+        '';
+
+    return String(action).toLowerCase();
+}
+
+
+// =====================================================
+// GET LOT
+// =====================================================
+
+function getLot(trade) {
+
+    const lot = Number(
+        trade.lot ??
+        trade.lots ??
+        trade.volume ??
+        trade.quantity ??
+        0
+    );
+
+    return Number.isFinite(lot)
+        ? lot
+        : 0;
+}
+
+
+// =====================================================
+// GET STATUS
+// =====================================================
+
+function getStatus(trade) {
+
+    return (
+        trade.status ??
+        trade.result ??
+        trade.close_reason ??
+        ''
+    );
+}
+
+
+// =====================================================
+// GET DATE
+// =====================================================
+
+function getTradeDate(trade) {
+
+    return (
+        trade.closed_at ??
+        trade.timestamp ??
+        trade.created_at ??
+        trade.opened_at ??
+        trade.date ??
+        trade.time ??
+        null
+    );
+}
+
+
+// =====================================================
+// GET FILTERED TRADES
+// =====================================================
+
+function getFilteredTrades() {
+
+    if (currentPeriod === 'all') {
+        return [...dashboardTrades];
+    }
+
+    const now = new Date();
+
+    const startDate = new Date(now);
+
+    startDate.setDate(
+        startDate.getDate() - Number(currentPeriod)
+    );
+
+    return dashboardTrades.filter(trade => {
+
+        const dateValue = getTradeDate(trade);
+
+        if (!dateValue) {
+            return false;
+        }
+
+        const tradeDate = new Date(dateValue);
+
+        return (
+            !Number.isNaN(tradeDate.getTime()) &&
+            tradeDate >= startDate &&
+            tradeDate <= now
+        );
+
+    });
+}
+
+
+// =====================================================
+// CALCULATE STATISTICS
+// =====================================================
+
+function calculateStatistics(trades) {
+
+    const totalTrades = trades.length;
+
+    const wins =
+        trades.filter(
+            trade => getPnl(trade) > 0
+        );
+
+    const losses =
+        trades.filter(
+            trade => getPnl(trade) < 0
+        );
+
+    const totalProfit =
+        wins.reduce(
+            (sum, trade) =>
+                sum + getPnl(trade),
+            0
+        );
+
+    const totalLoss =
+        losses.reduce(
+            (sum, trade) =>
+                sum + getPnl(trade),
+            0
+        );
+
+    const netProfit =
+        totalProfit + totalLoss;
+
+    const winRate =
+        totalTrades > 0
+            ? (wins.length / totalTrades) * 100
+            : 0;
+
+    let profitFactor = 0;
+
+    if (totalLoss < 0) {
+
+        profitFactor =
+            totalProfit /
+            Math.abs(totalLoss);
+
+    } else if (totalProfit > 0) {
+
+        profitFactor = Infinity;
+
+    }
+
+    return {
+        totalTrades,
+        wins: wins.length,
+        losses: losses.length,
+        totalProfit,
+        totalLoss,
+        netProfit,
+        winRate,
+        profitFactor
+    };
+}
+
+
+// =====================================================
+// UPDATE DASHBOARD
+// =====================================================
+
+function updateDashboard() {
+
+    const filteredTrades =
+        getFilteredTrades();
+
+    const stats =
+        calculateStatistics(
+            filteredTrades
+        );
+
+
+    // NET PROFIT
+
+    const netProfitElement =
+        document.getElementById(
+            'netProfit'
+        );
+
+    netProfitElement.textContent =
+        `${stats.netProfit >= 0 ? '+' : '-'}$${Math.abs(stats.netProfit).toFixed(2)}`;
+
+    netProfitElement.classList.toggle(
+        'profit',
+        stats.netProfit >= 0
+    );
+
+    netProfitElement.classList.toggle(
+        'loss',
+        stats.netProfit < 0
+    );
+
+
+    // WIN RATE
+
+    document.getElementById(
+        'winRate'
+    ).textContent =
+        `${stats.winRate.toFixed(1)}%`;
+
+    document.getElementById(
+        'tradeCountDescription'
+    ).textContent =
+        `จาก ${stats.totalTrades} ออเดอร์`;
+
+
+    // PROFIT FACTOR
+
+    document.getElementById(
+        'profitFactor'
+    ).textContent =
+
+        Number.isFinite(
+            stats.profitFactor
+        )
+
+            ? stats.profitFactor.toFixed(2)
+
+            : stats.totalProfit > 0
+                ? '∞'
+                : '0.00';
+
+
+    // PROFIT DESCRIPTION
+
+    document.getElementById(
+        'profitDescription'
+    ).textContent =
+
+        stats.totalTrades > 0
+            ? `${stats.wins} Win / ${stats.losses} Loss`
+            : 'ยังไม่มีข้อมูลการเทรด';
+
+
+    // RISK SCORE
+
+    updateRiskScore(stats);
+
+
+    // RECENT TRADES
+
+    renderRecentTrades();
+
+
+    // EQUITY CURVE
+
+    renderEquityChart(
+        filteredTrades
+    );
+}
+
+
+// =====================================================
+// RISK SCORE
+// =====================================================
+
+function updateRiskScore(stats) {
+
+    const riskElement =
+        document.getElementById(
+            'riskScore'
+        );
+
+    const descriptionElement =
+        document.getElementById(
+            'riskDescription'
+        );
+
+    if (stats.totalTrades === 0) {
+
+        riskElement.textContent =
+            'LOW';
+
+        descriptionElement.textContent =
+            'ยังไม่มีข้อมูล';
+
+        return;
+    }
+
+    let risk = 'LOW';
+
+    if (stats.winRate < 40) {
+
+        risk = 'HIGH';
+
+    } else if (stats.winRate < 55) {
+
+        risk = 'MEDIUM';
+
+    }
+
+    riskElement.textContent =
+        risk;
+
+    descriptionElement.textContent =
+        `Win Rate ${stats.winRate.toFixed(1)}%`;
+}
+
+
+// =====================================================
+// RENDER RECENT TRADES
+// =====================================================
+
+function renderRecentTrades() {
+
+    const container =
+        document.getElementById(
+            'recentTrades'
+        );
+
+    if (!dashboardTrades.length) {
+
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                ยังไม่มีข้อมูลการเทรด
+            </div>
+        `;
+
+        return;
+    }
+
+    const recentTrades =
+        [...dashboardTrades]
+            .sort((a, b) => {
+
+                const dateA =
+                    new Date(
+                        getTradeDate(a) || 0
+                    ).getTime();
+
+                const dateB =
+                    new Date(
+                        getTradeDate(b) || 0
+                    ).getTime();
+
+                return dateB - dateA;
+
+            })
+            .slice(0, 4);
+
+    container.innerHTML =
+        recentTrades.map(
+            trade => {
+
+                const pnl =
+                    getPnl(trade);
+
+                const symbol =
+                    getSymbol(trade);
+
+                const action =
+                    getAction(trade);
+
+                const lot =
+                    getLot(trade);
+
+                const status =
+                    getStatus(trade);
+
+                let actionText =
+                    'Trade';
+
+                if (
+                    action.includes('buy')
+                ) {
+
+                    actionText =
+                        'Buy';
+
+                } else if (
+                    action.includes('sell')
+                ) {
+
+                    actionText =
+                        'Sell';
+
+                } else if (
+                    action
+                ) {
+
+                    actionText =
+                        action;
+
+                }
+
+                const statusText =
+                    status || 'Closed';
+
+                return `
+                    <div class="trade-item">
+
+                        <div>
+
+                            <strong>
+                                ${escapeHtml(symbol)}
+                            </strong>
+
+                            <small>
+                                ${escapeHtml(actionText)}
+                                · ${lot.toFixed(2)} lot
+                                · ${escapeHtml(statusText)}
+                            </small>
+
+                        </div>
+
+                        <strong
+                            class="${pnl >= 0 ? 'profit' : 'loss'}"
+                        >
+                            ${pnl >= 0 ? '+' : '-'}$${Math.abs(pnl).toFixed(2)}
+                        </strong>
+
+                    </div>
+                `;
+
+            }
+        ).join('');
+}
+
+
+// =====================================================
+// EQUITY CURVE
+// =====================================================
+
+function renderEquityChart(trades) {
+
+    const canvas =
+        document.getElementById(
+            'equityChart'
+        );
+
+    if (!canvas) {
+        return;
+    }
+
+    const sortedTrades =
+        [...trades]
+            .sort((a, b) => {
+
+                const dateA =
+                    new Date(
+                        getTradeDate(a) || 0
+                    ).getTime();
+
+                const dateB =
+                    new Date(
+                        getTradeDate(b) || 0
+                    ).getTime();
+
+                return dateA - dateB;
+
+            });
+
+    let cumulative = 0;
+
+    const labels = [];
+    const values = [];
+
+    sortedTrades.forEach(
+        (trade, index) => {
+
+            cumulative +=
+                getPnl(trade);
+
+            const date =
+                getTradeDate(trade);
+
+            labels.push(
+
+                date
+                    ? new Date(date)
+                        .toLocaleDateString(
+                            'th-TH',
+                            {
+                                day: 'numeric',
+                                month: 'short'
+                            }
+                        )
+                    : `Trade ${index + 1}`
+
+            );
+
+            values.push(
+                Number(
+                    cumulative.toFixed(2)
+                )
+            );
+
+        }
+    );
+
+
+    if (dashboardEquityChart) {
+        dashboardEquityChart.destroy();
+    }
+
+
+    dashboardEquityChart =
+        new Chart(
+            canvas,
+            {
+
+                type: 'line',
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                'Cumulative P/L',
+
+                            data:
+                                values,
+
+                            borderWidth:
+                                2,
+
+                            tension:
+                                0.3,
+
+                            fill:
+                                true,
+
+                            pointRadius:
+                                2
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive:
+                        true,
+
+                    maintainAspectRatio:
+                        false,
+
+                    interaction: {
+
+                        intersect:
+                            false,
+
+                        mode:
+                            'index'
+
+                    },
+
+                    plugins: {
+
+                        legend: {
+
+                            display:
+                                false
+
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                label:
+                                    function(context) {
+
+                                        const value =
+                                            Number(
+                                                context.raw || 0
+                                            );
+
+                                        return ` P/L: ${value >= 0 ? '+' : '-'}$${Math.abs(value).toFixed(2)}`;
+
+                                    }
+
+                            }
+
+                        }
+
+                    },
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero:
+                                false,
+
+                            ticks: {
+
+                                callback:
+                                    function(value) {
+
+                                        return '$' + value;
+
+                                    }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+}
+
+
+// =====================================================
+// PERIOD BUTTONS
+// =====================================================
+
+document
+    .querySelectorAll('.period')
+    .forEach(button => {
+
+        button.addEventListener(
+            'click',
+            function() {
+
+                document
+                    .querySelectorAll('.period')
+                    .forEach(btn => {
+
+                        btn.classList.remove(
+                            'active'
+                        );
+
+                    });
+
+                this.classList.add(
+                    'active'
+                );
+
+                currentPeriod =
+                    this.dataset.period;
+
+                updateDashboard();
+
+            }
+        );
+
+    });
+
+
+// =====================================================
+// ESCAPE HTML
+// =====================================================
+
+function escapeHtml(value) {
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            '&amp;'
+        )
+
+        .replace(
+            /</g,
+            '&lt;'
+        )
+
+        .replace(
+            />/g,
+            '&gt;'
+        )
+
+        .replace(
+            /"/g,
+            '&quot;'
+        )
+
+        .replace(
+            /'/g,
+            '&#039;'
+        );
+
+}
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
+
+document
+    .querySelector('.logout a')
+    ?.addEventListener(
+        'click',
+        function(e) {
+
+            e.preventDefault();
+
+            localStorage.removeItem(
+                'auth_token'
+            );
+
+            window.location.href =
+                'login.php';
+
+        }
+    );
+
+
+// =====================================================
+// LOAD WHEN PAGE READY
+// =====================================================
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function() {
+
+        loadDashboard();
+
+    }
+);
+
+</script>
 
 </body>
 

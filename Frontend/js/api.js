@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://trading-notifier-vrdb.onrender.com';
+const API_BASE_URL = 'http://localhost:3000';
 
 
 // =========================
@@ -69,15 +69,15 @@ async function setupPassword(email, password) {
 // =========================
 
 function saveToken(token) {
-    localStorage.setItem('authToken', token);
+    localStorage.setItem('auth_token', token);
 }
 
 function getToken() {
-    return localStorage.getItem('authToken');
+    return localStorage.getItem('auth_token');
 }
 
 function removeToken() {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('auth_token');
 }
 
 
