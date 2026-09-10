@@ -1174,11 +1174,9 @@
 
         <div>
 
-            <div class="welcome">
-
-                ยินดีต้อนรับ, ผู้ใช้งาน
-
-            </div>
+            <div class="welcome" id="welcomeUser">
+    กำลังโหลด...
+</div>
 
 
             <h1>
@@ -1424,8 +1422,47 @@ function exportReport(){
 }
 
 async function loadReport(){
-    try { const data=await apiFetch('/api/trades?limit=1000'); allTrades=Array.isArray(data)?data:(data.trades||[]); render(); console.log('[Reports] Loaded trades:',allTrades.length); }
-    catch(err){ console.error('[Reports]',err); document.getElementById('tradeReportBody').innerHTML=`<tr><td colspan="7" style="text-align:center;padding:25px;color:#dc2626">โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(err.message)}</td></tr>`; }
+    try {
+        const [tradesData, profileData] = await Promise.all([
+            apiFetch('/api/trades?limit=1000'),
+            apiFetch('/api/profile')
+        ]);
+
+        allTrades = Array.isArray(tradesData)
+            ? tradesData
+            : (tradesData.trades || []);
+
+        const profile = profileData.user || profileData || {};
+
+        const name =
+            profile.full_name ||
+            profile.name ||
+            profile.username ||
+            profile.email ||
+            'ผู้ใช้งาน';
+
+        const welcomeUser = document.getElementById('welcomeUser');
+
+        if (welcomeUser) {
+            welcomeUser.textContent = `ยินดีต้อนรับ, ${name}`;
+        }
+
+        render();
+
+        console.log('[Reports] Loaded trades:', allTrades.length);
+        console.log('[Reports] Loaded user:', name);
+
+    } catch(err) {
+        console.error('[Reports]', err);
+
+        const welcomeUser = document.getElementById('welcomeUser');
+        if (welcomeUser) {
+            welcomeUser.textContent = 'ยินดีต้อนรับ, ผู้ใช้งาน';
+        }
+
+        document.getElementById('tradeReportBody').innerHTML =
+            `<tr><td colspan="7" style="text-align:center;padding:25px;color:#dc2626">โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(err.message)}</td></tr>`;
+    }
 }
 
 document.addEventListener('DOMContentLoaded',loadReport);

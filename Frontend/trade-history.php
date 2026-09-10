@@ -872,8 +872,8 @@ $winRate = 0;
 
             <div>
 
-                <div class="welcome">
-                    ยินดีต้อนรับ, ผู้ใช้งาน
+                <div class="welcome" id="welcomeUser">
+                    กำลังโหลด...
                 </div>
 
                 <h1>
@@ -1741,6 +1741,38 @@ async function loadTrades() {
         }
 
         const data = await response.json();
+
+        // Load logged-in user's name for the topbar.
+        try {
+            const profileResponse = await fetch(
+                `${TRADE_HISTORY_API_BASE_URL}/api/profile`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (profileResponse.ok) {
+                const profileData = await profileResponse.json();
+                const profile = profileData.user || profileData || {};
+                const name =
+                    profile.full_name ||
+                    profile.name ||
+                    profile.username ||
+                    profile.email ||
+                    'ผู้ใช้งาน';
+
+                const welcomeUser = document.getElementById('welcomeUser');
+                if (welcomeUser) {
+                    welcomeUser.textContent = `ยินดีต้อนรับ, ${name}`;
+                }
+            }
+        } catch (profileError) {
+            console.warn('[Trade History] Failed to load profile:', profileError);
+        }
 
         allTrades = Array.isArray(data)
             ? data

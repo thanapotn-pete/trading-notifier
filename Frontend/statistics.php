@@ -855,8 +855,8 @@
 
             <div>
 
-                <div class="welcome">
-                    ยินดีต้อนรับ, ผู้ใช้งาน
+                <div class="welcome" id="welcomeUser">
+                    กำลังโหลด...
                 </div>
 
 
@@ -2061,9 +2061,23 @@
 
     async function loadStatistics() {
         try {
-            const trades = await apiFetch(
-                `${API_BASE_URL}/api/trades?limit=1000`
-            );
+            const [trades, profileData] = await Promise.all([
+                apiFetch(`${API_BASE_URL}/api/trades?limit=1000`),
+                apiFetch(`${API_BASE_URL}/api/profile`)
+            ]);
+
+            const profile = profileData.user || profileData || {};
+            const name =
+                profile.full_name ||
+                profile.name ||
+                profile.username ||
+                profile.email ||
+                'ผู้ใช้งาน';
+
+            const welcomeUser = document.getElementById('welcomeUser');
+            if (welcomeUser) {
+                welcomeUser.textContent = `ยินดีต้อนรับ, ${name}`;
+            }
 
             allTrades = Array.isArray(trades)
                 ? trades
