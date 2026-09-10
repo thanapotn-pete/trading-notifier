@@ -2127,7 +2127,11 @@ function applyNotificationSettings(settings) {
     }
 
     if (openOrder) {
-        openOrder.checked = settings.notify_buy !== false;
+        // หน้าเว็บมี 1 switch สำหรับ "เปิดออเดอร์"
+        // จึงแสดง ON เมื่อทั้ง BUY และ SELL เปิดอยู่
+        openOrder.checked =
+            settings.notify_buy !== false &&
+            settings.notify_sell !== false;
     }
 
     if (closeOrder) {
@@ -2169,7 +2173,9 @@ function getSettingsFromUI() {
     return {
         enabled: master ? master.checked : false,
 
+        // "เปิดออเดอร์" 1 switch ควบคุมทั้ง BUY และ SELL
         notify_buy: openOrder ? openOrder.checked : false,
+        notify_sell: openOrder ? openOrder.checked : false,
         notify_close: closeOrder ? closeOrder.checked : false,
 
         notify_tp: tpSl ? tpSl.checked : false,
