@@ -179,7 +179,7 @@
 
             <div>
 
-                <div class="welcome">
+                <div class="welcome" id="welcomeUser">
                     ยินดีต้อนรับ, ผู้ใช้งาน
                 </div>
 
@@ -233,7 +233,7 @@
 
                 <!-- AVATAR -->
 
-                <div class="avatar">
+                <div class="avatar" id="userAvatar">
                     U
                 </div>
 
@@ -551,8 +551,8 @@
                                     เปิดออเดอร์
                                 </span>
 
-                                <strong>
-                                    เปิดใช้งาน
+                                <strong id="openNotificationStatus">
+                                    กำลังโหลด...
                                 </strong>
 
                             </div>
@@ -578,8 +578,8 @@
                                     ปิดออเดอร์
                                 </span>
 
-                                <strong>
-                                    เปิดใช้งาน
+                                <strong id="closeNotificationStatus">
+                                    กำลังโหลด...
                                 </strong>
 
                             </div>
@@ -605,8 +605,8 @@
                                     Risk Alert
                                 </span>
 
-                                <strong>
-                                    เปิดใช้งาน
+                                <strong id="riskNotificationStatus">
+                                    กำลังโหลด...
                                 </strong>
 
                             </div>
@@ -650,6 +650,8 @@ const DASHBOARD_API_BASE_URL = 'http://localhost:3000';
 let dashboardTrades = [];
 let dashboardEquityChart = null;
 let currentPeriod = 7;
+let dashboardProfile = null;
+let dashboardNotificationSettings = null;
 
 
 // =====================================================
@@ -676,45 +678,78 @@ async function loadDashboard() {
 
     try {
 
-        console.log('[Dashboard] Loading trades...');
+        console.log('[Dashboard] Loading dashboard data...');
 
-        const response = await fetch(
-            `${DASHBOARD_API_BASE_URL}/api/trades?limit=1000`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
 
-        if (response.status === 401) {
+        const [tradesResponse, profileResponse, settingsResponse] =
+            await Promise.all([
+                fetch(
+                    `${DASHBOARD_API_BASE_URL}/api/trades?limit=1000`,
+                    {
+                        method: 'GET',
+                        headers
+                    }
+                ),
+                fetch(
+                    `${DASHBOARD_API_BASE_URL}/api/profile`,
+                    {
+                        method: 'GET',
+                        headers
+                    }
+                ),
+                fetch(
+                    `${DASHBOARD_API_BASE_URL}/api/notification-settings`,
+                    {
+                        method: 'GET',
+                        headers
+                    }
+                )
+            ]);
 
+        if (
+            tradesResponse.status === 401 ||
+            profileResponse.status === 401 ||
+            settingsResponse.status === 401
+        ) {
             console.warn('[Dashboard] Session expired');
 
             localStorage.removeItem('auth_token');
             window.location.href = 'login.php';
-
             return;
         }
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+        if (!tradesResponse.ok) {
+            throw new Error(`Trades API HTTP ${tradesResponse.status}`);
         }
 
-        const data = await response.json();
-
+        const tradeData = await tradesResponse.json();
         dashboardTrades =
-            Array.isArray(data.trades)
-                ? data.trades
+            Array.isArray(tradeData.trades)
+                ? tradeData.trades
                 : [];
+
+        if (profileResponse.ok) {
+            const profileData = await profileResponse.json();
+            dashboardProfile = profileData.user || profileData || null;
+        }
+
+        if (settingsResponse.ok) {
+            const settingsData = await settingsResponse.json();
+            dashboardNotificationSettings =
+                settingsData.settings || settingsData || null;
+        }
 
         console.log(
             '[Dashboard] Trades:',
             dashboardTrades.length
         );
 
+        updateUserInfo();
+        updateNotificationStatus();
         updateDashboard();
 
     } catch (error) {
@@ -822,6 +857,124 @@ function getStatus(trade) {
     );
 }
 
+// =====================================================
+// CLOSED TRADE CHECK
+// =====================================================
+
+function isClosedTrade(trade) {
+
+    const status = String(
+        trade.status ??
+        trade.result ??
+        ''
+    ).toLowerCase();
+
+    return (
+        status === 'closed' ||
+        status === 'close' ||
+        Boolean(trade.closed_at)
+    );
+}
+
+
+// =====================================================
+// USER INFO
+// =====================================================
+
+function updateUserInfo() {
+
+    const welcomeElement =
+        document.getElementById('welcomeUser');
+
+    const avatarElement =
+        document.getElementById('userAvatar');
+
+    if (!dashboardProfile) {
+        return;
+    }
+
+    const name =
+        dashboardProfile.full_name ??
+        dashboardProfile.name ??
+        dashboardProfile.username ??
+        dashboardProfile.email ??
+        'ผู้ใช้งาน';
+
+    const displayName =
+        String(name).trim() || 'ผู้ใช้งาน';
+
+    if (welcomeElement) {
+        welcomeElement.textContent =
+            `ยินดีต้อนรับ, ${displayName}`;
+    }
+
+    if (avatarElement) {
+        avatarElement.textContent =
+            displayName.charAt(0).toUpperCase();
+    }
+}
+
+
+// =====================================================
+// NOTIFICATION STATUS
+// =====================================================
+
+function updateNotificationStatus() {
+
+    const settings =
+        dashboardNotificationSettings;
+
+    if (!settings) {
+        return;
+    }
+
+    const openElement =
+        document.getElementById('openNotificationStatus');
+
+    const closeElement =
+        document.getElementById('closeNotificationStatus');
+
+    const riskElement =
+        document.getElementById('riskNotificationStatus');
+
+    const masterEnabled =
+        settings.enabled !== false;
+
+    const openEnabled =
+        masterEnabled &&
+        settings.notify_buy !== false &&
+        settings.notify_sell !== false;
+
+    const closeEnabled =
+        masterEnabled &&
+        settings.notify_close !== false;
+
+    const riskEnabled =
+        masterEnabled &&
+        settings.notify_risk !== false;
+
+    if (openElement) {
+        openElement.textContent =
+            openEnabled
+                ? 'เปิดใช้งาน'
+                : 'ปิดใช้งาน';
+    }
+
+    if (closeElement) {
+        closeElement.textContent =
+            closeEnabled
+                ? 'เปิดใช้งาน'
+                : 'ปิดใช้งาน';
+    }
+
+    if (riskElement) {
+        riskElement.textContent =
+            riskEnabled
+                ? 'เปิดใช้งาน'
+                : 'ปิดใช้งาน';
+    }
+}
+
 
 // =====================================================
 // GET DATE
@@ -885,15 +1038,21 @@ function getFilteredTrades() {
 
 function calculateStatistics(trades) {
 
-    const totalTrades = trades.length;
+    // Dashboard statistics should be based on completed trades.
+    // Open positions must not affect Win Rate / Profit Factor.
+    const closedTrades =
+        trades.filter(isClosedTrade);
+
+    const totalTrades =
+        closedTrades.length;
 
     const wins =
-        trades.filter(
+        closedTrades.filter(
             trade => getPnl(trade) > 0
         );
 
     const losses =
-        trades.filter(
+        closedTrades.filter(
             trade => getPnl(trade) < 0
         );
 
@@ -941,7 +1100,8 @@ function calculateStatistics(trades) {
         totalLoss,
         netProfit,
         winRate,
-        profitFactor
+        profitFactor,
+        closedTrades
     };
 }
 
@@ -1045,6 +1205,42 @@ function updateDashboard() {
 // RISK SCORE
 // =====================================================
 
+function calculateMaxDrawdown(trades) {
+
+    const sortedTrades =
+        [...trades]
+            .filter(isClosedTrade)
+            .sort((a, b) => {
+                const dateA =
+                    new Date(getTradeDate(a) || 0).getTime();
+
+                const dateB =
+                    new Date(getTradeDate(b) || 0).getTime();
+
+                return dateA - dateB;
+            });
+
+    let equity = 0;
+    let peak = 0;
+    let maxDrawdown = 0;
+
+    sortedTrades.forEach(trade => {
+
+        equity += getPnl(trade);
+
+        peak = Math.max(peak, equity);
+
+        const drawdown =
+            peak - equity;
+
+        maxDrawdown =
+            Math.max(maxDrawdown, drawdown);
+    });
+
+    return maxDrawdown;
+}
+
+
 function updateRiskScore(stats) {
 
     const riskElement =
@@ -1068,13 +1264,22 @@ function updateRiskScore(stats) {
         return;
     }
 
+    const maxDrawdown =
+        calculateMaxDrawdown(stats.closedTrades);
+
     let risk = 'LOW';
 
-    if (stats.winRate < 40) {
+    if (
+        stats.winRate < 40 ||
+        maxDrawdown >= 100
+    ) {
 
         risk = 'HIGH';
 
-    } else if (stats.winRate < 55) {
+    } else if (
+        stats.winRate < 55 ||
+        maxDrawdown >= 50
+    ) {
 
         risk = 'MEDIUM';
 
@@ -1084,7 +1289,7 @@ function updateRiskScore(stats) {
         risk;
 
     descriptionElement.textContent =
-        `Win Rate ${stats.winRate.toFixed(1)}%`;
+        `Win Rate ${stats.winRate.toFixed(1)}% · Max DD $${maxDrawdown.toFixed(2)}`;
 }
 
 
@@ -1214,6 +1419,9 @@ function renderRecentTrades() {
 
 function renderEquityChart(trades) {
 
+    const closedTrades =
+        trades.filter(isClosedTrade);
+
     const canvas =
         document.getElementById(
             'equityChart'
@@ -1224,7 +1432,7 @@ function renderEquityChart(trades) {
     }
 
     const sortedTrades =
-        [...trades]
+        [...closedTrades]
             .sort((a, b) => {
 
                 const dateA =
