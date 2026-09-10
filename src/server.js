@@ -4,6 +4,7 @@ const { handleTradingViewAlert } = require('./handlers/tradingview');
 const { recordTrade } = require('./pnl/tracker');
 const { findUserBySecret } = require('./users');
 const { startScheduler } = require('./scheduler');
+const { notify } = require('./notifications');
 const apiRouter = require('./api');
 
 const app = express();
@@ -47,17 +48,102 @@ app.post('/webhook/tradingview', lookupUser, async (req, res) => {
 });
 
 // MT5 webhook — save to Supabase only (Telegram handled by MT5 directly)
+// MT5 webhook — save to Supabase and send Telegram notification
 app.post('/webhook/mt5', lookupUser, async (req, res) => {
   try {
-    const { action, symbol, price, pnl, lot, position_id, tp, sl } = req.body;
+    const {
+      action,
+      symbol,
+      price,
+      pnl,
+      lot,
+      position_id,
+      tp,
+      sl
+    } = req.body;
+
     if (!action || !symbol || !position_id) {
-      return res.status(400).json({ error: 'action, symbol and position_id required' });
+      return res.status(400).json({
+        error: 'action, symbol and position_id required'
+      });
     }
-    await recordTrade({ action, symbol, price, pnl, lot, position_id, tp, sl, user_id: req.user.id });
-    res.json({ ok: true });
+
+    // Save trade to Supabase
+    await recordTrade({
+      action,
+      symbol,
+      price,
+      pnl,
+      lot,
+      position_id,
+      tp,
+      sl,
+      user_id: req.user.id
+    });
+
+    // Send Telegram notification
+    if (req.user.telegram_chat_id) {
+      const actionText = String(action).toUpperCase();
+
+      const lines = [
+        '<b>MT5 Trade Alert</b>',
+        '',
+        `Action: <b>${actionText}</b>`,
+        `Symbol: <b>${symbol}</b>`,
+        `Price: <b>${price ?? '-'}</b>`
+      ];
+
+      if (lot !== undefined) {
+        lines.push(`Lot: ${lot}`);
+      }
+
+      if (tp !== undefined && tp !== null) {
+        lines.push(`TP: ${tp}`);
+      }
+
+      if (sl !== undefined && sl !== null) {
+        lines.push(`SL: ${sl}`);
+      }
+
+      if (pnl !== undefined && pnl !== null) {
+        const pnlText = Number(pnl) > 0
+          ? `+${pnl}`
+          : `${pnl}`;
+
+        lines.push(`P&L: <b>${pnlText}</b>`);
+      }
+
+      const time = new Date().toLocaleString('th-TH', {
+        timeZone: process.env.TIMEZONE || 'Asia/Bangkok'
+      });
+
+      lines.push(`Time: ${time}`);
+
+      await notify(
+        lines.join('\n'),
+        req.user.telegram_chat_id
+      );
+
+      console.log(
+        `[MT5 Webhook] Telegram sent to user: ${req.user.id}`
+      );
+    } else {
+      console.log(
+        `[MT5 Webhook] No Telegram Chat ID for user: ${req.user.id}`
+      );
+    }
+
+    res.json({
+      ok: true,
+      message: 'MT5 trade recorded and Telegram notification sent'
+    });
+
   } catch (err) {
     console.error('[MT5 Webhook] Error:', err.message);
-    res.status(500).json({ error: err.message });
+
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
