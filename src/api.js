@@ -2,6 +2,11 @@ const express = require('express');
 const { notify } = require('./notifications');
 
 const {
+  getNotificationSettings,
+  updateNotificationSettings
+} = require('./notification-settings');
+
+const {
   findUserBySecret,
   findUserById,
   findUserByEmail,
@@ -180,7 +185,62 @@ async function requireSession(req, res, next) {
 
 
 router.use(requireSession);
+// =====================================================
+// NOTIFICATION SETTINGS
+// =====================================================
 
+router.get('/notification-settings', async (req, res) => {
+  try {
+    const settings =
+      await getNotificationSettings(
+        req.user.id
+      );
+
+    res.json({
+      settings
+    });
+
+  } catch (err) {
+    console.error(
+      '[API /notification-settings GET] Error:',
+      err.message
+    );
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+router.patch('/notification-settings', async (req, res) => {
+  try {
+    const settings =
+      await updateNotificationSettings(
+        req.user.id,
+        req.body || {}
+      );
+
+    console.log(
+      `[API /notification-settings PATCH] Updated for user: ${req.user.id}`
+    );
+
+    res.json({
+      ok: true,
+      settings
+    });
+
+  } catch (err) {
+    console.error(
+      '[API /notification-settings PATCH] Error:',
+      err.message
+    );
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
 
 // =====================================================
 // TRADES

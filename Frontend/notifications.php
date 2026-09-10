@@ -1439,6 +1439,7 @@
                             <input
                                 type="checkbox"
                                 class="notification-switch"
+                                    id="openOrderSwitch"
                                 checked
                             >
 
@@ -1485,6 +1486,7 @@
                             <input
                                 type="checkbox"
                                 class="notification-switch"
+                                    id="closeOrderSwitch"
                                 checked
                             >
 
@@ -1531,6 +1533,7 @@
                             <input
                                 type="checkbox"
                                 class="notification-switch"
+                                    id="tpSlSwitch"
                                 checked
                             >
 
@@ -1577,6 +1580,7 @@
                             <input
                                 type="checkbox"
                                 class="notification-switch"
+                                    id="riskSwitch"
                                 checked
                             >
 
@@ -1623,6 +1627,7 @@
                             <input
                                 type="checkbox"
                                 class="notification-switch"
+                                    id="dailySummarySwitch"
                                 checked
                             >
 
@@ -1669,6 +1674,7 @@
                             <input
                                 type="checkbox"
                                 class="notification-switch"
+                                    id="weeklySummarySwitch"
                             >
 
                             <span class="slider"></span>
@@ -2051,6 +2057,11 @@
 const API_BASE_URL = 'http://localhost:3000';
 const TOKEN_KEY = 'auth_token';
 
+let notificationSettings = null;
+let saveSettingsTimer = null;
+let isLoadingSettings = false;
+let isSavingSettings = false;
+
 function getToken() {
     return localStorage.getItem(TOKEN_KEY);
 }
@@ -2074,22 +2085,207 @@ function apiFetch(path, options = {}) {
 }
 
 /* =========================================================
+   NOTIFICATION SETTINGS - DATABASE
+   ========================================================= */
+
+async function fetchNotificationSettings() {
+    const response = await apiFetch('/api/notification-settings');
+
+    if (response.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+        window.location.href = 'login.php';
+        return null;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.error || `HTTP ${response.status}`
+        );
+    }
+
+    return data.settings || data;
+}
+
+function applyNotificationSettings(settings) {
+    if (!settings) return;
+
+    notificationSettings = settings;
+
+    const master = document.getElementById('masterSwitch');
+    const openOrder = document.getElementById('openOrderSwitch');
+    const closeOrder = document.getElementById('closeOrderSwitch');
+    const tpSl = document.getElementById('tpSlSwitch');
+    const risk = document.getElementById('riskSwitch');
+    const daily = document.getElementById('dailySummarySwitch');
+    const weekly = document.getElementById('weeklySummarySwitch');
+
+    if (master) {
+        master.checked = settings.enabled !== false;
+    }
+
+    if (openOrder) {
+        openOrder.checked = settings.notify_buy !== false;
+    }
+
+    if (closeOrder) {
+        closeOrder.checked = settings.notify_close !== false;
+    }
+
+    // หน้าเว็บมี 1 switch สำหรับ TP / SL
+    // แต่ Database แยก notify_tp และ notify_sl
+    if (tpSl) {
+        tpSl.checked =
+            settings.notify_tp !== false &&
+            settings.notify_sl !== false;
+    }
+
+    if (risk) {
+        risk.checked = settings.notify_risk !== false;
+    }
+
+    if (daily) {
+        daily.checked = settings.notify_daily_summary !== false;
+    }
+
+    if (weekly) {
+        weekly.checked = settings.notify_weekly_summary === true;
+    }
+
+    updateMasterUI();
+}
+
+function getSettingsFromUI() {
+    const master = document.getElementById('masterSwitch');
+    const openOrder = document.getElementById('openOrderSwitch');
+    const closeOrder = document.getElementById('closeOrderSwitch');
+    const tpSl = document.getElementById('tpSlSwitch');
+    const risk = document.getElementById('riskSwitch');
+    const daily = document.getElementById('dailySummarySwitch');
+    const weekly = document.getElementById('weeklySummarySwitch');
+
+    return {
+        enabled: master ? master.checked : false,
+
+        notify_buy: openOrder ? openOrder.checked : false,
+        notify_close: closeOrder ? closeOrder.checked : false,
+
+        notify_tp: tpSl ? tpSl.checked : false,
+        notify_sl: tpSl ? tpSl.checked : false,
+
+        notify_risk: risk ? risk.checked : false,
+        notify_daily_summary: daily ? daily.checked : false,
+        notify_weekly_summary: weekly ? weekly.checked : false
+    };
+}
+
+async function saveNotificationSettings(showSuccess = false) {
+    if (isLoadingSettings) return;
+
+    const settings = getSettingsFromUI();
+
+    try {
+        isSavingSettings = true;
+
+        const response = await apiFetch(
+            '/api/notification-settings',
+            {
+                method: 'PATCH',
+                body: JSON.stringify(settings)
+            }
+        );
+
+        if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+            window.location.href = 'login.php';
+            return;
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || `HTTP ${response.status}`
+            );
+        }
+
+        notificationSettings = data.settings || settings;
+
+        if (showSuccess) {
+            alert('บันทึกการตั้งค่าเรียบร้อยแล้ว ✓');
+        }
+
+        console.log(
+            '[Notifications] Settings saved:',
+            notificationSettings
+        );
+
+    } catch (error) {
+        console.error(
+            '[Notifications] Save settings failed:',
+            error
+        );
+
+        alert(
+            'บันทึกการตั้งค่าไม่สำเร็จ\n\n' +
+            error.message
+        );
+
+    } finally {
+        isSavingSettings = false;
+    }
+}
+
+function scheduleSaveNotificationSettings() {
+    clearTimeout(saveSettingsTimer);
+
+    saveSettingsTimer = setTimeout(() => {
+        saveNotificationSettings(false);
+    }, 300);
+}
+
+async function loadNotificationSettings() {
+    try {
+        isLoadingSettings = true;
+
+        const settings =
+            await fetchNotificationSettings();
+
+        if (settings) {
+            applyNotificationSettings(settings);
+        }
+
+    } catch (error) {
+        console.error(
+            '[Notifications] Load settings failed:',
+            error
+        );
+
+        // ถ้าโหลดไม่ได้ ให้ใช้ค่า HTML เดิม
+        updateMasterUI();
+
+    } finally {
+        isLoadingSettings = false;
+    }
+}
+
+/* =========================================================
    MASTER SWITCH
    ========================================================= */
 
-function toggleAllNotifications() {
+function updateMasterUI() {
     const master = document.getElementById('masterSwitch');
-    const switches = document.querySelectorAll('.notification-switch');
+    const switches =
+        document.querySelectorAll('.notification-switch');
     const label = document.getElementById('masterLabel');
 
     if (!master) return;
 
     switches.forEach(item => {
         item.disabled = !master.checked;
-
-        if (!master.checked) {
-            item.checked = false;
-        }
     });
 
     if (label) {
@@ -2097,87 +2293,52 @@ function toggleAllNotifications() {
             ? 'เปิดใช้งาน'
             : 'ปิดใช้งาน';
     }
+}
 
-    saveNotificationSettings();
+function toggleAllNotifications() {
+    const master =
+        document.getElementById('masterSwitch');
+
+    const switches =
+        document.querySelectorAll('.notification-switch');
+
+    if (!master) return;
+
+    // เมื่อปิด Master ให้ปิด UI ของเหตุการณ์ทั้งหมด
+    // แต่ค่าของแต่ละ Event จะยังคงอยู่ใน Database
+    // และเปิดกลับมาได้โดยไม่ทำให้ค่าราย Event หาย
+    updateMasterUI();
+
+    scheduleSaveNotificationSettings();
 }
 
 /* =========================================================
-   SAVE SETTINGS
+   INDIVIDUAL SWITCHES
    ========================================================= */
 
-function saveNotificationSettings() {
-    const master = document.getElementById('masterSwitch');
-
-    const switches = Array.from(
-        document.querySelectorAll('.notification-switch')
-    );
-
-    const settings = {
-        master: master ? master.checked : false,
-        events: switches.map(item => item.checked)
-    };
-
-    localStorage.setItem(
-        'notification_settings',
-        JSON.stringify(settings)
-    );
-}
-
-function loadNotificationSettings() {
-    const raw = localStorage.getItem('notification_settings');
-
-    if (!raw) {
-        toggleAllNotifications();
-        return;
-    }
-
-    try {
-        const settings = JSON.parse(raw);
-        const master = document.getElementById('masterSwitch');
-        const switches = document.querySelectorAll('.notification-switch');
-
-        if (master && typeof settings.master === 'boolean') {
-            master.checked = settings.master;
-        }
-
-        switches.forEach((item, index) => {
-            if (Array.isArray(settings.events) &&
-                typeof settings.events[index] === 'boolean') {
-                item.checked = settings.events[index];
-            }
-        });
-
-        const label = document.getElementById('masterLabel');
-
-        switches.forEach(item => {
-            item.disabled = !master.checked;
-        });
-
-        if (label) {
-            label.textContent = master.checked
-                ? 'เปิดใช้งาน'
-                : 'ปิดใช้งาน';
-        }
-    } catch (error) {
-        console.error('Cannot load notification settings:', error);
-        toggleAllNotifications();
-    }
-}
-
-/* Save individual switch changes */
 document.addEventListener('change', function (event) {
-    if (event.target.classList.contains('notification-switch')) {
-        const master = document.getElementById('masterSwitch');
+    if (
+        event.target.classList &&
+        event.target.classList.contains('notification-switch')
+    ) {
+        const master =
+            document.getElementById('masterSwitch');
 
-        const allOff = Array.from(
-            document.querySelectorAll('.notification-switch')
-        ).every(item => !item.checked);
+        const switches =
+            Array.from(
+                document.querySelectorAll('.notification-switch')
+            );
+
+        const allOff =
+            switches.length > 0 &&
+            switches.every(item => !item.checked);
 
         if (master && allOff) {
             master.checked = false;
         }
 
-        saveNotificationSettings();
+        updateMasterUI();
+        scheduleSaveNotificationSettings();
     }
 });
 
@@ -2185,33 +2346,124 @@ document.addEventListener('change', function (event) {
    CHAT ID
    ========================================================= */
 
-function loadChatId() {
-    const chatId = localStorage.getItem('telegram_chat_id');
+function loadChatIdFromProfile(profile) {
+    const input = document.getElementById('chatId');
 
-    if (chatId) {
-        document.getElementById('chatId').value = chatId;
+    if (!input || !profile) return;
+
+    if (profile.telegram_chat_id !== undefined &&
+        profile.telegram_chat_id !== null) {
+        input.value = profile.telegram_chat_id;
     }
 }
 
-function saveChatId() {
-    const input = document.getElementById('chatId');
-    const chatId = input.value.trim();
+async function loadChatId() {
+    try {
+        const response =
+            await apiFetch('/api/profile');
+
+        if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            window.location.href = 'login.php';
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const profile =
+            data.user || data.profile || data;
+
+        loadChatIdFromProfile(profile);
+
+    } catch (error) {
+        console.error(
+            '[Notifications] Load Chat ID failed:',
+            error
+        );
+
+        // fallback สำหรับข้อมูลเก่าที่เคยเก็บไว้ใน browser
+        const oldChatId =
+            localStorage.getItem('telegram_chat_id');
+
+        const input =
+            document.getElementById('chatId');
+
+        if (oldChatId && input && !input.value) {
+            input.value = oldChatId;
+        }
+    }
+}
+
+async function saveChatId() {
+    const input =
+        document.getElementById('chatId');
+
+    const chatId =
+        input ? input.value.trim() : '';
 
     if (!chatId) {
         alert('กรุณากรอก Telegram Chat ID');
-        input.focus();
+
+        if (input) input.focus();
+
         return;
     }
 
     if (!/^-?\d+$/.test(chatId)) {
         alert('Telegram Chat ID ต้องเป็นตัวเลข');
-        input.focus();
+
+        if (input) input.focus();
+
         return;
     }
 
-    localStorage.setItem('telegram_chat_id', chatId);
+    try {
+        const response =
+            await apiFetch('/api/profile', {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    telegram_chat_id: chatId
+                })
+            });
 
-    alert('บันทึก Telegram Chat ID เรียบร้อยแล้ว');
+        if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+            window.location.href = 'login.php';
+            return;
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || `HTTP ${response.status}`
+            );
+        }
+
+        localStorage.setItem(
+            'telegram_chat_id',
+            chatId
+        );
+
+        alert(
+            'บันทึก Telegram Chat ID ลงฐานข้อมูลเรียบร้อยแล้ว ✓'
+        );
+
+    } catch (error) {
+        console.error(
+            '[Notifications] Save Chat ID failed:',
+            error
+        );
+
+        alert(
+            'บันทึก Telegram Chat ID ไม่สำเร็จ\n\n' +
+            error.message
+        );
+    }
 }
 
 /* =========================================================
@@ -2219,8 +2471,11 @@ function saveChatId() {
    ========================================================= */
 
 async function testTelegram() {
-    const button = document.getElementById('testConnectionButton');
-    const originalText = button ? button.textContent : '';
+    const button =
+        document.getElementById('testConnectionButton');
+
+    const originalText =
+        button ? button.textContent : '';
 
     if (button) {
         button.disabled = true;
@@ -2231,16 +2486,24 @@ async function testTelegram() {
         const token = getToken();
 
         if (!token) {
-            alert('ไม่พบ Session กรุณาเข้าสู่ระบบใหม่');
+            alert(
+                'ไม่พบ Session กรุณาเข้าสู่ระบบใหม่'
+            );
+
             window.location.href = 'login.php';
             return;
         }
 
-        const response = await apiFetch('/api/notifications');
+        const response =
+            await apiFetch('/api/notifications');
 
         if (response.status === 401) {
             localStorage.removeItem(TOKEN_KEY);
-            alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+
+            alert(
+                'Session หมดอายุ กรุณาเข้าสู่ระบบใหม่'
+            );
+
             window.location.href = 'login.php';
             return;
         }
@@ -2254,9 +2517,15 @@ async function testTelegram() {
             'ระบบแจ้งเตือนเชื่อมต่อแล้ว'
         );
 
-        alert('เชื่อมต่อระบบแจ้งเตือนสำเร็จ ✓');
+        alert(
+            'เชื่อมต่อระบบแจ้งเตือนสำเร็จ ✓'
+        );
+
     } catch (error) {
-        console.error('Notification connection test failed:', error);
+        console.error(
+            'Notification connection test failed:',
+            error
+        );
 
         setConnectionStatus(
             false,
@@ -2267,18 +2536,31 @@ async function testTelegram() {
             'ไม่สามารถเชื่อมต่อระบบแจ้งเตือนได้\n' +
             'กรุณาตรวจสอบว่า Node.js Backend กำลังทำงานอยู่'
         );
+
     } finally {
         if (button) {
             button.disabled = false;
-            button.textContent = originalText || 'ทดสอบการเชื่อมต่อ';
+            button.textContent =
+                originalText ||
+                'ทดสอบการเชื่อมต่อ';
         }
     }
 }
 
-function setConnectionStatus(connected, text) {
-    const status = document.getElementById('telegramConnectionStatus');
-    const dot = document.getElementById('connectionDot');
-    const label = document.getElementById('connectionText');
+function setConnectionStatus(
+    connected,
+    text
+) {
+    const status =
+        document.getElementById(
+            'telegramConnectionStatus'
+        );
+
+    const dot =
+        document.getElementById('connectionDot');
+
+    const label =
+        document.getElementById('connectionText');
 
     if (label) {
         label.textContent = text;
@@ -2306,14 +2588,20 @@ function setConnectionStatus(connected, text) {
    ========================================================= */
 
 async function sendTestMessage() {
-    const button = document.querySelector('.test-button');
-    const originalText = button ? button.textContent : '';
+    const button =
+        document.querySelector('.test-button');
+
+    const originalText =
+        button ? button.textContent : '';
 
     try {
         const token = getToken();
 
         if (!token) {
-            alert('ไม่พบ Session กรุณาเข้าสู่ระบบใหม่');
+            alert(
+                'ไม่พบ Session กรุณาเข้าสู่ระบบใหม่'
+            );
+
             window.location.href = 'login.php';
             return;
         }
@@ -2323,27 +2611,39 @@ async function sendTestMessage() {
             button.textContent = 'กำลังส่ง...';
         }
 
-        const response = await apiFetch('/api/notifications/test', {
-            method: 'POST',
-            body: JSON.stringify({})
-        });
+        const response =
+            await apiFetch(
+                '/api/notifications/test',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({})
+                }
+            );
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
         if (response.status === 401) {
             localStorage.removeItem(TOKEN_KEY);
-            alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+
+            alert(
+                'Session หมดอายุ กรุณาเข้าสู่ระบบใหม่'
+            );
+
             window.location.href = 'login.php';
             return;
         }
 
         if (!response.ok) {
             throw new Error(
-                data.error || 'ไม่สามารถส่งข้อความทดสอบได้'
+                data.error ||
+                'ไม่สามารถส่งข้อความทดสอบได้'
             );
         }
 
-        alert('ส่งข้อความทดสอบไปยัง Telegram สำเร็จ ✓');
+        alert(
+            'ส่งข้อความทดสอบไปยัง Telegram สำเร็จ ✓'
+        );
 
     } catch (error) {
         console.error(
@@ -2360,21 +2660,27 @@ async function sendTestMessage() {
         if (button) {
             button.disabled = false;
             button.textContent =
-                originalText || 'ส่งข้อความทดสอบ';
+                originalText ||
+                'ส่งข้อความทดสอบ';
         }
     }
 }
+
 /* =========================================================
    LOAD RECENT NOTIFICATIONS
    ========================================================= */
 
 async function loadRecentNotifications() {
-    const container = document.getElementById('recentNotifications');
+    const container =
+        document.getElementById(
+            'recentNotifications'
+        );
 
     if (!container) return;
 
     try {
-        const response = await apiFetch('/api/notifications');
+        const response =
+            await apiFetch('/api/notifications');
 
         if (response.status === 401) {
             localStorage.removeItem(TOKEN_KEY);
@@ -2386,23 +2692,33 @@ async function loadRecentNotifications() {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
-        const notifications = Array.isArray(data)
-            ? data
-            : Array.isArray(data.notifications)
-                ? data.notifications
-                : [];
+        const notifications =
+            Array.isArray(data)
+                ? data
+                : Array.isArray(data.notifications)
+                    ? data.notifications
+                    : [];
 
-        renderRecentNotifications(notifications);
+        renderRecentNotifications(
+            notifications
+        );
+
     } catch (error) {
-        console.error('Load notifications failed:', error);
+        console.error(
+            'Load notifications failed:',
+            error
+        );
 
         container.innerHTML = `
             <div class="recent-item">
                 <div class="recent-icon warning">!</div>
                 <div>
-                    <div class="recent-name">ไม่สามารถโหลดการแจ้งเตือนได้</div>
+                    <div class="recent-name">
+                        ไม่สามารถโหลดการแจ้งเตือนได้
+                    </div>
                     <div class="recent-message">
                         ตรวจสอบการเชื่อมต่อกับ Backend
                     </div>
@@ -2412,8 +2728,13 @@ async function loadRecentNotifications() {
     }
 }
 
-function renderRecentNotifications(notifications) {
-    const container = document.getElementById('recentNotifications');
+function renderRecentNotifications(
+    notifications
+) {
+    const container =
+        document.getElementById(
+            'recentNotifications'
+        );
 
     if (!container) return;
 
@@ -2422,92 +2743,101 @@ function renderRecentNotifications(notifications) {
             <div class="recent-item">
                 <div class="recent-icon">i</div>
                 <div>
-                    <div class="recent-name">ยังไม่มีการแจ้งเตือน</div>
+                    <div class="recent-name">
+                        ยังไม่มีการแจ้งเตือน
+                    </div>
                     <div class="recent-message">
                         เมื่อระบบมีการแจ้งเตือน รายการจะแสดงที่นี่
                     </div>
                 </div>
             </div>
         `;
+
         return;
     }
 
-    const latest = notifications.slice(0, 5);
+    const latest =
+        notifications.slice(0, 5);
 
-    container.innerHTML = latest.map(item => {
-        const title =
-            item.title ||
-            item.name ||
-            item.event ||
-            item.type ||
-            'การแจ้งเตือน';
+    container.innerHTML =
+        latest.map(item => {
+            const title =
+                item.title ||
+                item.name ||
+                item.event ||
+                item.type ||
+                'การแจ้งเตือน';
 
-        const message =
-            item.message ||
-            item.description ||
-            item.text ||
-            '';
+            const message =
+                item.message ||
+                item.description ||
+                item.text ||
+                '';
 
-        const time =
-            item.created_at ||
-            item.createdAt ||
-            item.timestamp ||
-            item.time ||
-            '';
+            const time =
+                item.created_at ||
+                item.createdAt ||
+                item.timestamp ||
+                item.time ||
+                '';
 
-        const lower = `${title} ${message}`.toLowerCase();
+            const lower =
+                `${title} ${message}`.toLowerCase();
 
-        let icon = 'i';
-        let iconClass = '';
+            let icon = 'i';
+            let iconClass = '';
 
-        if (
-            lower.includes('loss') ||
-            lower.includes('sl') ||
-            lower.includes('แพ้') ||
-            lower.includes('ขาดทุน')
-        ) {
-            icon = '↓';
-            iconClass = 'loss';
-        } else if (
-            lower.includes('risk') ||
-            lower.includes('drawdown') ||
-            lower.includes('เสี่ยง')
-        ) {
-            icon = '!';
-            iconClass = 'warning';
-        } else if (
-            lower.includes('profit') ||
-            lower.includes('tp') ||
-            lower.includes('ชนะ') ||
-            lower.includes('กำไร')
-        ) {
-            icon = '✓';
-        } else if (
-            lower.includes('open') ||
-            lower.includes('เปิด')
-        ) {
-            icon = '↑';
-        }
+            if (
+                lower.includes('loss') ||
+                lower.includes('sl') ||
+                lower.includes('แพ้') ||
+                lower.includes('ขาดทุน')
+            ) {
+                icon = '↓';
+                iconClass = 'loss';
 
-        return `
-            <div class="recent-item">
-                <div class="recent-icon ${iconClass}">${escapeHtml(icon)}</div>
-                <div>
-                    <div class="recent-name">
-                        ${escapeHtml(title)}
+            } else if (
+                lower.includes('risk') ||
+                lower.includes('drawdown') ||
+                lower.includes('เสี่ยง')
+            ) {
+                icon = '!';
+                iconClass = 'warning';
+
+            } else if (
+                lower.includes('profit') ||
+                lower.includes('tp') ||
+                lower.includes('ชนะ') ||
+                lower.includes('กำไร')
+            ) {
+                icon = '✓';
+
+            } else if (
+                lower.includes('open') ||
+                lower.includes('เปิด')
+            ) {
+                icon = '↑';
+            }
+
+            return `
+                <div class="recent-item">
+                    <div class="recent-icon ${iconClass}">
+                        ${escapeHtml(icon)}
                     </div>
-
-                    <div class="recent-message">
-                        ${escapeHtml(message)}
-                    </div>
-
-                    <div class="recent-time">
-                        ${formatNotificationTime(time)}
+                    <div>
+                        <div class="recent-name">
+                            ${escapeHtml(title)}
+                        </div>
+                        <div class="recent-message">
+                            ${escapeHtml(message)}
+                        </div>
+                        <div class="recent-time">
+                            ${formatNotificationTime(time)}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
 }
 
 /* =========================================================
@@ -2516,7 +2846,8 @@ function renderRecentNotifications(notifications) {
 
 async function loadProfile() {
     try {
-        const response = await apiFetch('/api/profile');
+        const response =
+            await apiFetch('/api/profile');
 
         if (response.status === 401) {
             localStorage.removeItem(TOKEN_KEY);
@@ -2526,8 +2857,13 @@ async function loadProfile() {
 
         if (!response.ok) return;
 
-        const data = await response.json();
-        const profile = data.user || data.profile || data;
+        const data =
+            await response.json();
+
+        const profile =
+            data.user ||
+            data.profile ||
+            data;
 
         const name =
             profile.name ||
@@ -2536,17 +2872,28 @@ async function loadProfile() {
             profile.email ||
             'ผู้ใช้งาน';
 
-        document.querySelectorAll('.welcome').forEach(element => {
-            element.textContent = `ยินดีต้อนรับ, ${name}`;
-        });
+        document
+            .querySelectorAll('.welcome')
+            .forEach(element => {
+                element.textContent =
+                    `ยินดีต้อนรับ, ${name}`;
+            });
 
-        const avatar = document.querySelector('.avatar');
+        const avatar =
+            document.querySelector('.avatar');
 
         if (avatar) {
-            avatar.textContent = name.charAt(0).toUpperCase();
+            avatar.textContent =
+                name.charAt(0).toUpperCase();
         }
+
+        loadChatIdFromProfile(profile);
+
     } catch (error) {
-        console.error('Load profile failed:', error);
+        console.error(
+            'Load profile failed:',
+            error
+        );
     }
 }
 
@@ -2554,17 +2901,28 @@ async function loadProfile() {
    LOGOUT
    ========================================================= */
 
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.logout a').forEach(link => {
-        link.addEventListener('click', function (event) {
-            event.preventDefault();
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+        document
+            .querySelectorAll('.logout a')
+            .forEach(link => {
+                link.addEventListener(
+                    'click',
+                    function (event) {
+                        event.preventDefault();
 
-            localStorage.removeItem(TOKEN_KEY);
+                        localStorage.removeItem(
+                            TOKEN_KEY
+                        );
 
-            window.location.href = 'login.php';
-        });
-    });
-});
+                        window.location.href =
+                            'login.php';
+                    }
+                );
+            });
+    }
+);
 
 /* =========================================================
    HELPERS
@@ -2588,10 +2946,13 @@ function formatNotificationTime(value) {
         return escapeHtml(value);
     }
 
-    return date.toLocaleString('th-TH', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-    });
+    return date.toLocaleString(
+        'th-TH',
+        {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+        }
+    );
 }
 
 /* =========================================================
@@ -2604,17 +2965,19 @@ async function initializeNotificationPage() {
         return;
     }
 
-    loadChatId();
-    loadNotificationSettings();
-    loadProfile();
-    loadRecentNotifications();
+    // โหลด Profile + Chat ID
+    await loadProfile();
 
-    /*
-     * ตรวจสอบว่า Backend API ใช้งานได้
-     * ไม่แสดงข้อความปลอมว่า Telegram connected
-     */
+    // โหลด Settings จาก Supabase
+    await loadNotificationSettings();
+
+    // โหลดรายการแจ้งเตือนล่าสุด
+    await loadRecentNotifications();
+
+    // ตรวจสอบ Backend API
     try {
-        const response = await apiFetch('/api/notifications');
+        const response =
+            await apiFetch('/api/notifications');
 
         if (response.status === 401) {
             localStorage.removeItem(TOKEN_KEY);
@@ -2633,8 +2996,12 @@ async function initializeNotificationPage() {
                 'ระบบแจ้งเตือนยังไม่พร้อม'
             );
         }
+
     } catch (error) {
-        console.error('Initial notification API check failed:', error);
+        console.error(
+            'Initial notification API check failed:',
+            error
+        );
 
         setConnectionStatus(
             false,
