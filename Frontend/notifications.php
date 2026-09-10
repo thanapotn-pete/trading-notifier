@@ -2306,33 +2306,64 @@ function setConnectionStatus(connected, text) {
    ========================================================= */
 
 async function sendTestMessage() {
-    const chatId = document.getElementById('chatId').value.trim();
+    const button = document.querySelector('.test-button');
+    const originalText = button ? button.textContent : '';
 
-    if (!chatId) {
-        alert('กรุณากรอก Telegram Chat ID ก่อน');
-        document.getElementById('chatId').focus();
-        return;
+    try {
+        const token = getToken();
+
+        if (!token) {
+            alert('ไม่พบ Session กรุณาเข้าสู่ระบบใหม่');
+            window.location.href = 'login.php';
+            return;
+        }
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'กำลังส่ง...';
+        }
+
+        const response = await apiFetch('/api/notifications/test', {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+
+        const data = await response.json();
+
+        if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+            window.location.href = 'login.php';
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || 'ไม่สามารถส่งข้อความทดสอบได้'
+            );
+        }
+
+        alert('ส่งข้อความทดสอบไปยัง Telegram สำเร็จ ✓');
+
+    } catch (error) {
+        console.error(
+            '[Notifications] Test Telegram Error:',
+            error
+        );
+
+        alert(
+            'ส่งข้อความทดสอบไม่สำเร็จ\n\n' +
+            error.message
+        );
+
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent =
+                originalText || 'ส่งข้อความทดสอบ';
+        }
     }
-
-    if (!/^-?\d+$/.test(chatId)) {
-        alert('Telegram Chat ID ต้องเป็นตัวเลข');
-        return;
-    }
-
-    /*
-     * ปัจจุบัน Backend มี GET /api/notifications
-     * แต่ยังไม่มี endpoint สำหรับส่งข้อความทดสอบโดยตรง
-     * จึงยังไม่ยิง POST ปลอมไปหา API
-     */
-    localStorage.setItem('telegram_chat_id', chatId);
-
-    alert(
-        'บันทึก Chat ID แล้ว ✓\n\n' +
-        'ตอนนี้ Backend ยังไม่มี API สำหรับส่งข้อความทดสอบโดยตรง\n' +
-        'จึงยังไม่สามารถยืนยันการส่งข้อความไป Telegram จากหน้านี้ได้'
-    );
 }
-
 /* =========================================================
    LOAD RECENT NOTIFICATIONS
    ========================================================= */

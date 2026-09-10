@@ -1,4 +1,5 @@
 const express = require('express');
+const { notify } = require('./notifications');
 
 const {
   findUserBySecret,
@@ -421,6 +422,54 @@ router.get('/notifications', async (req, res) => {
   } catch (err) {
     console.error(
       '[API /notifications] Error:',
+      err.message
+    );
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+// =====================================================
+// TEST TELEGRAM
+// =====================================================
+
+router.post('/notifications/test', async (req, res) => {
+  try {
+    const chatId = req.user.telegram_chat_id;
+
+    if (!chatId) {
+      return res.status(400).json({
+        error: 'Telegram Chat ID is not configured'
+      });
+    }
+
+    const message = [
+      '<b>TradeAnalytics Test</b>',
+      '',
+      'Telegram notification is working.',
+      `User: ${req.user.name || req.user.email}`,
+      `Time: ${new Date().toLocaleString('th-TH', {
+        timeZone: process.env.TIMEZONE || 'Asia/Bangkok'
+      })}`
+    ].join('\n');
+
+    await notify(message, chatId);
+
+    console.log(
+      `[API /notifications/test] Telegram sent to user: ${req.user.id}`
+    );
+
+    res.json({
+      ok: true,
+      message: 'Test Telegram message sent successfully'
+    });
+
+  } catch (err) {
+    console.error(
+      '[API /notifications/test] Error:',
       err.message
     );
 
