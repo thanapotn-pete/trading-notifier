@@ -282,7 +282,7 @@ function shouldNotifyTrade(
   }
 
   // ---------------------------------------------------
-  // Check Maximum Drawdown
+  // Check Risk / Maximum Drawdown
   // ---------------------------------------------------
 
   const drawdown =
@@ -291,12 +291,24 @@ function shouldNotifyTrade(
       ? Number(trade.drawdown)
       : null;
 
+  // ถ้าเป็น Trade ที่มี Drawdown
+  // และ Risk Alert ถูกปิด → ไม่ต้องแจ้ง
+  if (
+    drawdown !== null &&
+    settings.notify_risk === false
+  ) {
+    return false;
+  }
+
+  // ถ้ากำหนด Maximum Drawdown ไว้
   if (
     settings.max_drawdown !== null &&
     settings.max_drawdown !== undefined &&
     drawdown !== null &&
     Number.isFinite(drawdown)
   ) {
+    // แจ้งเตือนเมื่อ Drawdown
+    // มากกว่าหรือเท่ากับค่าที่กำหนด
     if (
       drawdown <
       Number(settings.max_drawdown)

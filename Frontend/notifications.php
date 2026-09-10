@@ -583,6 +583,79 @@
 
 
         /* =====================================================
+           RISK THRESHOLD
+        ===================================================== */
+
+        .risk-threshold {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 2px 17px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .risk-threshold-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .risk-threshold-label {
+            font-size: 13px !important;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .risk-threshold-description {
+            margin-top: 4px;
+            font-size: 11px !important;
+            line-height: 1.5;
+            color: #8a9894;
+        }
+
+        .risk-threshold-input {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .risk-threshold-input input {
+            width: 90px;
+            height: 38px;
+            border: 1px solid #dbe4e1;
+            border-radius: 8px;
+            padding: 0 10px;
+            color: #334155;
+            font-size: 13px !important;
+            text-align: right;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .risk-threshold-input input:focus {
+            border-color: #087f68;
+            box-shadow: 0 0 0 3px rgba(8, 127, 104, 0.07);
+        }
+
+        .risk-threshold-unit {
+            font-size: 13px !important;
+            font-weight: 600;
+            color: #64746f;
+        }
+
+        @media (max-width: 700px) {
+            .risk-threshold {
+                align-items: flex-start;
+            }
+
+            .risk-threshold-input input {
+                width: 78px;
+            }
+        }
+
+
+        /* =====================================================
            CHAT ID
         ===================================================== */
 
@@ -1592,6 +1665,36 @@
                     </div>
 
 
+                    <!-- RISK THRESHOLD -->
+
+                    <div class="risk-threshold">
+
+                        <div class="risk-threshold-left">
+                            <div class="risk-threshold-label">
+                                Maximum Drawdown
+                            </div>
+
+                            <div class="risk-threshold-description">
+                                แจ้งเตือนเมื่อ Drawdown ถึงหรือเกินค่าที่กำหนด
+                            </div>
+                        </div>
+
+                        <div class="risk-threshold-input">
+                            <input
+                                type="number"
+                                id="maxDrawdownInput"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value="10"
+                                placeholder="10"
+                            >
+                            <span class="risk-threshold-unit">%</span>
+                        </div>
+
+                    </div>
+
+
 
                     <!-- DAILY SUMMARY -->
 
@@ -2119,6 +2222,7 @@ function applyNotificationSettings(settings) {
     const closeOrder = document.getElementById('closeOrderSwitch');
     const tpSl = document.getElementById('tpSlSwitch');
     const risk = document.getElementById('riskSwitch');
+    const maxDrawdownInput = document.getElementById('maxDrawdownInput');
     const daily = document.getElementById('dailySummarySwitch');
     const weekly = document.getElementById('weeklySummarySwitch');
 
@@ -2150,6 +2254,15 @@ function applyNotificationSettings(settings) {
         risk.checked = settings.notify_risk !== false;
     }
 
+    if (maxDrawdownInput) {
+        maxDrawdownInput.value =
+            settings.max_drawdown !== null &&
+            settings.max_drawdown !== undefined &&
+            settings.max_drawdown !== ''
+                ? settings.max_drawdown
+                : 10;
+    }
+
     if (daily) {
         daily.checked = settings.notify_daily_summary !== false;
     }
@@ -2167,6 +2280,7 @@ function getSettingsFromUI() {
     const closeOrder = document.getElementById('closeOrderSwitch');
     const tpSl = document.getElementById('tpSlSwitch');
     const risk = document.getElementById('riskSwitch');
+    const maxDrawdownInput = document.getElementById('maxDrawdownInput');
     const daily = document.getElementById('dailySummarySwitch');
     const weekly = document.getElementById('weeklySummarySwitch');
 
@@ -2182,6 +2296,10 @@ function getSettingsFromUI() {
         notify_sl: tpSl ? tpSl.checked : false,
 
         notify_risk: risk ? risk.checked : false,
+        max_drawdown:
+            maxDrawdownInput && maxDrawdownInput.value.trim() !== ''
+                ? Number(maxDrawdownInput.value)
+                : null,
         notify_daily_summary: daily ? daily.checked : false,
         notify_weekly_summary: weekly ? weekly.checked : false
     };
@@ -2191,6 +2309,15 @@ async function saveNotificationSettings(showSuccess = false) {
     if (isLoadingSettings) return;
 
     const settings = getSettingsFromUI();
+
+    if (settings.max_drawdown !== null) {
+        if (!Number.isFinite(settings.max_drawdown) ||
+            settings.max_drawdown < 0 ||
+            settings.max_drawdown > 100) {
+            alert('Maximum Drawdown ต้องอยู่ระหว่าง 0 ถึง 100%');
+            return;
+        }
+    }
 
     try {
         isSavingSettings = true;
@@ -2286,6 +2413,8 @@ function updateMasterUI() {
     const master = document.getElementById('masterSwitch');
     const switches =
         document.querySelectorAll('.notification-switch');
+    const risk = document.getElementById('riskSwitch');
+    const maxDrawdownInput = document.getElementById('maxDrawdownInput');
     const label = document.getElementById('masterLabel');
 
     if (!master) return;
@@ -2293,6 +2422,13 @@ function updateMasterUI() {
     switches.forEach(item => {
         item.disabled = !master.checked;
     });
+
+    if (maxDrawdownInput) {
+        maxDrawdownInput.disabled =
+            !master.checked ||
+            !risk ||
+            !risk.checked;
+    }
 
     if (label) {
         label.textContent = master.checked
@@ -2347,6 +2483,19 @@ document.addEventListener('change', function (event) {
         scheduleSaveNotificationSettings();
     }
 });
+
+/* =========================================================
+   RISK THRESHOLD
+   ========================================================= */
+
+const maxDrawdownInput = document.getElementById('maxDrawdownInput');
+
+if (maxDrawdownInput) {
+    maxDrawdownInput.addEventListener('change', function () {
+        saveNotificationSettings(true);
+    });
+}
+
 
 /* =========================================================
    CHAT ID
