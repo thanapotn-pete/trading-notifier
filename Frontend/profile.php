@@ -1612,114 +1612,24 @@
                     </div>
 
 
+<!-- SYSTEM SETTINGS INFO -->
 
-                    <!-- TIMEZONE -->
+<div class="preference-row">
 
-                    <div class="preference-row">
+    <div>
 
-                        <div>
+        <div class="preference-name">
+            การตั้งค่าระบบ
+        </div>
 
-                            <div class="preference-name">
-                                Timezone
-                            </div>
+        <div class="preference-description">
+            ระบบใช้การตั้งค่ามาตรฐานสำหรับการแสดงผลข้อมูลการเทรด
+            โดยผู้ใช้งานสามารถจัดการการแจ้งเตือนและข้อมูลบัญชีได้จากเมนูที่เกี่ยวข้อง
+        </div>
 
-                            <div class="preference-description">
-                                เขตเวลาที่ใช้แสดงวันที่และเวลา
-                            </div>
+    </div>
 
-                        </div>
-
-
-                        <select class="preference-select">
-
-                            <option selected>
-                                Asia/Bangkok
-                            </option>
-
-                            <option>
-                                Asia/Tokyo
-                            </option>
-
-                            <option>
-                                UTC
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-
-                    <!-- CURRENCY -->
-
-                    <div class="preference-row">
-
-                        <div>
-
-                            <div class="preference-name">
-                                สกุลเงิน
-                            </div>
-
-                            <div class="preference-description">
-                                สกุลเงินที่ใช้แสดงกำไรและขาดทุน
-                            </div>
-
-                        </div>
-
-
-                        <select class="preference-select">
-
-                            <option selected>
-                                USD ($)
-                            </option>
-
-                            <option>
-                                THB (฿)
-                            </option>
-
-                            <option>
-                                EUR (€)
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-
-                    <!-- LANGUAGE -->
-
-                    <div class="preference-row">
-
-                        <div>
-
-                            <div class="preference-name">
-                                ภาษา
-                            </div>
-
-                            <div class="preference-description">
-                                ภาษาที่ใช้ในหน้าเว็บไซต์
-                            </div>
-
-                        </div>
-
-
-                        <select class="preference-select">
-
-                            <option selected>
-                                ภาษาไทย
-                            </option>
-
-                            <option>
-                                English
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-                </div>
+</div>
 
 
 
