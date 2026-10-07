@@ -911,21 +911,34 @@ $winRate = 0;
                 <!-- NOTIFICATION -->
 
                 <button
-                    type="button"
-                    class="icon-button"
-                    aria-label="การแจ้งเตือน"
-                >
-
-                    <i class="bi bi-bell"></i>
-
-                </button>
+    type="button"
+    class="icon-button"
+    aria-label="การแจ้งเตือน"
+    onclick="window.location.href='notifications.php'"
+>
+    <i class="bi bi-bell"></i>
+</button>
 
 
                 <!-- USER -->
 
-                <div class="avatar">
-                    U
-                </div>
+                <div class="profile-menu">
+    <div class="avatar" id="userAvatar">
+        U
+    </div>
+
+    <div class="profile-dropdown" id="profileDropdown">
+        <a href="profile.php">
+            <i class="bi bi-person"></i>
+            โปรไฟล์
+        </a>
+
+        <a href="#" id="avatarLogout">
+            <i class="bi bi-box-arrow-right"></i>
+            ออกจากระบบ
+        </a>
+    </div>
+</div>
 
 
             </div>
@@ -1788,6 +1801,11 @@ async function loadTrades() {
                 if (welcomeUser) {
                     welcomeUser.textContent = `ยินดีต้อนรับ, ${name}`;
                 }
+                const userAvatar = document.getElementById('userAvatar');
+
+if (userAvatar) {
+    userAvatar.textContent = name.charAt(0).toUpperCase();
+}
             }
         } catch (profileError) {
             console.warn('[Trade History] Failed to load profile:', profileError);
@@ -2321,6 +2339,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     loadTrades();
+    // PROFILE DROPDOWN
+const userAvatar = document.getElementById('userAvatar');
+const profileDropdown = document.getElementById('profileDropdown');
+const avatarLogout = document.getElementById('avatarLogout');
+
+userAvatar?.addEventListener('click', function () {
+    profileDropdown?.classList.toggle('show');
+});
+
+avatarLogout?.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    localStorage.removeItem('auth_token');
+    window.location.href = 'login.php';
+});
+
+document.addEventListener('click', function (e) {
+    if (
+        profileDropdown &&
+        userAvatar &&
+        !userAvatar.contains(e.target) &&
+        !profileDropdown.contains(e.target)
+    ) {
+        profileDropdown.classList.remove('show');
+    }
+});
 });
 </script>
 

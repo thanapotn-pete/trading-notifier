@@ -11,7 +11,7 @@
 
 
     <!-- ================= GOOGLE FONT ================= -->
-
+    <!-- โหลดฟอนต์ IBM Plex Sans Thai -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
 
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +23,7 @@
 
 
     <!-- ================= BOOTSTRAP 5 ================= -->
-
+    <!-- โหลด CSS ของ Bootstrap 5 -->
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         rel="stylesheet"
@@ -31,7 +31,7 @@
 
 
     <!-- ================= BOOTSTRAP ICONS ================= -->
-
+    <!-- โหลดชุดไอคอน Bootstrap Icons -->
     <link
         rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
@@ -39,7 +39,7 @@
 
 
     <!-- ================= CSS ของเรา ================= -->
-
+    <!-- โหลดไฟล์สไตล์ CSS หลักของระบบ -->
     <link rel="stylesheet" href="css/style.css">
 
 
@@ -52,12 +52,12 @@
 
 
     <!-- ================= SIDEBAR ================= -->
-
+    <!-- แถบเมนูด้านข้างระบบ -->
     <aside class="sidebar">
 
 
         <!-- LOGO -->
-
+        <!-- ส่วนแสดงโลโก้แอป -->
         <div class="logo">
 
             <i class="bi bi-graph-up-arrow"></i>
@@ -68,12 +68,12 @@
 
 
         <!-- MENU -->
-
+        <!-- รายการเมนูนำทางในระบบ -->
         <div class="menu-section">
 
 
             <!-- Dashboard -->
-
+            <!-- เมนูหน้า Dashboard (หน้าปัจจุบัน) -->
             <a href="dashboard.php" class="menu-item active">
 
                 <i class="bi bi-grid"></i>
@@ -84,7 +84,7 @@
 
 
             <!-- Trade History -->
-
+            <!-- เมนูไปหน้าประวัติการเทรด -->
             <a href="trade-history.php" class="menu-item">
 
                 <i class="bi bi-clock-history"></i>
@@ -95,7 +95,7 @@
 
 
             <!-- Statistics -->
-
+            <!-- เมนูไปหน้าสถิติการเทรด -->
             <a href="statistics.php" class="menu-item">
 
                 <i class="bi bi-bar-chart"></i>
@@ -106,7 +106,7 @@
 
 
             <!-- Reports -->
-
+            <!-- เมนูไปหน้ารายงาน -->
             <a href="reports.php" class="menu-item">
 
                 <i class="bi bi-file-earmark-text"></i>
@@ -117,14 +117,14 @@
 
 
             <!-- Setting -->
-
+            <!-- หัวข้อการตั้งค่า -->
             <div class="menu-title">
                 การตั้งค่า
             </div>
 
 
             <!-- Notifications -->
-
+            <!-- เมนูตั้งค่าการแจ้งเตือน Telegram -->
             <a href="notifications.php" class="menu-item">
 
                 <i class="bi bi-telegram"></i>
@@ -135,7 +135,7 @@
 
 
             <!-- Profile -->
-
+            <!-- เมนูจัดการบัญชีผู้ใช้งาน -->
             <a href="profile.php" class="menu-item">
 
                 <i class="bi bi-person"></i>
@@ -149,7 +149,7 @@
 
 
         <!-- LOGOUT -->
-
+        <!-- ปุ่มออกจากระบบ -->
         <div class="logout">
 
             <a href="#">
@@ -168,22 +168,24 @@
 
 
     <!-- ================= MAIN ================= -->
-
+    <!-- พื้นที่เนื้อหาหลักด้านขวา -->
     <main class="main-content">
 
 
         <!-- ================= TOPBAR ================= -->
-
+        <!-- แถบด้านบนสุดของหน้า Dashboard -->
         <header class="topbar">
 
 
             <div>
 
+                <!-- ข้อความต้อนรับผู้ใช้งาน -->
                 <div class="welcome" id="welcomeUser">
                     ยินดีต้อนรับ, ผู้ใช้งาน
                 </div>
 
 
+                <!-- หัวข้อหน้า Dashboard -->
                 <h1>
                     Dashboard
                 </h1>
@@ -192,12 +194,12 @@
 
 
             <!-- TOPBAR RIGHT -->
-
+            <!-- ส่วนแสดงสถานะและโปรไฟล์ขวาบน -->
             <div class="topbar-right">
 
 
                 <!-- MT5 STATUS -->
-
+                <!-- ป้ายแสดงสถานะการเชื่อมต่อ MetaTrader 5 -->
                 <span class="status-badge">
 
                     <span class="status-dot"></span>
@@ -208,7 +210,7 @@
 
 
                 <!-- TELEGRAM STATUS -->
-
+                <!-- ป้ายแสดงสถานะการทำงาน Telegram -->
                 <span class="status-badge">
 
                     <span class="status-dot"></span>
@@ -219,11 +221,12 @@
 
 
                 <!-- NOTIFICATION -->
-
+                <!-- ปุ่มแจ้งเตือน -->
                 <button
                     type="button"
                     class="icon-button"
                     aria-label="การแจ้งเตือน"
+                    onclick="window.location.href='notifications.php'"
                 >
 
                     <i class="bi bi-bell"></i>
@@ -232,10 +235,24 @@
 
 
                 <!-- AVATAR -->
+                <!-- เมนูโปรไฟล์และ Dropdown ขวาบน -->
+               <div class="profile-menu">
+    <div class="avatar" id="userAvatar">
+        U
+    </div>
 
-                <div class="avatar" id="userAvatar">
-                    U
-                </div>
+    <div class="profile-dropdown" id="profileDropdown">
+        <a href="profile.php">
+            <i class="bi bi-person"></i>
+            โปรไฟล์
+        </a>
+
+        <a href="#" id="avatarLogout">
+            <i class="bi bi-box-arrow-right"></i>
+            ออกจากระบบ
+        </a>
+    </div>
+</div>
 
 
             </div>
@@ -246,19 +263,20 @@
 
 
         <!-- ================= CONTENT ================= -->
-
+        <!-- เนื้อหาภายในหน้า Dashboard -->
         <section class="content">
 
 
             <!-- ===================================================== -->
             <!-- SUMMARY CARDS -->
+            <!-- ส่วนการ์ดแสดงผลสรุปตัวเลขสถิติสำคัญ -->
             <!-- ===================================================== -->
 
             <div class="row g-3">
 
 
                 <!-- ================= PROFIT ================= -->
-
+                <!-- การ์ดแสดงกำไรสุทธิ -->
                 <div class="col-md-6 col-xl-3">
 
                     <div class="stat-card">
@@ -293,7 +311,7 @@
 
 
                 <!-- ================= WIN RATE ================= -->
-
+                <!-- การ์ดแสดงอัตราการชนะ (Win Rate) -->
                 <div class="col-md-6 col-xl-3">
 
                     <div class="stat-card">
@@ -328,7 +346,7 @@
 
 
                 <!-- ================= PROFIT FACTOR ================= -->
-
+                <!-- การ์ดแสดง Profit Factor -->
                 <div class="col-md-6 col-xl-3">
 
                     <div class="stat-card">
@@ -363,7 +381,7 @@
 
 
                 <!-- ================= RISK SCORE ================= -->
-
+                <!-- การ์ดแสดงระดับความเสี่ยง (Risk Score) -->
                 <div class="col-md-6 col-xl-3">
 
                     <div class="stat-card">
@@ -402,13 +420,14 @@
 
             <!-- ===================================================== -->
             <!-- CHART + RECENT ORDERS -->
+            <!-- ส่วนกราฟ Equity Curve และรายการออเดอร์ล่าสุด -->
             <!-- ===================================================== -->
 
             <div class="row g-3 mt-1">
 
 
                 <!-- ================= EQUITY CURVE ================= -->
-
+                <!-- ส่วนแสดงกราฟเส้นแสดงผลกำไรสะสม -->
                 <div class="col-lg-8">
 
                     <div class="card-box">
@@ -421,6 +440,7 @@
                             </h2>
 
 
+                            <!-- ปุ่มเลือกช่วงเวลาดูกราฟ (1W, 1M, 3M) -->
                             <div class="period-buttons">
 
                                 <button
@@ -455,6 +475,7 @@
                         </div>
 
 
+                        <!-- พื้นที่สำหรับแสดงกราฟ Chart.js -->
                         <div class="chart-area">
 
                             <canvas id="equityChart"></canvas>
@@ -469,7 +490,7 @@
 
 
                 <!-- ================= RECENT ORDERS ================= -->
-
+                <!-- ส่วนแสดงรายการออเดอร์ล่าสุด -->
                 <div class="col-lg-4">
 
                     <div class="card-box">
@@ -482,6 +503,7 @@
                             </h2>
 
 
+                            <!-- ลิงก์ไปดูประวัติการเทรดทั้งหมด -->
                             <a href="trade-history.php">
                                 ดูทั้งหมด →
                             </a>
@@ -489,6 +511,7 @@
                         </div>
 
 
+                        <!-- รายการออเดอร์ที่จะถูกเรนเดอร์ผ่าน JS -->
                         <div class="trade-list" id="recentTrades">
 
                             <div class="text-center py-4 text-muted">
@@ -509,6 +532,7 @@
 
             <!-- ===================================================== -->
             <!-- TELEGRAM NOTIFICATION -->
+            <!-- ส่วนสถานะการแจ้งเตือน Telegram -->
             <!-- ===================================================== -->
 
             <div class="card-box mt-3">
@@ -537,7 +561,7 @@
 
 
                     <!-- ================= OPEN ORDER ================= -->
-
+                    <!-- สถานะแจ้งเตือนเปิดออเดอร์ -->
                     <div class="col-md-4">
 
                         <div class="notification-card">
@@ -564,7 +588,7 @@
 
 
                     <!-- ================= CLOSE ORDER ================= -->
-
+                    <!-- สถานะแจ้งเตือนปิดออเดอร์ -->
                     <div class="col-md-4">
 
                         <div class="notification-card">
@@ -591,7 +615,7 @@
 
 
                     <!-- ================= RISK ALERT ================= -->
-
+                    <!-- สถานะแจ้งเตือนความเสี่ยง Risk Alert -->
                     <div class="col-md-4">
 
                         <div class="notification-card">
@@ -633,7 +657,7 @@
 
 
 <!-- ================= CHART.JS ================= -->
-
+<!-- โหลดไลบรารี Chart.js สำหรับวาดกราฟ -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
@@ -644,18 +668,23 @@
 
 
 <script>
+/*
+|--------------------------------------------------------------------------
+| Dashboard Script - จัดการการโหลดข้อมูลและเรนเดอร์ UI
+|--------------------------------------------------------------------------
+*/
 
-const DASHBOARD_API_BASE_URL = 'http://localhost:3000';
+const DASHBOARD_API_BASE_URL = 'http://localhost:3000'; // กำหนด URL ของ Node.js API Server
 
-let dashboardTrades = [];
-let dashboardEquityChart = null;
-let currentPeriod = 7;
-let dashboardProfile = null;
-let dashboardNotificationSettings = null;
+let dashboardTrades = [];          // ตัวแปรเก็บรายการเทรดทั้งหมด
+let dashboardEquityChart = null;   // ตัวแปรเก็บอินสแตนซ์ของกราฟ Equity Curve
+let currentPeriod = 7;             // กำหนดช่วงเวลาเริ่มต้นดูกราฟ (7 วัน)
+let dashboardProfile = null;       // ตัวแปรเก็บข้อมูลโปรไฟล์ผู้ใช้
+let dashboardNotificationSettings = null; // ตัวแปรเก็บการตั้งค่า Telegram Notification
 
 
 // =====================================================
-// GET TOKEN
+// GET TOKEN (ฟังก์ชันดึง Auth Token จาก LocalStorage)
 // =====================================================
 
 function getAuthToken() {
@@ -664,13 +693,14 @@ function getAuthToken() {
 
 
 // =====================================================
-// LOAD DASHBOARD DATA
+// LOAD DASHBOARD DATA (ฟังก์ชันดึงข้อมูลทั้งหมดสำหรับ Dashboard แบบ Parallel ด้วย Promise.all)
 // =====================================================
 
 async function loadDashboard() {
 
     const token = getAuthToken();
 
+    // ถ้าไม่มี Token ให้ดีดกลับไปหน้า Login ทันที
     if (!token) {
         window.location.href = 'login.php';
         return;
@@ -685,6 +715,7 @@ async function loadDashboard() {
             'Content-Type': 'application/json'
         };
 
+        // ยิง API 3 ตัวพร้อมกันเพื่อประสิทธิภาพที่ดีขึ้น (Trades, Profile, Notification Settings)
         const [tradesResponse, profileResponse, settingsResponse] =
             await Promise.all([
                 fetch(
@@ -710,6 +741,7 @@ async function loadDashboard() {
                 )
             ]);
 
+        // ตรวจสอบว่าถ้า Token หมดอายุหรือไม่มีสิทธิ์เข้าถึง (401) ให้ลบ Token ทิ้งแล้วไปหน้า Login
         if (
             tradesResponse.status === 401 ||
             profileResponse.status === 401 ||
@@ -726,6 +758,7 @@ async function loadDashboard() {
             throw new Error(`Trades API HTTP ${tradesResponse.status}`);
         }
 
+        // แปลงข้อมูล Response เป็น JSON และเก็บลงตัวแปร
         const tradeData = await tradesResponse.json();
         dashboardTrades =
             Array.isArray(tradeData.trades)
@@ -748,6 +781,7 @@ async function loadDashboard() {
             dashboardTrades.length
         );
 
+        // เรียกฟังก์ชันอัปเดตข้อมูลบนหน้าจอ
         updateUserInfo();
         updateNotificationStatus();
         updateDashboard();
@@ -759,6 +793,7 @@ async function loadDashboard() {
             error
         );
 
+        // แสดงข้อความแจ้งเตือนหากโหลดข้อมูลไม่สำเร็จ
         document.getElementById(
             'recentTrades'
         ).innerHTML = `
@@ -771,7 +806,7 @@ async function loadDashboard() {
 
 
 // =====================================================
-// GET PNL
+// GET PNL (ดึงค่ากำไร/ขาดทุนจากออเดอร์)
 // =====================================================
 
 function getPnl(trade) {
@@ -792,7 +827,7 @@ function getPnl(trade) {
 
 
 // =====================================================
-// GET SYMBOL
+// GET SYMBOL (ดึงชื่อคู่เงินหรือ Symbol)
 // =====================================================
 
 function getSymbol(trade) {
@@ -807,7 +842,7 @@ function getSymbol(trade) {
 
 
 // =====================================================
-// GET ACTION
+// GET ACTION (ดึงประเภทคำสั่ง BUY/SELL)
 // =====================================================
 
 function getAction(trade) {
@@ -824,7 +859,7 @@ function getAction(trade) {
 
 
 // =====================================================
-// GET LOT
+// GET LOT (ดึงขนาด Lot ของออเดอร์)
 // =====================================================
 
 function getLot(trade) {
@@ -844,7 +879,7 @@ function getLot(trade) {
 
 
 // =====================================================
-// GET STATUS
+// GET STATUS (ดึงสถานะออเดอร์)
 // =====================================================
 
 function getStatus(trade) {
@@ -858,7 +893,7 @@ function getStatus(trade) {
 }
 
 // =====================================================
-// CLOSED TRADE CHECK
+// CLOSED TRADE CHECK (ตรวจสอบว่าออเดอร์ปิดไปแล้วหรือยัง)
 // =====================================================
 
 function isClosedTrade(trade) {
@@ -878,7 +913,7 @@ function isClosedTrade(trade) {
 
 
 // =====================================================
-// USER INFO
+// USER INFO (อัปเดตชื่อผู้ใช้และตัวอักษรย่อใน Avatar)
 // =====================================================
 
 function updateUserInfo() {
@@ -916,7 +951,7 @@ function updateUserInfo() {
 
 
 // =====================================================
-// NOTIFICATION STATUS
+// NOTIFICATION STATUS (อัปเดตสถานะการแจ้งเตือนบนหน้า Dashboard)
 // =====================================================
 
 function updateNotificationStatus() {
@@ -977,7 +1012,7 @@ function updateNotificationStatus() {
 
 
 // =====================================================
-// GET DATE
+// GET DATE (ดึงวันที่จากออเดอร์)
 // =====================================================
 
 function getTradeDate(trade) {
@@ -995,7 +1030,7 @@ function getTradeDate(trade) {
 
 
 // =====================================================
-// GET FILTERED TRADES
+// GET FILTERED TRADES (กรองข้อมูลตามช่วงเวลา 1W, 1M, 3M)
 // =====================================================
 
 function getFilteredTrades() {
@@ -1033,13 +1068,12 @@ function getFilteredTrades() {
 
 
 // =====================================================
-// CALCULATE STATISTICS
+// CALCULATE STATISTICS (คำนวณสถิติภาพรวม เช่น Win Rate, Profit Factor)
 // =====================================================
 
 function calculateStatistics(trades) {
 
-    // Dashboard statistics should be based on completed trades.
-    // Open positions must not affect Win Rate / Profit Factor.
+    // สถิติบน Dashboard จะอิงจากออเดอร์ที่ปิดแล้วเท่านั้น
     const closedTrades =
         trades.filter(isClosedTrade);
 
@@ -1107,7 +1141,7 @@ function calculateStatistics(trades) {
 
 
 // =====================================================
-// UPDATE DASHBOARD
+// UPDATE DASHBOARD (อัปเดตข้อมูลแสดงผลทั้งหมดบน Dashboard)
 // =====================================================
 
 function updateDashboard() {
@@ -1122,7 +1156,7 @@ function updateDashboard() {
 
 
     // NET PROFIT
-
+    // แสดงผลกำไรสุทธิพร้อมเปลี่ยนสี (เขียว/แดง) ตามค่าบวก/ลบ
     const netProfitElement =
         document.getElementById(
             'netProfit'
@@ -1143,7 +1177,7 @@ function updateDashboard() {
 
 
     // WIN RATE
-
+    // แสดงอัตราการชนะและจำนวนออเดอร์
     document.getElementById(
         'winRate'
     ).textContent =
@@ -1156,7 +1190,7 @@ function updateDashboard() {
 
 
     // PROFIT FACTOR
-
+    // แสดงค่า Profit Factor
     document.getElementById(
         'profitFactor'
     ).textContent =
@@ -1173,7 +1207,7 @@ function updateDashboard() {
 
 
     // PROFIT DESCRIPTION
-
+    // แสดงจำนวน Win / Loss
     document.getElementById(
         'profitDescription'
     ).textContent =
@@ -1184,17 +1218,17 @@ function updateDashboard() {
 
 
     // RISK SCORE
-
+    // คำนวณและอัปเดตระดับความเสี่ยง
     updateRiskScore(stats);
 
 
     // RECENT TRADES
-
+    // เรนเดอร์รายการออเดอร์ล่าสุด
     renderRecentTrades();
 
 
     // EQUITY CURVE
-
+    // วาดกราฟเส้น Equity Curve
     renderEquityChart(
         filteredTrades
     );
@@ -1202,7 +1236,7 @@ function updateDashboard() {
 
 
 // =====================================================
-// RISK SCORE
+// RISK SCORE (คำนวณ Max Drawdown เพื่อประเมินระดับความเสี่ยง)
 // =====================================================
 
 function calculateMaxDrawdown(trades) {
@@ -1269,6 +1303,7 @@ function updateRiskScore(stats) {
 
     let risk = 'LOW';
 
+    // กำหนดเงื่อนไขระดับความเสี่ยง (HIGH, MEDIUM, LOW) ตาม Win Rate และ Max Drawdown
     if (
         stats.winRate < 40 ||
         maxDrawdown >= 100
@@ -1294,7 +1329,7 @@ function updateRiskScore(stats) {
 
 
 // =====================================================
-// RENDER RECENT TRADES
+// RENDER RECENT TRADES (เรนเดอร์รายการออเดอร์ล่าสุด 4 รายการ)
 // =====================================================
 
 function renderRecentTrades() {
@@ -1315,6 +1350,7 @@ function renderRecentTrades() {
         return;
     }
 
+    // เรียงลำดับจากออเดอร์ล่าสุดไปเก่าสุด แล้วตัดมาแค่ 4 รายการแรก
     const recentTrades =
         [...dashboardTrades]
             .sort((a, b) => {
@@ -1414,7 +1450,7 @@ function renderRecentTrades() {
 
 
 // =====================================================
-// EQUITY CURVE
+// EQUITY CURVE (วาดกราฟเส้น Cumulative P/L ด้วย Chart.js)
 // =====================================================
 
 function renderEquityChart(trades) {
@@ -1431,6 +1467,7 @@ function renderEquityChart(trades) {
         return;
     }
 
+    // เรียงลำดับออเดอร์ตามวันที่เพื่อคำนวณกำไรสะสม (Cumulative)
     const sortedTrades =
         [...closedTrades]
             .sort((a, b) => {
@@ -1488,6 +1525,7 @@ function renderEquityChart(trades) {
     );
 
 
+    // หากมีกราฟเดิมอยู่ให้ทำลายทิ้งก่อนสร้างใหม่เพื่อป้องกันบั๊กซ้อนทับ
     if (dashboardEquityChart) {
         dashboardEquityChart.destroy();
     }
@@ -1611,7 +1649,7 @@ function renderEquityChart(trades) {
 
 
 // =====================================================
-// PERIOD BUTTONS
+// PERIOD BUTTONS (ดักจับ Event การเปลี่ยนช่วงเวลาดูกราฟ 1W, 1M, 3M)
 // =====================================================
 
 document
@@ -1648,7 +1686,7 @@ document
 
 
 // =====================================================
-// ESCAPE HTML
+// ESCAPE HTML (ฟังก์ชันป้องกัน Cross-Site Scripting - XSS)
 // =====================================================
 
 function escapeHtml(value) {
@@ -1684,7 +1722,7 @@ function escapeHtml(value) {
 
 
 // =====================================================
-// LOGOUT
+// LOGOUT (ฟังก์ชันออกจากระบบจาก Sidebar)
 // =====================================================
 
 document
@@ -1705,9 +1743,39 @@ document
         }
     );
 
+// =====================================================
+// PROFILE DROPDOWN (จัดการเปิด-ปิดเมนูโปรไฟล์ขวาบน)
+// =====================================================
+
+const userAvatar = document.getElementById('userAvatar');
+const profileDropdown = document.getElementById('profileDropdown');
+const avatarLogout = document.getElementById('avatarLogout');
+
+userAvatar?.addEventListener('click', function () {
+    profileDropdown?.classList.toggle('show');
+});
+
+avatarLogout?.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    localStorage.removeItem('auth_token');
+    window.location.href = 'login.php';
+});
+
+document.addEventListener('click', function (e) {
+    if (
+        profileDropdown &&
+        userAvatar &&
+        !userAvatar.contains(e.target) &&
+        !profileDropdown.contains(e.target)
+    ) {
+        profileDropdown.classList.remove('show');
+    }
+});
+
 
 // =====================================================
-// LOAD WHEN PAGE READY
+// LOAD WHEN PAGE READY (เริ่มต้นโหลดข้อมูลเมื่อหน้าเว็บพร้อมใช้งาน)
 // =====================================================
 
 document.addEventListener(

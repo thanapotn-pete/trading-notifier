@@ -28,7 +28,11 @@
 
     <!-- CSS หลัก -->
     <link rel="stylesheet" href="css/style.css">
-
+<!-- Bootstrap Icons -->
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+>
 
     <style>
 
@@ -1308,15 +1312,33 @@
             </div>
 
 
-            <button class="icon-button">
-                ♧
-            </button>
+            <button
+    type="button"
+    class="icon-button"
+    aria-label="การแจ้งเตือน"
+    onclick="window.location.href='notifications.php'"
+>
+    <i class="bi bi-bell"></i>
+</button>
 
 
-            <div class="avatar">
-                U
-            </div>
+            <div class="profile-menu">
+    <div class="avatar" id="userAvatar">
+        U
+    </div>
 
+    <div class="profile-dropdown" id="profileDropdown">
+        <a href="profile.php">
+            <i class="bi bi-person"></i>
+            โปรไฟล์
+        </a>
+
+        <a href="#" id="avatarLogout">
+            <i class="bi bi-box-arrow-right"></i>
+            ออกจากระบบ
+        </a>
+    </div>
+</div>
 
         </div>
 
@@ -3169,6 +3191,32 @@ document.addEventListener(
     'DOMContentLoaded',
     initializeNotificationPage
 );
+// PROFILE DROPDOWN
+const userAvatar = document.getElementById('userAvatar');
+const profileDropdown = document.getElementById('profileDropdown');
+const avatarLogout = document.getElementById('avatarLogout');
+
+userAvatar?.addEventListener('click', function () {
+    profileDropdown?.classList.toggle('show');
+});
+
+avatarLogout?.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    localStorage.removeItem('auth_token');
+    window.location.href = 'login.php';
+});
+
+document.addEventListener('click', function (e) {
+    if (
+        profileDropdown &&
+        userAvatar &&
+        !userAvatar.contains(e.target) &&
+        !profileDropdown.contains(e.target)
+    ) {
+        profileDropdown.classList.remove('show');
+    }
+});
 </script>
 
 
