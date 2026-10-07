@@ -1199,6 +1199,7 @@ $winRate = 0;
                         <input
                             type="date"
                             class="filter-input"
+                            id="dateFilter"
                         >
 
                     </div>
@@ -1548,22 +1549,24 @@ $winRate = 0;
 |--------------------------------------------------------------------------
 */
 
-const TRADE_HISTORY_API_BASE_URL = 'http://localhost:3000';
-const TRADE_HISTORY_TOKEN_KEY = 'auth_token';
+const TRADE_HISTORY_API_BASE_URL = 'http://localhost:3000'; // กำหนด URL ของ Node.js API
+const TRADE_HISTORY_TOKEN_KEY = 'auth_token'; // คีย์ Token ใน LocalStorage
 
-let allTrades = [];
-let filteredTrades = [];
-let currentPage = 1;
-const rowsPerPage = 10;
+let allTrades = []; // ตัวแปรเก็บข้อมูลเทรดทั้งหมด
+let filteredTrades = []; // ตัวแปรเก็บข้อมูลหลังกดกรอง/ค้นหา
+let currentPage = 1; // หน้าปัจจุบันของ Pagination
+const rowsPerPage = 10; // จำนวนแถวต่อ 1 หน้า
 
 /* =========================
    Helper
 ========================= */
 
+// ฟังก์ชันดึง Token ยืนยันตัวตน
 function getAuthToken() {
     return localStorage.getItem(TRADE_HISTORY_TOKEN_KEY);
 }
 
+// ฟังก์ชันป้องกัน XSS แปลงอักขระพิเศษ
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -1573,15 +1576,18 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
+// แปลงค่าเป็นตัวเลข ป้องกัน NaN
 function toNumber(value) {
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
 }
 
+// ดึงชื่อ Symbol จากหลายๆ รูปแบบคีย์ข้อมูล
 function getSymbol(trade) {
     return trade.symbol ?? trade.instrument ?? trade.ticker ?? '-';
 }
 
+// ดึง Action (BUY / SELL) และแปลงเป็นตัวพิมพ์ใหญ่
 function getAction(trade) {
     const value = trade.action ?? trade.side ?? trade.type ?? trade.direction ?? '';
     const normalized = String(value).toUpperCase();
@@ -1592,6 +1598,7 @@ function getAction(trade) {
     return normalized || '-';
 }
 
+// ดึงราคาซื้อขาย
 function getPrice(trade) {
     return trade.close_price ??
            trade.closePrice ??
@@ -1601,6 +1608,7 @@ function getPrice(trade) {
            '-';
 }
 
+// ดึงจำนวน Lot
 function getLot(trade) {
     return trade.lot ??
            trade.volume ??
@@ -1609,6 +1617,7 @@ function getLot(trade) {
            '-';
 }
 
+// ดึงกำไรขาดทุน P/L
 function getPnl(trade) {
     return toNumber(
         trade.pnl ??
@@ -1619,6 +1628,7 @@ function getPnl(trade) {
     );
 }
 
+// ดึงสถานะการปิดออเดอร์
 function getStatus(trade) {
     return trade.status ??
            trade.close_reason ??
@@ -1627,6 +1637,7 @@ function getStatus(trade) {
            '-';
 }
 
+// ดึงเวลาทำรายการ
 function getTimestamp(trade) {
     return trade.closed_at ??
            trade.closedAt ??
@@ -1638,6 +1649,7 @@ function getTimestamp(trade) {
            '-';
 }
 
+// จัดรูปแบบตัวเลขทศนิยม
 function formatNumber(value, decimals = 2) {
     return toNumber(value).toLocaleString('en-US', {
         minimumFractionDigits: decimals,
@@ -1645,6 +1657,7 @@ function formatNumber(value, decimals = 2) {
     });
 }
 
+// จัดรูปแบบราคา
 function formatPrice(value) {
     if (value === '-' || value === null || value === undefined || value === '') {
         return '-';
@@ -1662,6 +1675,7 @@ function formatPrice(value) {
     });
 }
 
+// จัดรูปแบบเวลาเป็นภาษาไทย
 function formatTimestamp(value) {
     if (!value || value === '-') return '-';
 
@@ -1680,6 +1694,7 @@ function formatTimestamp(value) {
     });
 }
 
+// แปลงวันที่สำหรับระบบกรอง
 function getTradeDate(value) {
     if (!value || value === '-') return null;
 
@@ -1710,15 +1725,18 @@ function getTradeDate(value) {
    API
 ========================= */
 
+// ฟังก์ชันโหลดข้อมูลประวัติการเทรดจาก Node.js API
 async function loadTrades() {
     const token = getAuthToken();
 
+    // ถ้าไม่มี Token ให้เตะกลับไปหน้า Login
     if (!token) {
         window.location.href = 'login.php';
         return;
     }
 
     try {
+        // ยิง Request ไปดึงประวัติการเทรด
         const response = await fetch(
             `${TRADE_HISTORY_API_BASE_URL}/api/trades?limit=1000`,
             {
@@ -1730,6 +1748,7 @@ async function loadTrades() {
             }
         );
 
+        // ถ้า Token หมดอายุหรือไม่มีสิทธิ์ ให้ลบ Token ทิ้งแล้วพาไปหน้า Login
         if (response.status === 401 || response.status === 403) {
             localStorage.removeItem(TRADE_HISTORY_TOKEN_KEY);
             window.location.href = 'login.php';
@@ -1742,7 +1761,7 @@ async function loadTrades() {
 
         const data = await response.json();
 
-        // Load logged-in user's name for the topbar.
+        // ดึงข้อมูลโปรไฟล์ผู้ใช้งานมาแสดงที่ Topbar
         try {
             const profileResponse = await fetch(
                 `${TRADE_HISTORY_API_BASE_URL}/api/profile`,
@@ -1779,7 +1798,6 @@ async function loadTrades() {
             : (Array.isArray(data.trades) ? data.trades : []);
 
         filteredTrades = [...allTrades];
-
         currentPage = 1;
 
         updateSummary(allTrades);
@@ -1810,6 +1828,7 @@ async function loadTrades() {
    Summary
 ========================= */
 
+// คำนวณสรุปผลกำไร/ขาดทุน และ Win Rate
 function updateSummary(trades) {
     const total = trades.length;
 
@@ -1849,6 +1868,7 @@ function updateSummary(trades) {
    Table
 ========================= */
 
+// เรนเดอร์ข้อมูลลงในตาราง HTML
 function renderTable() {
     const tbody = document.getElementById('tradeTableBody');
 
@@ -1959,6 +1979,7 @@ function renderTable() {
     }).join('');
 }
 
+// แสดงข้อความว่างเปล่าเมื่อโหลดไม่ได้
 function showEmptyState(message) {
     const tbody = document.getElementById('tradeTableBody');
 
@@ -1980,6 +2001,7 @@ function showEmptyState(message) {
     `;
 }
 
+// อัปเดตจำนวนรายการที่แสดงใต้ตาราง
 function updateTableCount() {
     const count = document.querySelector('.table-count');
     const footerInfo = document.querySelector('.table-footer-info');
@@ -2010,6 +2032,7 @@ function updateTableCount() {
    Filter
 ========================= */
 
+// ฟังก์ชันกรองข้อมูล (ค้นหา Symbol, ประเภท, วันที่)
 function filterTrades() {
     const searchInput =
         document.getElementById('tradeSearch');
@@ -2086,6 +2109,7 @@ function filterTrades() {
     updatePagination();
 }
 
+// รีเซ็ตตัวกรองทั้งหมด
 function resetFilters() {
     const searchInput =
         document.getElementById('tradeSearch');
@@ -2113,6 +2137,7 @@ function resetFilters() {
    Pagination
 ========================= */
 
+// อัปเดตปุ่มแบ่งหน้า (Pagination)
 function updatePagination() {
     const pagination =
         document.querySelector('.pagination');
@@ -2176,6 +2201,7 @@ function updatePagination() {
     pagination.innerHTML = html;
 }
 
+// เปลี่ยนหน้าตาราง
 function goToPage(page) {
     const totalPages = Math.max(
         1,
@@ -2197,6 +2223,7 @@ function goToPage(page) {
    Export CSV
 ========================= */
 
+// ฟังก์ชันดาวน์โหลดรายงานเป็นไฟล์ CSV
 function exportTradesCSV() {
     if (filteredTrades.length === 0) {
         alert('ไม่มีข้อมูลการเทรดสำหรับ Export');
@@ -2265,6 +2292,7 @@ function exportTradesCSV() {
    Events
 ========================= */
 
+// ดักจับ Event เมื่อโหลดหน้าเว็บเสร็จ
 document.addEventListener('DOMContentLoaded', () => {
 
     const exportButton =
@@ -2291,15 +2319,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    const dateInput =
-        document.getElementById('dateFilter');
-
-    if (dateInput) {
-        dateInput.addEventListener(
-            'change',
-            filterTrades
-        );
-    }
 
     loadTrades();
 });
