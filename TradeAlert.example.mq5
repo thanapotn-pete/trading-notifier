@@ -3,10 +3,10 @@
 //+------------------------------------------------------------------+
 #property strict
 
-input string bot_token           = "8652580563:AAHuVqOmvah3p2ZNzC9BgQyYYu3QpKj4QA8";
-input string chat_id             = "8647961040";
+input string bot_token           = "YOUR_TELEGRAM_BOT_TOKEN";
+input string chat_id             = "YOUR_TELEGRAM_CHAT_ID";
 input string webhook_url         = "https://trading-notifier-vrdb.onrender.com/webhook/mt5";
-input string webhook_secret      = "Peet67peet67-";
+input string webhook_secret      = "YOUR_WEBHOOK_SECRET";
 input int    webrequest_timeout  = 5000; // ms
 input int    send_delay_ms       = 150;  // ms
 input bool   send_pending_alerts = true; // แจ้งเตือน Pending order (ตั้ง/ยกเลิก)
