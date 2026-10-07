@@ -433,16 +433,27 @@ router.patch('/profile', async (req, res) => {
 // =====================================================
 
 function notificationMessage(trade) {
-  if (trade.status === 'closed') {
-    const pnl =
-      trade.pnl != null
-        ? ` (${trade.pnl >= 0 ? '+' : ''}${trade.pnl})`
-        : '';
+    if (trade.status === 'closed') {
+        const pnl =
+            trade.pnl != null
+                ? (trade.pnl >= 0 ? '+' : '') + `$${trade.pnl}`
+                : '';
 
-    return `${trade.action.toUpperCase()} ${trade.symbol} closed${pnl}`;
-  }
+        return `🔔 Trade Closed
 
-  return `${trade.action.toUpperCase()} ${trade.symbol} @ ${trade.price}`;
+Action: ${trade.action.toUpperCase()}
+Symbol: ${trade.symbol}
+Close Price: ${trade.price}
+P/L: ${pnl}
+Status: CLOSED`;
+    }
+
+    return `🔔 Trade Opened
+
+Action: ${trade.action.toUpperCase()}
+Symbol: ${trade.symbol}
+Price: ${trade.price}
+Status: OPEN`;
 }
 
 

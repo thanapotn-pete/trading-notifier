@@ -444,21 +444,21 @@
                             <div class="period-buttons">
 
                                 <button
-                                    type="button"
-                                    class="period active"
-                                    data-period="7"
-                                >
-                                    1W
-                                </button>
+    type="button"
+    class="period"
+    data-period="7"
+>
+    1W
+</button>
 
 
                                 <button
-                                    type="button"
-                                    class="period"
-                                    data-period="30"
-                                >
-                                    1M
-                                </button>
+    type="button"
+    class="period active"
+    data-period="30"
+>
+    1M
+</button>
 
 
                                 <button

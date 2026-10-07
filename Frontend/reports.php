@@ -1363,13 +1363,37 @@ async function apiFetch(path) {
 }
 
 function filterByPeriod(trades) {
-    const period=document.getElementById('periodSelect').value;
-    if(period==='all') return [...trades];
-    const now=new Date();
-    let start=new Date(now); start.setHours(0,0,0,0);
-    if(period==='today') return trades.filter(t=>{const d=getTradeDate(t); return d && d>=start;});
-    start.setDate(start.getDate()-Number(period)+1);
-    return trades.filter(t=>{const d=getTradeDate(t); return d && d>=start && d<=now;});
+    const period = document.getElementById('periodSelect').value;
+
+    if (period === 'all') {
+        return [...trades];
+    }
+
+    const now = new Date();
+    const start = new Date(now);
+
+    if (period === 'today') {
+        start.setHours(0, 0, 0, 0);
+
+        return trades.filter(t => {
+            const d = getTradeDate(t);
+            return d && d >= start && d <= now;
+        });
+    }
+
+    start.setDate(
+        start.getDate() - Number(period)
+    );
+
+    return trades.filter(t => {
+        const d = getTradeDate(t);
+
+        return (
+            d &&
+            d >= start &&
+            d <= now
+        );
+    });
 }
 
 function calculateStats(trades) {
