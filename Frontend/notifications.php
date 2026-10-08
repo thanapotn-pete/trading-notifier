@@ -2109,7 +2109,7 @@
                         <div class="telegram-message">
 
                             📈
-                            <strong>เปิดออเดอร์</strong>
+                            <strong>Open Order</strong>
 
                             <br>
 
