@@ -1060,101 +1060,133 @@
 <aside class="sidebar">
 
 
+    <!-- LOGO -->
+
     <div class="logo">
 
-        <i>⌁</i>
+        <i class="bi bi-graph-up-arrow"></i>
 
-        TradeAnalytics
+        <span>
+            TradeAnalytics
+        </span>
 
     </div>
 
+
+    <!-- DASHBOARD -->
 
     <a
         href="dashboard.php"
         class="menu-item"
     >
 
-        <span>▦</span>
+        <i class="bi bi-grid"></i>
 
-        Dashboard
+        <span>
+            Dashboard
+        </span>
 
     </a>
 
+
+    <!-- TRADE HISTORY -->
 
     <a
         href="trade-history.php"
         class="menu-item"
     >
 
-        <span>◷</span>
+        <i class="bi bi-clock-history"></i>
 
-        ประวัติการเทรด
+        <span>
+            ประวัติการเทรด
+        </span>
 
     </a>
 
+
+    <!-- STATISTICS -->
 
     <a
         href="statistics.php"
         class="menu-item"
     >
 
-        <span>▥</span>
+        <i class="bi bi-bar-chart"></i>
 
-        สถิติการเทรด
+        <span>
+            สถิติการเทรด
+        </span>
 
     </a>
 
+
+    <!-- REPORTS -->
 
     <a
         href="reports.php"
         class="menu-item active"
     >
 
-        <span>▤</span>
+        <i class="bi bi-file-earmark-text"></i>
 
-        รายงาน
+        <span>
+            รายงาน
+        </span>
 
     </a>
 
 
+    <!-- SETTING -->
+
     <div class="menu-title">
-
         การตั้งค่า
-
     </div>
 
+
+    <!-- NOTIFICATIONS -->
 
     <a
         href="notifications.php"
         class="menu-item"
     >
 
-        <span>◉</span>
+        <i class="bi bi-telegram"></i>
 
-        การแจ้งเตือน
+        <span>
+            การแจ้งเตือน
+        </span>
 
     </a>
 
+
+    <!-- PROFILE -->
 
     <a
         href="profile.php"
         class="menu-item"
     >
 
-        <span>♙</span>
+        <i class="bi bi-person"></i>
 
-        บัญชีผู้ใช้งาน
+        <span>
+            บัญชีผู้ใช้งาน
+        </span>
 
     </a>
 
+
+    <!-- LOGOUT -->
 
     <div class="logout">
 
         <a href="#">
 
-            <span>↪</span>
+            <i class="bi bi-box-arrow-right"></i>
 
-            ออกจากระบบ
+            <span>
+                ออกจากระบบ
+            </span>
 
         </a>
 
@@ -1162,8 +1194,6 @@
 
 
 </aside>
-
-
 
 <!-- =========================================================
      MAIN

@@ -1160,12 +1160,11 @@
 
 <aside class="sidebar">
 
-
     <div class="logo">
 
-        <i>⌁</i>
+        <i class="bi bi-graph-up-arrow"></i>
 
-        TradeAnalytics
+        <span>TradeAnalytics</span>
 
     </div>
 
@@ -1175,9 +1174,9 @@
         class="menu-item"
     >
 
-        <span>▦</span>
+        <i class="bi bi-grid"></i>
 
-        Dashboard
+        <span>Dashboard</span>
 
     </a>
 
@@ -1187,9 +1186,9 @@
         class="menu-item"
     >
 
-        <span>◷</span>
+        <i class="bi bi-clock-history"></i>
 
-        ประวัติการเทรด
+        <span>ประวัติการเทรด</span>
 
     </a>
 
@@ -1199,9 +1198,9 @@
         class="menu-item"
     >
 
-        <span>▥</span>
+        <i class="bi bi-bar-chart"></i>
 
-        สถิติการเทรด
+        <span>สถิติการเทรด</span>
 
     </a>
 
@@ -1211,15 +1210,17 @@
         class="menu-item"
     >
 
-        <span>▤</span>
+        <i class="bi bi-file-earmark-text"></i>
 
-        รายงาน
+        <span>รายงาน</span>
 
     </a>
 
 
     <div class="menu-title">
+
         การตั้งค่า
+
     </div>
 
 
@@ -1228,9 +1229,9 @@
         class="menu-item active"
     >
 
-        <span>◉</span>
+        <i class="bi bi-telegram"></i>
 
-        การแจ้งเตือน
+        <span>การแจ้งเตือน</span>
 
     </a>
 
@@ -1240,9 +1241,9 @@
         class="menu-item"
     >
 
-        <span>♙</span>
+        <i class="bi bi-person"></i>
 
-        บัญชีผู้ใช้งาน
+        <span>บัญชีผู้ใช้งาน</span>
 
     </a>
 
@@ -1251,17 +1252,15 @@
 
         <a href="#">
 
-            <span>↪</span>
+            <i class="bi bi-box-arrow-right"></i>
 
-            ออกจากระบบ
+            <span>ออกจากระบบ</span>
 
         </a>
 
     </div>
 
-
 </aside>
-
 
 
 <!-- =========================================================

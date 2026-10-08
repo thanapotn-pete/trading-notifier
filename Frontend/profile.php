@@ -854,82 +854,129 @@
 
 <aside class="sidebar">
 
+    <!-- LOGO -->
     <div class="logo">
-        <i>⌁</i>
-        TradeAnalytics
+
+        <i class="bi bi-graph-up-arrow"></i>
+
+        <span>
+            TradeAnalytics
+        </span>
+
     </div>
 
 
+    <!-- DASHBOARD -->
     <a
         href="dashboard.php"
         class="menu-item"
     >
-        <span>▦</span>
-        Dashboard
+
+        <i class="bi bi-grid"></i>
+
+        <span>
+            Dashboard
+        </span>
+
     </a>
 
 
+    <!-- TRADE HISTORY -->
     <a
         href="trade-history.php"
         class="menu-item"
     >
-        <span>◷</span>
-        ประวัติการเทรด
+
+        <i class="bi bi-clock-history"></i>
+
+        <span>
+            ประวัติการเทรด
+        </span>
+
     </a>
 
 
+    <!-- STATISTICS -->
     <a
         href="statistics.php"
         class="menu-item"
     >
-        <span>▥</span>
-        สถิติการเทรด
+
+        <i class="bi bi-bar-chart"></i>
+
+        <span>
+            สถิติการเทรด
+        </span>
+
     </a>
 
 
+    <!-- REPORTS -->
     <a
         href="reports.php"
         class="menu-item"
     >
-        <span>▤</span>
-        รายงาน
+
+        <i class="bi bi-file-earmark-text"></i>
+
+        <span>
+            รายงาน
+        </span>
+
     </a>
 
 
+    <!-- SETTING -->
     <div class="menu-title">
         การตั้งค่า
     </div>
 
 
+    <!-- NOTIFICATIONS -->
     <a
         href="notifications.php"
         class="menu-item"
     >
-        <span>◉</span>
-        การแจ้งเตือน
+
+        <i class="bi bi-telegram"></i>
+
+        <span>
+            การแจ้งเตือน
+        </span>
+
     </a>
 
 
+    <!-- PROFILE -->
     <a
         href="profile.php"
         class="menu-item active"
     >
-        <span>♙</span>
-        บัญชีผู้ใช้งาน
+
+        <i class="bi bi-person"></i>
+
+        <span>
+            บัญชีผู้ใช้งาน
+        </span>
+
     </a>
 
 
+    <!-- LOGOUT -->
     <div class="logout">
 
-        <a
-            href="#"
-            onclick="logout()"
-        >
-            <span>↪</span>
-            ออกจากระบบ
+        <a href="#">
+
+            <i class="bi bi-box-arrow-right"></i>
+
+            <span>
+                ออกจากระบบ
+            </span>
+
         </a>
 
     </div>
+
 
 </aside>
 
@@ -997,16 +1044,17 @@
     </div>
 
     <div class="profile-dropdown" id="profileDropdown">
-        <a href="profile.php">
-            <i class="bi bi-person"></i>
-            โปรไฟล์
-        </a>
 
-        <a href="#" id="avatarLogout">
-            <i class="bi bi-box-arrow-right"></i>
-            ออกจากระบบ
-        </a>
-    </div>
+    <a href="profile.php">
+        <i class="bi bi-person"></i>
+        โปรไฟล์
+    </a>
+
+    <a href="#" id="avatarLogout">
+        <i class="bi bi-box-arrow-right"></i>
+        ออกจากระบบ
+    </a>
+
 </div>
 
         </div>

@@ -1609,7 +1609,7 @@ function renderEquityChart(trades) {
                                                 context.raw || 0
                                             );
 
-                                        return ` P/L: ${value >= 0 ? '+' : '-'}$${Math.abs(value).toFixed(2)}`;
+                                        return ` กำไรสุทธิ: ${value >= 0 ? '+' : '-'}$${Math.abs(value).toFixed(2)}`;
 
                                     }
 
