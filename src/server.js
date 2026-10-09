@@ -49,7 +49,7 @@ app.use('/api', (req, res, next) => {
 
   res.header(
     'Access-Control-Allow-Methods',
-    'GET, POST, PATCH'
+    'GET, POST, PATCH, DELETE'
   );
 
   res.header(

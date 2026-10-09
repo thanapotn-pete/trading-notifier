@@ -348,6 +348,7 @@ function renderUsers() {
                 <button class="icon-btn" title="แก้ไขบัญชี" data-action="edit" data-id="${escapeHtml(user.id)}"><i class="bi bi-pencil"></i></button>
                 <button class="icon-btn" title="รีเซ็ตรหัสผ่าน" data-action="password" data-id="${escapeHtml(user.id)}"><i class="bi bi-key"></i></button>
                 <button class="icon-btn ${user.is_active ? 'warn' : ''}" title="${user.is_active ? 'ระงับบัญชี' : 'เปิดใช้งานบัญชี'}" data-action="toggle" data-id="${escapeHtml(user.id)}"><i class="bi ${user.is_active ? 'bi-person-slash' : 'bi-person-check'}"></i></button>
+                <button class="icon-btn warn" title="ลบบัญชี" data-action="delete" data-id="${escapeHtml(user.id)}"><i class="bi bi-trash"></i></button>
             </div></td>
         </tr>`;
     }).join('');
@@ -478,6 +479,21 @@ document.getElementById('usersBody').addEventListener('click', async (event) => 
                 method: 'POST', body: JSON.stringify({ password })
             });
             showNotice('รีเซ็ตรหัสผ่านแล้ว');
+        } catch (error) { showNotice(error.message, 'error'); }
+        return;
+    }
+    if (button.dataset.action === 'delete') {
+        const typed = window.prompt(`ลบบัญชีนี้ถาวร รวมถึงประวัติการเทรดและการตั้งค่าทั้งหมด กู้คืนไม่ได้
+พิมพ์อีเมล ${user.email} เพื่อยืนยัน`);
+        if (typed === null) return;
+        if (typed.trim().toLowerCase() !== String(user.email || '').toLowerCase()) {
+            showNotice('อีเมลที่พิมพ์ไม่ตรงกัน ยกเลิกการลบ', 'error');
+            return;
+        }
+        try {
+            await api(`/api/admin/users/${encodeURIComponent(user.id)}`, { method: 'DELETE' });
+            showNotice('ลบบัญชีแล้ว');
+            await loadUsers();
         } catch (error) { showNotice(error.message, 'error'); }
         return;
     }

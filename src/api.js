@@ -326,6 +326,26 @@ router.patch('/admin/users/:id', requireAdmin, async (req, res) => {
   }
 });
 
+router.delete('/admin/users/:id', requireAdmin, async (req, res) => {
+  try {
+    const target = await findUserById(req.params.id);
+    if (!target) return res.status(404).json({ error: 'Account not found' });
+
+    if (target.id === req.user.id) {
+      return res.status(400).json({ error: 'You cannot delete your own account' });
+    }
+    if (target.role === 'admin' && target.is_active !== false && await countActiveAdmins() <= 1) {
+      return res.status(400).json({ error: 'At least one active administrator must remain' });
+    }
+
+    await deleteManagedUser(target.id);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[API /admin/users DELETE] Error:', err.message);
+    res.status(500).json({ error: 'Could not delete the account' });
+  }
+});
+
 router.post('/admin/users/:id/reset-password', requireAdmin, async (req, res) => {
   try {
     const user = await findUserById(req.params.id);

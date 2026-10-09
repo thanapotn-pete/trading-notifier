@@ -97,6 +97,18 @@ async function updateManagedUser(userId, fields) {
   return data;
 }
 
+// Removes the account and its dependent rows (trades / notification settings
+// reference users.id without ON DELETE CASCADE, so they go first).
+async function deleteManagedUser(userId) {
+  const supabase = getClient();
+  for (const table of ['trades', 'notification_settings']) {
+    const { error } = await supabase.from(table).delete().eq('user_id', userId);
+    if (error) throw error;
+  }
+  const { error } = await supabase.from('users').delete().eq('id', userId);
+  if (error) throw error;
+}
+
 async function countActiveAdmins() {
   const supabase = getClient();
   const { count, error } = await supabase
