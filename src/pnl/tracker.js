@@ -114,7 +114,7 @@ async function getDailySummary(userId) {
   const tz = process.env.TIMEZONE || 'Asia/Bangkok';
 
   const today = new Date().toLocaleDateString(
-    'th-TH',
+    'en-GB',
     {
       timeZone: tz,
     }
