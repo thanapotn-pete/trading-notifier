@@ -87,10 +87,14 @@ string JSONEscape(string s)
    return(s);
 }
 
-void SendWebhook(string action, string symbol, double price, double lot, double pnl = 0.0,
-                  ulong position_id = 0, double tp = 0.0, double sl = 0.0)
+// คืน true เมื่อ server รับเรื่องแล้วและเป็นฝ่ายจัดการแจ้งเตือน
+//   (ส่ง Telegram ให้แล้ว หรือผู้ใช้ปิดการแจ้งเตือนนี้ไว้บนเว็บ) → EA ไม่ต้องส่งเอง
+// คืน false เมื่อส่งไม่ถึง / server error / server ยังไม่มี Chat ID ของผู้ใช้
+//   → EA ส่ง Telegram เองเป็นแผนสำรอง จะได้ไม่พลาดสัญญาณ
+bool SendWebhook(string action, string symbol, double price, double lot, double pnl = 0.0,
+                  ulong position_id = 0, double tp = 0.0, double sl = 0.0, int order_seq = 0)
 {
-   if(StringLen(webhook_url) == 0) return;
+   if(StringLen(webhook_url) == 0) return(false);
    string pnl_str = DoubleToString(pnl, 2);
    string body = "{\"secret\":\"" + webhook_secret + "\","
                + "\"action\":\"" + action + "\","
@@ -100,7 +104,8 @@ void SendWebhook(string action, string symbol, double price, double lot, double 
                + "\"pnl\":" + pnl_str + ","
                + "\"position_id\":" + (string)position_id + ","
                + "\"tp\":" + DoubleToString(tp, _Digits) + ","
-               + "\"sl\":" + DoubleToString(sl, _Digits) + "}";
+               + "\"sl\":" + DoubleToString(sl, _Digits) + ","
+               + "\"order_seq\":" + (string)order_seq + "}";
    uchar data[];
    int dlen = StringToCharArray(body, data, 0, -1, CP_UTF8);
    ArrayResize(data, dlen - 1);
@@ -110,9 +115,16 @@ void SendWebhook(string action, string symbol, double price, double lot, double 
    PrintFormat("SendWebhook calling url=%s action=%s symbol=%s", webhook_url, action, symbol);
    int res = WebRequest("POST", webhook_url, headers, webrequest_timeout, data, result, result_headers);
    if(res == -1)
+   {
       PrintFormat("SendWebhook error=%d (4014=URL not allowed in Options)", GetLastError());
-   else
-      PrintFormat("SendWebhook ok status=%d", res);
+      ResetLastError();
+      return(false);
+   }
+   PrintFormat("SendWebhook ok status=%d", res);
+   if(res < 200 || res >= 300) return(false);
+   string resp = CharArrayToString(result);
+   if(StringFind(resp, "\"reason\":\"no_chat_id\"") >= 0) return(false);
+   return(true);
 }
 
 bool SendTelegramToId(string id, string message)
@@ -417,7 +429,6 @@ void OnTradeTransaction(
       msg += "💵 Entry    <b>" + DoubleToString(deal_price, digits) + "</b>\n";
       msg += "🎯 TP       " + tp_str + "\n";
       msg += "🛑 SL       " + sl_str;
-      SendTelegram(WithDisclaimer(msg));
       // raw SL/TP for Supabase (selected by position ticket, not symbol,
       // so it's correct even with multiple positions on the same symbol)
       double raw_sl = 0.0, raw_tp = 0.0;
@@ -426,7 +437,9 @@ void OnTradeTransaction(
          raw_sl = PositionGetDouble(POSITION_SL);
          raw_tp = PositionGetDouble(POSITION_TP);
       }
-      SendWebhook(typ == "BUY" ? "buy" : "sell", symbol, deal_price, deal_volume, 0.0, pos_id, raw_tp, raw_sl);
+      // server ส่ง Telegram ให้ตามการตั้งค่าบนเว็บ — EA ส่งเองเฉพาะเมื่อ server ไม่รับเรื่อง
+      if(!SendWebhook(typ == "BUY" ? "buy" : "sell", symbol, deal_price, deal_volume, 0.0, pos_id, raw_tp, raw_sl, order_seq))
+         SendTelegram(WithDisclaimer(msg));
       return;
    }
 
@@ -445,8 +458,9 @@ void OnTradeTransaction(
       msg += sep + "\n";
       msg += "💵 Exit     " + DoubleToString(deal_price, digits) + "\n";
       msg += "💰 Profit   <b>" + profit_str + "$</b>";
-      SendTelegram(WithDisclaimer(msg));
-      SendWebhook("close", symbol, deal_price, deal_volume, deal_profit, pos_id);
+      // server ส่ง Telegram ให้ตามการตั้งค่าบนเว็บ — EA ส่งเองเฉพาะเมื่อ server ไม่รับเรื่อง
+      if(!SendWebhook("close", symbol, deal_price, deal_volume, deal_profit, pos_id, 0.0, 0.0, order_seq))
+         SendTelegram(WithDisclaimer(msg));
       // ปิดสนิทแล้ว (ไม่มี position เหลือ) → คืนเลขลำดับ กัน GlobalVariable สะสม
       if(!PositionSelectByTicket(pos_id)) ReleaseOrderSeq(pos_id);
       return;

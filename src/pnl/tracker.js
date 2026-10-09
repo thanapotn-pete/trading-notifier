@@ -109,6 +109,28 @@ async function recordTrade(trade) {
 }
 
 
+// The stored row for one position — the close message needs the original
+// BUY/SELL and entry price, which the EA doesn't resend on close.
+async function getPosition(userId, positionId) {
+  const supabase = getClient();
+
+  const { data, error } = await supabase
+    .from('trades')
+    .select('action, symbol, price, lot, tp, sl, status')
+    .eq('user_id', userId)
+    .eq('position_id', positionId)
+    .order('timestamp', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
 async function getDailySummary(userId) {
   const supabase = getClient();
   const tz = process.env.TIMEZONE || 'Asia/Bangkok';
@@ -398,6 +420,7 @@ async function getStatistics(userId) {
 
 module.exports = {
   recordTrade,
+  getPosition,
   getDailySummary,
   listTrades,
   getStatistics,

@@ -8,8 +8,13 @@ const {
 } = require('./handlers/tradingview');
 
 const {
-  recordTrade
+  recordTrade,
+  getPosition
 } = require('./pnl/tracker');
+
+const {
+  buildTradeMessage
+} = require('./trade-message');
 
 const {
   findUserBySecret
@@ -177,7 +182,8 @@ app.post(
         position_id,
         tp,
         sl,
-        drawdown
+        drawdown,
+        order_seq
       } = req.body;
 
 
@@ -240,6 +246,10 @@ app.post(
 
           notification_sent: false,
 
+          // The EA reads this: with no Chat ID on the server it sends the
+          // Telegram message itself instead of dropping it.
+          reason: 'no_chat_id',
+
           message:
             'MT5 trade recorded. Telegram Chat ID not configured.'
 
@@ -300,6 +310,10 @@ app.post(
 
           notification_sent: false,
 
+          // The user turned this alert off on the website — the EA must
+          // not send it either.
+          reason: 'blocked_by_settings',
+
           message:
             'MT5 trade recorded. Telegram notification blocked by settings.'
 
@@ -311,145 +325,56 @@ app.post(
       // -------------------------------------------------
       // Build Telegram Message
       // -------------------------------------------------
+      // On close the EA only sends action="close", so look up the stored
+      // position to show whether it was a BUY or SELL and its entry price.
 
-      const actionText =
-        String(action).toUpperCase();
+      let position = null;
 
+      if (String(action).toLowerCase() === 'close') {
 
-      const lines = [
+        try {
 
-        '<b>MT5 Trade Alert</b>',
+          position =
+            await getPosition(
+              req.user.id,
+              position_id
+            );
 
-        '',
+        } catch (err) {
 
-        `Action: <b>${actionText}</b>`,
+          console.error(
+            '[MT5 Webhook] Position lookup failed:',
+            err.message
+          );
 
-        `Symbol: <b>${symbol}</b>`,
-
-        `Price: <b>${price ?? '-'}</b>`
-
-      ];
-
-
-      // -------------------------------------------------
-      // Lot
-      // -------------------------------------------------
-
-      if (
-        lot !== undefined &&
-        lot !== null
-      ) {
-
-        lines.push(
-          `Lot: ${lot}`
-        );
+        }
 
       }
 
 
-      // -------------------------------------------------
-      // TP
-      // -------------------------------------------------
-
-      if (
-        tp !== undefined &&
-        tp !== null
-      ) {
-
-        lines.push(
-          `TP: ${tp}`
-        );
-
-      }
-
-
-      // -------------------------------------------------
-      // SL
-      // -------------------------------------------------
-
-      if (
-        sl !== undefined &&
-        sl !== null
-      ) {
-
-        lines.push(
-          `SL: ${sl}`
-        );
-
-      }
-
-
-      // -------------------------------------------------
-      // P&L
-      // -------------------------------------------------
-
-      if (
-        pnl !== undefined &&
-        pnl !== null
-      ) {
-
-        const pnlNumber =
-          Number(pnl);
-
-        const pnlText =
-          Number.isFinite(pnlNumber)
-
-            ? pnlNumber > 0
-              ? `+${pnlNumber}`
-              : `${pnlNumber}`
-
-            : `${pnl}`;
-
-
-        lines.push(
-          `P&L: <b>${pnlText}</b>`
-        );
-
-      }
-
-
-      // -------------------------------------------------
-      // Drawdown
-      // -------------------------------------------------
-
-      if (
-        drawdown !== undefined &&
-        drawdown !== null
-      ) {
-
-        lines.push(
-          `Drawdown: ${drawdown}%`
-        );
-
-      }
-
-
-      // -------------------------------------------------
-      // Time
-      // -------------------------------------------------
-
-      const time =
-        new Date().toLocaleString(
-          'th-TH',
+      const message =
+        buildTradeMessage(
           {
-            timeZone:
-              process.env.TIMEZONE ||
-              'Asia/Bangkok'
-          }
+            action,
+            symbol,
+            price,
+            pnl,
+            lot,
+            position_id,
+            tp,
+            sl,
+            drawdown,
+            order_seq
+          },
+          position
         );
-
-
-      lines.push(
-        `Time: ${time}`
-      );
-
 
       // -------------------------------------------------
       // Send Telegram
       // -------------------------------------------------
 
       await notify(
-        lines.join('\n'),
+        message,
         req.user.telegram_chat_id
       );
 

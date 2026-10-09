@@ -271,7 +271,15 @@ function shouldNotifyTrade(
       ? Number(trade.pnl)
       : null;
 
+  // Only a closing trade has a real P&L — an opening trade always arrives
+  // with pnl = 0, so applying the minimum there would block every open alert.
+  const isClosing =
+    action === 'close' ||
+    action === 'tp' ||
+    action === 'sl';
+
   if (
+    isClosing &&
     settings.min_pnl !== null &&
     settings.min_pnl !== undefined &&
     pnl !== null &&
