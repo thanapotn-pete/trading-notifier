@@ -342,7 +342,7 @@ router.delete('/admin/users/:id', requireAdmin, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('[API /admin/users DELETE] Error:', err.message);
-    res.status(500).json({ error: 'Could not delete the account' });
+    res.status(500).json({ error: `Could not delete the account: ${err.message}` });
   }
 });
 

@@ -103,10 +103,13 @@ async function deleteManagedUser(userId) {
   const supabase = getClient();
   for (const table of ['trades', 'notification_settings']) {
     const { error } = await supabase.from(table).delete().eq('user_id', userId);
-    if (error) throw error;
+    if (error) throw new Error(`${table}: ${error.message}`);
   }
-  const { error } = await supabase.from('users').delete().eq('id', userId);
-  if (error) throw error;
+  const { data, error } = await supabase.from('users').delete().eq('id', userId).select('id');
+  if (error) throw new Error(`users: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error('users: no row deleted (Supabase RLS policy is probably blocking DELETE)');
+  }
 }
 
 async function countActiveAdmins() {
