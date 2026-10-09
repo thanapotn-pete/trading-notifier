@@ -39,7 +39,9 @@ async function findUserById(id) {
 
 async function findUserByEmail(email) {
   const supabase = getClient();
-  const { data, error } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
+  // Case-insensitive match (ilike); escape wildcard characters so the email is literal.
+  const pattern = String(email).replace(/[\\%_]/g, '\\$&');
+  const { data, error } = await supabase.from('users').select('*').ilike('email', pattern).maybeSingle();
   if (error) throw error;
   return data;
 }
