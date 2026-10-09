@@ -158,6 +158,7 @@ module.exports = {
   listManagedUsers,
   createManagedUser,
   updateManagedUser,
+  deleteManagedUser,
   countActiveAdmins,
   setPassword,
   listUsers,

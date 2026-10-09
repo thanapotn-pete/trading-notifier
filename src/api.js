@@ -14,6 +14,7 @@ const {
   listManagedUsers,
   createManagedUser,
   updateManagedUser,
+  deleteManagedUser,
   countActiveAdmins,
   setPassword,
   updateUserProfile
