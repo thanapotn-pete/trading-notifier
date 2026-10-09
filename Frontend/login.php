@@ -365,7 +365,9 @@
             // รอสั้น ๆ แล้วไป Dashboard
             setTimeout(function () {
 
-                window.location.href = 'dashboard.php';
+                window.location.href = data.role === 'admin'
+                    ? 'admin.php'
+                    : 'dashboard.php';
 
             }, 700);
 

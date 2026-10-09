@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const { notify } = require('./notifications');
 
 const {
@@ -10,6 +11,10 @@ const {
   findUserBySecret,
   findUserById,
   findUserByEmail,
+  listManagedUsers,
+  createManagedUser,
+  updateManagedUser,
+  countActiveAdmins,
   setPassword,
   updateUserProfile
 } = require('./users');
@@ -86,10 +91,8 @@ router.post('/setup-password', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const {
-      email,
-      password
-    } = req.body || {};
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
 
     if (!email || !password) {
       return res.status(400).json({
@@ -98,6 +101,10 @@ router.post('/login', async (req, res) => {
     }
 
     const user = await findUserByEmail(email);
+
+    if (user && user.is_active === false) {
+      return res.status(401).json({ error: 'This account is disabled. Contact an administrator.' });
+    }
 
     const ok =
       user &&
@@ -117,7 +124,8 @@ router.post('/login', async (req, res) => {
     );
 
     res.json({
-      token: createSessionToken(user)
+      token: createSessionToken(user),
+      role: user.role || 'user'
     });
 
   } catch (err) {
@@ -157,7 +165,7 @@ async function requireSession(req, res, next) {
         ? await findUserById(userId)
         : null;
 
-    if (!user) {
+    if (!user || user.is_active === false) {
       return res.status(401).json({
         error: 'Invalid or expired session'
       });
@@ -185,6 +193,159 @@ async function requireSession(req, res, next) {
 
 
 router.use(requireSession);
+
+async function requireAdmin(req, res, next) {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Administrator access required' });
+  }
+  next();
+}
+
+router.get('/admin/users', requireAdmin, async (req, res) => {
+  try {
+    res.json({ users: await listManagedUsers() });
+  } catch (err) {
+    console.error('[API /admin/users GET] Error:', err.message);
+    res.status(500).json({ error: 'Could not load user accounts' });
+  }
+});
+
+router.post('/admin/users', requireAdmin, async (req, res) => {
+  try {
+    const firstName = String(req.body?.first_name || '').trim();
+    const lastName = String(req.body?.last_name || '').trim();
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const telegramChatId = String(req.body?.telegram_chat_id || '').trim();
+    const password = String(req.body?.password || '');
+
+    if (!firstName || !lastName || !email) {
+      return res.status(400).json({ error: 'First name, last name and email are required' });
+    }
+    if (firstName.length > 100 || lastName.length > 100) {
+      return res.status(400).json({ error: 'Names must be 100 characters or fewer' });
+    }
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Enter a valid email address' });
+    }
+    if (password.length < 8 || password.length > 72) {
+      return res.status(400).json({ error: 'Initial password must be between 8 and 72 characters' });
+    }
+    if (telegramChatId && !/^-?\d+$/.test(telegramChatId)) {
+      return res.status(400).json({ error: 'Telegram Chat ID must contain only numbers' });
+    }
+    if (await findUserByEmail(email)) {
+      return res.status(409).json({ error: 'An account with this email already exists' });
+    }
+
+    const webhookSecret = crypto.randomBytes(32).toString('hex');
+    const user = await createManagedUser({
+      firstName,
+      lastName,
+      email,
+      telegramChatId,
+      webhookSecret,
+      passwordHash: await hashPassword(password)
+    });
+    res.status(201).json({ user, webhook_secret: webhookSecret });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'An account with this email already exists' });
+    }
+    console.error('[API /admin/users POST] Error:', err.message);
+    res.status(500).json({ error: 'Could not create the account' });
+  }
+});
+
+router.patch('/admin/users/:id', requireAdmin, async (req, res) => {
+  try {
+    const current = await findUserById(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Account not found' });
+
+    const patch = req.body || {};
+    const fields = {};
+    for (const key of ['first_name', 'last_name', 'email', 'telegram_chat_id', 'role', 'is_active']) {
+      if (Object.prototype.hasOwnProperty.call(patch, key)) fields[key] = patch[key];
+    }
+    if (!Object.keys(fields).length) {
+      return res.status(400).json({ error: 'No account fields supplied' });
+    }
+
+    for (const key of ['first_name', 'last_name']) {
+      if (fields[key] !== undefined) {
+        fields[key] = String(fields[key]).trim();
+        if (!fields[key] || fields[key].length > 100) {
+          return res.status(400).json({ error: 'Names are required and must be 100 characters or fewer' });
+        }
+      }
+    }
+    if (fields.email !== undefined) {
+      fields.email = String(fields.email).trim().toLowerCase();
+      if (fields.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
+        return res.status(400).json({ error: 'Enter a valid email address' });
+      }
+    }
+    if (fields.telegram_chat_id !== undefined) {
+      fields.telegram_chat_id = String(fields.telegram_chat_id || '').trim() || null;
+      if (fields.telegram_chat_id && !/^-?\d+$/.test(fields.telegram_chat_id)) {
+        return res.status(400).json({ error: 'Telegram Chat ID must contain only numbers' });
+      }
+    }
+    if (fields.role !== undefined && !['admin', 'user'].includes(fields.role)) {
+      return res.status(400).json({ error: 'Role must be admin or user' });
+    }
+    if (fields.is_active !== undefined && typeof fields.is_active !== 'boolean') {
+      return res.status(400).json({ error: 'is_active must be a boolean' });
+    }
+    if (
+      (fields.email && fields.email.toLowerCase() !== String(current.email || '').toLowerCase() && await findUserByEmail(fields.email))
+    ) {
+      return res.status(409).json({ error: 'An account with this email already exists' });
+    }
+
+    const becomesInactiveAdmin = current.role === 'admin' && current.is_active !== false && (
+      fields.role === 'user' || fields.is_active === false
+    );
+    if (becomesInactiveAdmin) {
+      if (current.id === req.user.id) {
+        return res.status(400).json({ error: 'You cannot remove your own administrator access' });
+      }
+      if (await countActiveAdmins() <= 1) {
+        return res.status(400).json({ error: 'At least one active administrator must remain' });
+      }
+    }
+
+    const user = await updateManagedUser(req.params.id, fields);
+    if (!user) return res.status(404).json({ error: 'Account not found' });
+    res.json({ user });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'An account with this email already exists' });
+    }
+    console.error('[API /admin/users PATCH] Error:', err.message);
+    res.status(500).json({ error: 'Could not update the account' });
+  }
+});
+
+router.post('/admin/users/:id/reset-password', requireAdmin, async (req, res) => {
+  try {
+    const user = await findUserById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'Account not found' });
+
+    const password = String(req.body?.password || '');
+    if (password.length < 8 || password.length > 72) {
+      return res.status(400).json({ error: 'Password must be between 8 and 72 characters' });
+    }
+    await setPassword(user.id, {
+      email: user.email,
+      passwordHash: await hashPassword(password)
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[API /admin/users/:id/reset-password] Error:', err.message);
+    res.status(500).json({ error: 'Could not reset the password' });
+  }
+});
+
 // =====================================================
 // NOTIFICATION SETTINGS
 // =====================================================

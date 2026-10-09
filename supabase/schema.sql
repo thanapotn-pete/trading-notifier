@@ -49,3 +49,24 @@ alter table users add column password_hash text;
 -- never read by any backend logic) — dropped rather than left dead.
 alter table users drop column mt5_account_id;
 alter table users drop column mt5_server;
+
+-- Run once to add server-enforced account roles and account suspension.
+alter table users add column if not exists role text not null default 'user';
+alter table users add column if not exists is_active boolean not null default true;
+alter table users alter column telegram_chat_id drop not null;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'users_role_check'
+      and conrelid = 'public.users'::regclass
+  ) then
+    alter table users add constraint users_role_check check (role in ('user', 'admin'));
+  end if;
+end $$;
+
+-- Promote the first administrator manually after confirming that the account exists:
+-- update users set role = 'admin' where lower(email) = lower('your-admin-email@example.com');
+-- select id, email, role, is_active from users where lower(email) = lower('your-admin-email@example.com');
+
