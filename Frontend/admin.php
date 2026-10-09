@@ -1,105 +1,248 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | TradeAnalytics</title>
+
+    <title>TradeAnalytics - จัดการบัญชี</title>
+
+    <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS หลัก -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
     <style>
-        :root { color-scheme: light; --green:#087f68; --ink:#17211e; --muted:#73807b; --line:#e5ebe8; --bg:#f5f8f7; }
-        * { box-sizing:border-box; }
-        body { margin:0; background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans Thai',Arial,sans-serif; }
-        button,input,select { font:inherit; }
-        button { cursor:pointer; }
-        .topbar { height:70px; background:white; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 max(24px,calc((100vw - 1180px)/2)); }
-        .brand { display:flex; gap:10px; align-items:center; font-weight:700; font-size:18px; color:var(--green); }
-        .brand i { font-size:22px; }
-        .top-actions { display:flex; gap:10px; }
-        .button { border:0; border-radius:8px; padding:10px 15px; font-weight:600; background:var(--green); color:white; }
-        .button:hover { background:#066b58; }
-        .button.secondary { background:white; color:#34423d; border:1px solid var(--line); }
-        .button.danger { color:#a93030; background:#fff4f3; border:1px solid #f2d3d0; }
-        .wrap { max-width:1180px; margin:32px auto; padding:0 22px; }
-        .heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px; }
-        h1 { margin:0 0 5px; font-size:27px; }
-        .sub { margin:0; color:var(--muted); font-size:14px; }
-        .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:18px; }
-        .stat,.panel { background:white; border:1px solid var(--line); border-radius:12px; box-shadow:0 2px 7px rgba(15,23,42,.025); }
-        .stat { padding:17px 20px; }
-        .stat-label { color:var(--muted); font-size:13px; }
-        .stat-value { font-weight:700; font-size:25px; margin-top:2px; }
-        .panel { overflow:hidden; }
-        .toolbar { padding:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid var(--line); }
-        .search { width:min(100%,340px); height:41px; border:1px solid #dce4e0; border-radius:8px; padding:0 12px; outline:none; }
-        .search:focus,input:focus,select:focus { border-color:#75b6a6; box-shadow:0 0 0 3px rgba(8,127,104,.09); outline:none; }
-        .table-wrap { overflow-x:auto; }
-        table { width:100%; border-collapse:collapse; min-width:850px; }
-        th,td { padding:13px 16px; text-align:left; border-bottom:1px solid #edf1ef; font-size:13px; vertical-align:middle; }
-        th { color:#718079; font-weight:600; background:#fbfcfc; white-space:nowrap; }
-        tr:last-child td { border-bottom:0; }
-        .person { font-weight:600; }
-        .secondary-text { color:var(--muted); font-size:12px; margin-top:2px; }
-        .badge { display:inline-flex; border-radius:20px; padding:4px 9px; font-size:11px; font-weight:600; }
-        .badge.admin { background:#eef0ff; color:#4a52a7; }
-        .badge.user { background:#edf7f3; color:#26765e; }
-        .badge.active { background:#eaf8f1; color:#27845e; }
-        .badge.inactive { background:#fff1ef; color:#ae4b40; }
-        .actions { display:flex; gap:6px; white-space:nowrap; }
-        .icon-btn { width:32px; height:32px; border:1px solid var(--line); border-radius:7px; background:#fff; color:#52605a; }
-        .icon-btn:hover { color:var(--green); border-color:#a9cfc4; }
-        .icon-btn.warn:hover { color:#b64036; border-color:#eab8b2; }
-        .empty,.loading { text-align:center; padding:40px 15px; color:var(--muted); }
-        .notice { display:none; border-radius:8px; padding:11px 13px; margin-bottom:15px; font-size:13px; }
-        .notice.error { display:block; color:#9e2929; border:1px solid #f0c8c5; background:#fff2f1; }
-        .notice.success { display:block; color:#176c53; border:1px solid #bee2d5; background:#f0faf6; }
-        dialog { width:min(520px,calc(100vw - 28px)); max-height:90vh; border:1px solid var(--line); border-radius:14px; padding:0; box-shadow:0 20px 70px rgba(16,32,25,.2); }
-        dialog::backdrop { background:rgba(18,30,25,.42); }
-        .dialog-head { padding:19px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
-        .dialog-head h2 { font-size:19px; margin:0; }
-        .dialog-body { padding:20px 22px 22px; }
-        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-        .field { margin-bottom:14px; }
-        .field label { display:block; font-size:13px; color:#4f5e57; margin-bottom:6px; font-weight:500; }
-        .field input,.field select { width:100%; height:42px; border:1px solid #dce4e0; border-radius:8px; padding:0 11px; background:white; }
-        .help { color:var(--muted); font-size:12px; margin:4px 0 0; }
-        .check-row { display:flex; align-items:center; gap:8px; margin:8px 0 18px; font-size:13px; }
-        .dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
-        .secret-box { background:#f5f8f7; border:1px solid var(--line); padding:12px; border-radius:8px; overflow-wrap:anywhere; font-family:monospace; font-size:13px; margin:12px 0; }
-        @media(max-width:650px) { .wrap { margin:22px auto; padding:0 14px; } .heading { align-items:flex-start; flex-direction:column; } .cards { gap:8px; } .stat { padding:13px; } .stat-value { font-size:21px; } .toolbar { align-items:stretch; flex-direction:column; } .search { width:100%; } .topbar { padding:0 14px; } .form-grid { grid-template-columns:1fr; gap:0; } }
+        /* ใช้โครงสร้างเดียวกับหน้าอื่นจาก css/style.css — ด้านล่างคือส่วนเฉพาะหน้า admin */
+        .logo { font-size: 17px !important; }
+        .menu-item { font-size: 14px !important; padding: 11px 12px; }
+        .menu-title { font-size: 12px !important; }
+        .logout a { font-size: 14px !important; }
+        .welcome { font-size: 13px; }
+        .topbar h1 { font-size: 24px; }
+
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+
+        .page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+        .page-head h2 { margin: 0 0 3px; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+        .page-head p, .sub { margin: 0; color: var(--text-secondary); font-size: 13px; }
+
+        .admin-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 18px; }
+        .admin-stats .stat-card { min-height: 105px; }
+
+        .button { border: 0; border-radius: 9px; padding: 10px 16px; font-size: 13px; font-weight: 600; background: var(--primary); color: #fff; display: inline-flex; align-items: center; gap: 7px; transition: background .2s ease; }
+        .button:hover { background: var(--primary-dark); }
+        .button.secondary { background: #fff; color: #34423d; border: 1px solid var(--border); }
+        .button.secondary:hover { background: #f1f5f4; }
+        .button:disabled { opacity: .6; cursor: not-allowed; }
+
+        .table-card { padding: 0; overflow: hidden; }
+        .toolbar { padding: 16px 19px; display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+        .search { width: min(100%, 340px); height: 40px; border: 1px solid #dce4e0; border-radius: 9px; padding: 0 12px; outline: none; background: #fff; }
+        .search:focus, .field input:focus, .field select:focus { border-color: #75b6a6; box-shadow: 0 0 0 3px rgba(8, 127, 104, .09); outline: none; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 820px; }
+        th, td { padding: 13px 19px; text-align: left; border-bottom: 1px solid var(--border-soft); font-size: 13px; vertical-align: middle; }
+        th { color: #718079; font-weight: 600; background: #fbfcfc; white-space: nowrap; font-size: 12px; }
+        tr:last-child td { border-bottom: 0; }
+        tbody tr:hover td { background: #fafcfb; }
+        .person { font-weight: 600; }
+        .secondary-text { color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
+        .badge { display: inline-flex; border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; }
+        .badge.admin { background: #eef0ff; color: #4a52a7; }
+        .badge.user { background: var(--primary-light); color: #26765e; }
+        .badge.active { background: #eaf8f1; color: #27845e; }
+        .badge.inactive { background: #fff1ef; color: #ae4b40; }
+        .actions { display: flex; gap: 6px; white-space: nowrap; }
+        .icon-btn { width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: #52605a; display: inline-flex; align-items: center; justify-content: center; }
+        .icon-btn:hover { color: var(--primary); border-color: #a9cfc4; }
+        .icon-btn.warn:hover { color: #b64036; border-color: #eab8b2; }
+        .empty, .loading { text-align: center; padding: 40px 15px; color: var(--text-secondary); }
+
+        .notice { display: none; border-radius: 9px; padding: 11px 13px; margin-bottom: 16px; font-size: 13px; }
+        .notice.error { display: block; color: #9e2929; border: 1px solid #f0c8c5; background: #fff2f1; }
+        .notice.success { display: block; color: #176c53; border: 1px solid #bee2d5; background: #f0faf6; }
+
+        dialog { width: min(520px, calc(100vw - 28px)); max-height: 90vh; border: 1px solid var(--border); border-radius: 14px; padding: 0; color: var(--text-main); box-shadow: 0 20px 70px rgba(16, 32, 25, .2); }
+        dialog::backdrop { background: rgba(18, 30, 25, .42); }
+        .dialog-head { padding: 19px 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .dialog-head h2 { font-size: 18px; margin: 0; }
+        .dialog-body { padding: 20px 22px 22px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 13px; color: #4f5e57; margin-bottom: 6px; font-weight: 500; }
+        .field input, .field select { width: 100%; height: 42px; border: 1px solid #dce4e0; border-radius: 9px; padding: 0 11px; background: #fff; }
+        .help { color: var(--text-muted); font-size: 12px; margin: 4px 0 0; }
+        .check-row { display: flex; align-items: center; gap: 8px; margin: 8px 0 18px; font-size: 13px; }
+        .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+        .secret-box { background: var(--background); border: 1px solid var(--border); padding: 12px; border-radius: 9px; overflow-wrap: anywhere; font-family: monospace; font-size: 13px; margin: 12px 0; }
+
+        @media (max-width: 900px) { .admin-stats { grid-template-columns: 1fr; } }
+        @media (max-width: 650px) {
+            .page-head { align-items: flex-start; flex-direction: column; }
+            .toolbar { align-items: stretch; flex-direction: column; }
+            .search { width: 100%; }
+            .form-grid { grid-template-columns: 1fr; gap: 0; }
+        }
     </style>
 </head>
+
+
 <body>
-<header class="topbar">
-    <div class="brand"><i class="bi bi-graph-up-arrow"></i> TradeAnalytics <span style="color:#8b9691;font-weight:500;font-size:13px">Admin</span></div>
-    <div class="top-actions">
-        <a class="button secondary" href="dashboard.php" style="text-decoration:none"><i class="bi bi-grid"></i> Dashboard</a>
-        <button class="button secondary" id="logoutButton" type="button"><i class="bi bi-box-arrow-right"></i> ออกจากระบบ</button>
+
+<!-- =========================================================
+     SIDEBAR
+========================================================= -->
+
+<aside class="sidebar">
+
+    <div class="logo">
+        <i class="bi bi-graph-up-arrow"></i>
+        <span>TradeAnalytics</span>
     </div>
-</header>
-<main class="wrap">
-    <section class="heading">
-        <div><h1>จัดการบัญชี</h1><p class="sub">ดูแลบัญชีผู้ใช้ บทบาท และสถานะการใช้งาน</p></div>
-        <button class="button" id="createButton" type="button"><i class="bi bi-person-plus"></i> เพิ่มบัญชี</button>
-    </section>
-    <div id="notice" class="notice" role="status"></div>
-    <section class="cards" aria-label="Account summary">
-        <div class="stat"><div class="stat-label">บัญชีทั้งหมด</div><div class="stat-value" id="totalCount">—</div></div>
-        <div class="stat"><div class="stat-label">ผู้ใช้งาน</div><div class="stat-value" id="userCount">—</div></div>
-        <div class="stat"><div class="stat-label">แอดมินที่ใช้งาน</div><div class="stat-value" id="adminCount">—</div></div>
-    </section>
-    <section class="panel">
-        <div class="toolbar">
-            <input class="search" id="searchInput" type="search" placeholder="ค้นหาชื่อหรืออีเมล..." aria-label="ค้นหาบัญชี">
-            <span class="sub" id="resultCount"></span>
+
+    <a href="dashboard.php" class="menu-item">
+        <i class="bi bi-grid"></i>
+        <span>Dashboard</span>
+    </a>
+
+    <a href="trade-history.php" class="menu-item">
+        <i class="bi bi-clock-history"></i>
+        <span>ประวัติการเทรด</span>
+    </a>
+
+    <a href="statistics.php" class="menu-item">
+        <i class="bi bi-bar-chart"></i>
+        <span>สถิติการเทรด</span>
+    </a>
+
+    <a href="reports.php" class="menu-item">
+        <i class="bi bi-file-earmark-text"></i>
+        <span>รายงาน</span>
+    </a>
+
+    <div class="menu-title">การตั้งค่า</div>
+
+    <a href="notifications.php" class="menu-item">
+        <i class="bi bi-telegram"></i>
+        <span>การแจ้งเตือน</span>
+    </a>
+
+    <a href="profile.php" class="menu-item">
+        <i class="bi bi-person"></i>
+        <span>บัญชีผู้ใช้งาน</span>
+    </a>
+
+    <a href="admin.php" class="menu-item active" id="adminMenuItem">
+        <i class="bi bi-shield-lock"></i>
+        <span>จัดการบัญชี</span>
+    </a>
+
+    <div class="logout">
+        <a href="#" id="sidebarLogout">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>ออกจากระบบ</span>
+        </a>
+    </div>
+
+</aside>
+
+
+<!-- =========================================================
+     MAIN
+========================================================= -->
+
+<main class="main-content">
+
+    <header class="topbar">
+
+        <div>
+            <div class="welcome" id="welcomeText">ยินดีต้อนรับ, ผู้ดูแลระบบ</div>
+            <h1>จัดการบัญชี</h1>
         </div>
-        <div class="table-wrap"><table>
-            <thead><tr><th>บัญชี</th><th>Telegram Chat ID</th><th>บทบาท</th><th>สถานะ</th><th>วันที่สร้าง</th><th>จัดการ</th></tr></thead>
-            <tbody id="usersBody"><tr><td colspan="6" class="loading">กำลังโหลดบัญชี...</td></tr></tbody>
-        </table></div>
-    </section>
+
+        <div class="topbar-right">
+
+            <button type="button" class="icon-button" aria-label="การแจ้งเตือน" onclick="window.location.href='notifications.php'">
+                <i class="bi bi-bell"></i>
+            </button>
+
+            <div class="profile-menu">
+                <div class="avatar" id="userAvatar">A</div>
+
+                <div class="profile-dropdown" id="profileDropdown">
+                    <a href="profile.php">
+                        <i class="bi bi-person"></i>
+                        โปรไฟล์
+                    </a>
+                    <a href="#" id="avatarLogout">
+                        <i class="bi bi-box-arrow-right"></i>
+                        ออกจากระบบ
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <div class="content">
+
+        <div class="page-head">
+            <div>
+                <h2>บัญชีผู้ใช้ทั้งหมด</h2>
+                <p>ดูแลบัญชีผู้ใช้ บทบาท และสถานะการใช้งาน</p>
+            </div>
+            <button class="button" id="createButton" type="button"><i class="bi bi-person-plus"></i> เพิ่มบัญชี</button>
+        </div>
+
+        <div id="notice" class="notice" role="status"></div>
+
+        <section class="admin-stats" aria-label="สรุปบัญชี">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-title">บัญชีทั้งหมด</div>
+                    <div class="stat-value" id="totalCount">—</div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-people"></i></div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <div class="stat-title">ผู้ใช้งาน</div>
+                    <div class="stat-value" id="userCount">—</div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-person"></i></div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <div class="stat-title">แอดมินที่ใช้งาน</div>
+                    <div class="stat-value" id="adminCount">—</div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-shield-lock"></i></div>
+            </div>
+        </section>
+
+        <section class="card-box table-card">
+            <div class="toolbar">
+                <input class="search" id="searchInput" type="search" placeholder="ค้นหาชื่อหรืออีเมล..." aria-label="ค้นหาบัญชี">
+                <span class="sub" id="resultCount"></span>
+            </div>
+            <div class="table-wrap"><table>
+                <thead><tr><th>บัญชี</th><th>Telegram Chat ID</th><th>บทบาท</th><th>สถานะ</th><th>วันที่สร้าง</th><th>จัดการ</th></tr></thead>
+                <tbody id="usersBody"><tr><td colspan="6" class="loading">กำลังโหลดบัญชี...</td></tr></tbody>
+            </table></div>
+        </section>
+
+    </div>
+
 </main>
 
 <dialog id="userDialog">
@@ -257,9 +400,28 @@ document.getElementById('closeDialog').addEventListener('click', () => userDialo
 document.getElementById('cancelDialog').addEventListener('click', () => userDialog.close());
 document.getElementById('closeSecret').addEventListener('click', () => secretDialog.close());
 document.getElementById('searchInput').addEventListener('input', renderUsers);
-document.getElementById('logoutButton').addEventListener('click', () => {
+function logout() {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('authToken');
     window.location.href = 'login.php';
+}
+
+document.getElementById('sidebarLogout').addEventListener('click', (event) => {
+    event.preventDefault();
+    if (window.confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) logout();
+});
+document.getElementById('avatarLogout').addEventListener('click', (event) => {
+    event.preventDefault();
+    logout();
+});
+
+const userAvatar = document.getElementById('userAvatar');
+const profileDropdown = document.getElementById('profileDropdown');
+userAvatar.addEventListener('click', () => profileDropdown.classList.toggle('show'));
+document.addEventListener('click', (event) => {
+    if (!userAvatar.contains(event.target) && !profileDropdown.contains(event.target)) {
+        profileDropdown.classList.remove('show');
+    }
 });
 
 userForm.addEventListener('submit', async (event) => {
@@ -362,6 +524,9 @@ async function initialize() {
             window.location.href = 'dashboard.php';
             return;
         }
+        const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.name || profile.email || 'ผู้ดูแลระบบ';
+        document.getElementById('welcomeText').textContent = `ยินดีต้อนรับ, ${fullName}`;
+        userAvatar.textContent = fullName.charAt(0).toUpperCase();
         await loadUsers();
     } catch {
         showNotice('เชื่อมต่อ API ไม่สำเร็จ กรุณาตรวจสอบว่า Backend กำลังทำงาน', 'error');
@@ -369,5 +534,6 @@ async function initialize() {
 }
 initialize();
 </script>
+
 </body>
 </html>
