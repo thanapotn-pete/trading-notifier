@@ -2192,6 +2192,8 @@ document.addEventListener('click', function (e) {
 </script>
 
 
+<script src="js/admin-menu.js"></script>
+
 </body>
 
 </html>

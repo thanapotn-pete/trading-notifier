@@ -144,11 +144,6 @@
 
             </a>
 
-            <a href="admin.php" class="menu-item" id="adminMenuItem" style="display:none">
-                <i class="bi bi-shield-lock"></i>
-                <span>จัดการบัญชี</span>
-            </a>
-
 
         </div>
 
@@ -923,10 +918,6 @@ function isClosedTrade(trade) {
 
 function updateUserInfo() {
 
-    const adminMenuItem = document.getElementById('adminMenuItem');
-    if (adminMenuItem && dashboardProfile?.role === 'admin') {
-        adminMenuItem.style.display = 'flex';
-    }
 
     const welcomeElement =
         document.getElementById('welcomeUser');
@@ -1798,6 +1789,8 @@ document.addEventListener(
 );
 
 </script>
+
+<script src="js/admin-menu.js"></script>
 
 </body>
 
