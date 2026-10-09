@@ -36,6 +36,25 @@ const {
 const router = express.Router();
 
 
+// Emails are stored lowercase and compared case-insensitively, so
+// "A@x.com" and "a@x.com" can never become two different accounts.
+// Returns the normalized email, or null when it is not a valid address.
+function normalizeEmail(value) {
+  const email = String(value ?? '').trim().toLowerCase();
+
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return null;
+  }
+
+  return email;
+}
+
+async function emailTakenByOther(email, userId) {
+  const other = await findUserByEmail(email);
+  return Boolean(other && other.id !== userId);
+}
+
+
 // =====================================================
 // SETUP PASSWORD
 // =====================================================
@@ -62,10 +81,24 @@ router.post('/setup-password', async (req, res) => {
       });
     }
 
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail) {
+      return res.status(400).json({
+        error: 'Enter a valid email address'
+      });
+    }
+
+    if (await emailTakenByOther(normalizedEmail, user.id)) {
+      return res.status(409).json({
+        error: 'An account with this email already exists'
+      });
+    }
+
     const passwordHash = await hashPassword(password);
 
     await setPassword(user.id, {
-      email,
+      email: normalizedEmail,
       passwordHash
     });
 
@@ -560,6 +593,38 @@ router.patch('/profile', async (req, res) => {
       ...profileFields
     } = req.body || {};
 
+    // Validate everything before changing anything, so a rejected email
+    // can't leave the password already updated.
+    for (const key of ['first_name', 'last_name']) {
+      if (profileFields[key] !== undefined) {
+        profileFields[key] = String(profileFields[key]).trim();
+
+        if (profileFields[key].length > 100) {
+          return res.status(400).json({
+            error: 'Names must be 100 characters or fewer'
+          });
+        }
+      }
+    }
+
+    if (profileFields.email !== undefined) {
+      const email = normalizeEmail(profileFields.email);
+
+      if (!email) {
+        return res.status(400).json({
+          error: 'Enter a valid email address'
+        });
+      }
+
+      if (await emailTakenByOther(email, req.user.id)) {
+        return res.status(409).json({
+          error: 'An account with this email already exists'
+        });
+      }
+
+      profileFields.email = email;
+    }
+
     if (password) {
       const ok =
         await verifyPassword(
@@ -598,6 +663,13 @@ router.patch('/profile', async (req, res) => {
     );
 
   } catch (err) {
+    // Unique index on lower(email) — lost a race with another sign-up
+    if (err.code === '23505') {
+      return res.status(409).json({
+        error: 'An account with this email already exists'
+      });
+    }
+
     console.error(
       '[API /profile] Error:',
       err.message

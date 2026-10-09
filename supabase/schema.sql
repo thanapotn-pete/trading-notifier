@@ -70,6 +70,13 @@ end $$;
 -- update users set role = 'admin' where lower(email) = lower('your-admin-email@example.com');
 -- select id, email, role, is_active from users where lower(email) = lower('your-admin-email@example.com');
 
+-- Emails are unique ignoring case: the original `unique (email)` constraint
+-- is case-sensitive, so "A@x.com" and "a@x.com" could both exist and break
+-- login lookup. Check for existing clashes first (must return no rows):
+--   select lower(email), count(*) from users
+--   where email is not null group by 1 having count(*) > 1;
+create unique index if not exists users_email_lower_key on users (lower(email));
+
 -- Per-user notification preferences (src/notification-settings.js).
 -- Columns mirror the table currently in Supabase.
 create table if not exists notification_settings (
