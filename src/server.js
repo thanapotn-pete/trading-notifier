@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const path = require('path');
 const express = require('express');
 
 const {
@@ -489,6 +490,18 @@ app.post(
 
   }
 );
+
+
+// =====================================================
+// FRONTEND (static pages)
+// =====================================================
+
+// Same origin as the API, so the pages need no CORS and no API URL setting.
+app.use(express.static(path.join(__dirname, '..', 'Frontend')));
+
+app.get('/', (req, res) => {
+  res.redirect('/login.html');
+});
 
 
 // =====================================================

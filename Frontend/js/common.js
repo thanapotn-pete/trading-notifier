@@ -1,4 +1,4 @@
-// ฟังก์ชันและพฤติกรรมที่ใช้ร่วมกันทุกหน้า (ต้องโหลดต่อจาก js/config.js)
+﻿// ฟังก์ชันและพฤติกรรมที่ใช้ร่วมกันทุกหน้า (ต้องโหลดต่อจาก js/config.js)
 (function () {
     const TOKEN_KEY = 'auth_token';
     const ROLE_KEY = 'user_role';
@@ -17,7 +17,7 @@
 
     function logout() {
         clearSession();
-        window.location.href = 'login.php';
+        window.location.href = 'login.html';
     }
 
     function escapeHtml(value) {

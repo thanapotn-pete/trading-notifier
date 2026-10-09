@@ -55,7 +55,58 @@
 
     <!-- ================= SIDEBAR ================= -->
     <!-- แถบเมนูด้านข้างระบบ -->
-    <?php $activePage = 'dashboard'; include __DIR__ . '/partials/sidebar.php'; ?>
+    <aside class="sidebar">
+
+    <!-- LOGO -->
+    <div class="logo">
+        <i class="bi bi-graph-up-arrow"></i>
+        <span>TradeAnalytics</span>
+    </div>
+
+    <a href="dashboard.html" class="menu-item active">
+        <i class="bi bi-grid"></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="trade-history.html" class="menu-item">
+        <i class="bi bi-clock-history"></i>
+        <span>ประวัติการเทรด</span>
+    </a>
+    <a href="statistics.html" class="menu-item">
+        <i class="bi bi-bar-chart"></i>
+        <span>สถิติการเทรด</span>
+    </a>
+    <a href="reports.html" class="menu-item">
+        <i class="bi bi-file-earmark-text"></i>
+        <span>รายงาน</span>
+    </a>
+
+    <!-- SETTING -->
+    <div class="menu-title">การตั้งค่า</div>
+
+    <a href="notifications.html" class="menu-item">
+        <i class="bi bi-telegram"></i>
+        <span>การแจ้งเตือน</span>
+    </a>
+    <a href="profile.html" class="menu-item">
+        <i class="bi bi-person"></i>
+        <span>บัญชีผู้ใช้งาน</span>
+    </a>
+
+    <!-- ADMIN (js/common.js จะแสดงเมื่อบัญชีเป็น admin เท่านั้น) -->
+    <a href="admin.html" class="menu-item" id="adminMenuItem" style="display:none">
+        <i class="bi bi-shield-lock"></i>
+        <span>จัดการบัญชี</span>
+    </a>
+
+    <!-- LOGOUT -->
+    <div class="logout">
+        <a href="#">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>ออกจากระบบ</span>
+        </a>
+    </div>
+
+</aside>
 
 
 
@@ -118,7 +169,7 @@
                     type="button"
                     class="icon-button"
                     aria-label="การแจ้งเตือน"
-                    onclick="window.location.href='notifications.php'"
+                    onclick="window.location.href='notifications.html'"
                 >
 
                     <i class="bi bi-bell"></i>
@@ -134,7 +185,7 @@
     </div>
 
     <div class="profile-dropdown" id="profileDropdown">
-        <a href="profile.php">
+        <a href="profile.html">
             <i class="bi bi-person"></i>
             โปรไฟล์
         </a>
@@ -396,7 +447,7 @@
 
 
                             <!-- ลิงก์ไปดูประวัติการเทรดทั้งหมด -->
-                            <a href="trade-history.php">
+                            <a href="trade-history.html">
                                 ดูทั้งหมด →
                             </a>
 
@@ -437,7 +488,7 @@
                     </h2>
 
 
-                    <a href="notifications.php">
+                    <a href="notifications.html">
 
                         <i class="bi bi-telegram"></i>
 
@@ -593,7 +644,7 @@ async function loadDashboard() {
 
     // ถ้าไม่มี Token ให้ดีดกลับไปหน้า Login ทันที
     if (!token) {
-        window.location.href = 'login.php';
+        window.location.href = 'login.html';
         return;
     }
 
@@ -641,7 +692,7 @@ async function loadDashboard() {
             console.warn('[Dashboard] Session expired');
 
             localStorage.removeItem('auth_token');
-            window.location.href = 'login.php';
+            window.location.href = 'login.html';
             return;
         }
 

@@ -1,21 +1,3 @@
-<?php
-/*
-|--------------------------------------------------------------------------
-| Trade History
-|--------------------------------------------------------------------------
-| ข้อมูลการเทรดจะถูกโหลดจาก Node.js API ตามผู้ใช้งานที่ Login อยู่
-|--------------------------------------------------------------------------
-*/
-$trades = [];
-$totalTrades = 0;
-$winningTrades = 0;
-$losingTrades = 0;
-$totalProfit = 0;
-$totalLoss = 0;
-$totalPnl = 0;
-$winRate = 0;
-?>
-
 <!DOCTYPE html>
 
 <html lang="th">
@@ -752,7 +734,58 @@ $winRate = 0;
          SIDEBAR
     ========================================================= -->
 
-    <?php $activePage = 'trade-history'; include __DIR__ . '/partials/sidebar.php'; ?>
+    <aside class="sidebar">
+
+    <!-- LOGO -->
+    <div class="logo">
+        <i class="bi bi-graph-up-arrow"></i>
+        <span>TradeAnalytics</span>
+    </div>
+
+    <a href="dashboard.html" class="menu-item">
+        <i class="bi bi-grid"></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="trade-history.html" class="menu-item active">
+        <i class="bi bi-clock-history"></i>
+        <span>ประวัติการเทรด</span>
+    </a>
+    <a href="statistics.html" class="menu-item">
+        <i class="bi bi-bar-chart"></i>
+        <span>สถิติการเทรด</span>
+    </a>
+    <a href="reports.html" class="menu-item">
+        <i class="bi bi-file-earmark-text"></i>
+        <span>รายงาน</span>
+    </a>
+
+    <!-- SETTING -->
+    <div class="menu-title">การตั้งค่า</div>
+
+    <a href="notifications.html" class="menu-item">
+        <i class="bi bi-telegram"></i>
+        <span>การแจ้งเตือน</span>
+    </a>
+    <a href="profile.html" class="menu-item">
+        <i class="bi bi-person"></i>
+        <span>บัญชีผู้ใช้งาน</span>
+    </a>
+
+    <!-- ADMIN (js/common.js จะแสดงเมื่อบัญชีเป็น admin เท่านั้น) -->
+    <a href="admin.html" class="menu-item" id="adminMenuItem" style="display:none">
+        <i class="bi bi-shield-lock"></i>
+        <span>จัดการบัญชี</span>
+    </a>
+
+    <!-- LOGOUT -->
+    <div class="logout">
+        <a href="#">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>ออกจากระบบ</span>
+        </a>
+    </div>
+
+</aside>
 
 
 
@@ -814,7 +847,7 @@ $winRate = 0;
     type="button"
     class="icon-button"
     aria-label="การแจ้งเตือน"
-    onclick="window.location.href='notifications.php'"
+    onclick="window.location.href='notifications.html'"
 >
     <i class="bi bi-bell"></i>
 </button>
@@ -828,7 +861,7 @@ $winRate = 0;
     </div>
 
     <div class="profile-dropdown" id="profileDropdown">
-        <a href="profile.php">
+        <a href="profile.html">
             <i class="bi bi-person"></i>
             โปรไฟล์
         </a>
@@ -912,7 +945,7 @@ $winRate = 0;
                             </div>
 
                             <div class="history-summary-value">
-                                <?= $totalTrades ?>
+                                0
                             </div>
 
                         </div>
@@ -943,7 +976,7 @@ $winRate = 0;
                             </div>
 
                             <div class="history-summary-value green">
-                                <?= $winningTrades ?>
+                                0
                             </div>
 
                         </div>
@@ -974,7 +1007,7 @@ $winRate = 0;
                             </div>
 
                             <div class="history-summary-value red">
-                                <?= $losingTrades ?>
+                                0
                             </div>
 
                         </div>
@@ -1011,7 +1044,7 @@ $winRate = 0;
                             </div>
 
                             <div class="history-summary-value">
-                                <?= number_format($winRate, 1) ?>%
+                                0.0%
                             </div>
 
                         </div>
@@ -1173,7 +1206,7 @@ $winRate = 0;
 
 
                     <span class="table-count">
-                        <?= $totalTrades ?> รายการ
+                        0 รายการ
                     </span>
 
 
@@ -1229,133 +1262,6 @@ $winRate = 0;
                         <tbody id="tradeTableBody">
 
 
-                            <?php foreach ($trades as $trade): ?>
-
-                                <tr
-                                    data-symbol="<?= htmlspecialchars($trade['symbol']) ?>"
-                                    data-action="<?= htmlspecialchars($trade['action']) ?>"
-                                >
-
-
-                                    <!-- SYMBOL -->
-
-                                    <td>
-
-                                        <span class="symbol-name">
-
-                                            <?= htmlspecialchars($trade['symbol']) ?>
-
-                                        </span>
-
-
-                                        <span class="symbol-type">
-
-                                            Forex / Trading
-
-                                        </span>
-
-                                    </td>
-
-
-
-                                    <!-- ACTION -->
-
-                                    <td>
-
-                                        <?php if ($trade['action'] === 'BUY'): ?>
-
-                                            <span class="action-badge action-buy">
-
-                                                BUY
-
-                                            </span>
-
-                                        <?php else: ?>
-
-                                            <span class="action-badge action-sell">
-
-                                                SELL
-
-                                            </span>
-
-                                        <?php endif; ?>
-
-                                    </td>
-
-
-
-                                    <!-- PRICE -->
-
-                                    <td>
-
-                                        <?= htmlspecialchars($trade['price']) ?>
-
-                                    </td>
-
-
-
-                                    <!-- LOT -->
-
-                                    <td>
-
-                                        <?= htmlspecialchars($trade['lot']) ?>
-
-                                    </td>
-
-
-
-                                    <!-- PNL -->
-
-                                    <td>
-
-                                        <?php if ($trade['pnl'] >= 0): ?>
-
-                                            <span class="pnl-positive">
-
-                                                +$<?= number_format($trade['pnl'], 2) ?>
-
-                                            </span>
-
-                                        <?php else: ?>
-
-                                            <span class="pnl-negative">
-
-                                                -$<?= number_format(abs($trade['pnl']), 2) ?>
-
-                                            </span>
-
-                                        <?php endif; ?>
-
-                                    </td>
-
-
-
-                                    <!-- STATUS -->
-
-                                    <td>
-
-                                        <span class="trade-status">
-
-                                            <?= htmlspecialchars($trade['status']) ?>
-
-                                        </span>
-
-                                    </td>
-
-
-
-                                    <!-- TIMESTAMP -->
-
-                                    <td>
-
-                                        <?= htmlspecialchars($trade['timestamp']) ?>
-
-                                    </td>
-
-
-                                </tr>
-
-                            <?php endforeach; ?>
 
 
                         </tbody>
@@ -1377,7 +1283,7 @@ $winRate = 0;
 
                     <div class="table-footer-info">
 
-                        แสดง <?= $totalTrades ?> รายการ
+                        แสดง 0 รายการ
 
                     </div>
 
@@ -1635,7 +1541,7 @@ async function loadTrades() {
 
     // ถ้าไม่มี Token ให้เตะกลับไปหน้า Login
     if (!token) {
-        window.location.href = 'login.php';
+        window.location.href = 'login.html';
         return;
     }
 
@@ -1655,7 +1561,7 @@ async function loadTrades() {
         // ถ้า Token หมดอายุหรือไม่มีสิทธิ์ ให้ลบ Token ทิ้งแล้วพาไปหน้า Login
         if (response.status === 401 || response.status === 403) {
             localStorage.removeItem(TRADE_HISTORY_TOKEN_KEY);
-            window.location.href = 'login.php';
+            window.location.href = 'login.html';
             return;
         }
 
