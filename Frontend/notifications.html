@@ -648,6 +648,24 @@
             color: #64746f;
         }
 
+        .risk-threshold-save {
+            height: 38px;
+            padding: 0 14px;
+            border: none;
+            border-radius: 8px;
+            background: #087f68;
+            color: #ffffff;
+            font-size: 13px !important;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .risk-threshold-save:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 700px) {
             .risk-threshold {
                 align-items: flex-start;
@@ -1657,11 +1675,19 @@
                                 id="maxDrawdownInput"
                                 min="0"
                                 max="100"
-                                step="0.1"
+                                step="0.5"
                                 value="10"
                                 placeholder="10"
                             >
                             <span class="risk-threshold-unit">%</span>
+                            <button
+                                type="button"
+                                id="saveDrawdownBtn"
+                                class="risk-threshold-save"
+                                disabled
+                            >
+                                บันทึก
+                            </button>
                         </div>
 
                     </div>
@@ -2246,7 +2272,9 @@ function applyNotificationSettings(settings) {
     updateMasterUI();
 }
 
-function getSettingsFromUI() {
+// includeDrawdown=false leaves max_drawdown out of the PATCH, so toggling a
+// switch never saves a half-edited Maximum Drawdown (it has its own save button).
+function getSettingsFromUI(includeDrawdown = true) {
     const master = document.getElementById('masterSwitch');
     const openOrder = document.getElementById('openOrderSwitch');
     const closeOrder = document.getElementById('closeOrderSwitch');
@@ -2256,7 +2284,7 @@ function getSettingsFromUI() {
     const daily = document.getElementById('dailySummarySwitch');
     const weekly = document.getElementById('weeklySummarySwitch');
 
-    return {
+    const settings = {
         enabled: master ? master.checked : false,
 
         // "เปิดออเดอร์" 1 switch ควบคุมทั้ง BUY และ SELL
@@ -2275,14 +2303,18 @@ function getSettingsFromUI() {
         notify_daily_summary: daily ? daily.checked : false,
         notify_weekly_summary: weekly ? weekly.checked : false
     };
+
+    if (!includeDrawdown) delete settings.max_drawdown;
+
+    return settings;
 }
 
-async function saveNotificationSettings(showSuccess = false) {
+async function saveNotificationSettings(showSuccess = false, includeDrawdown = true) {
     if (isLoadingSettings) return;
 
-    const settings = getSettingsFromUI();
+    const settings = getSettingsFromUI(includeDrawdown);
 
-    if (settings.max_drawdown !== null) {
+    if (includeDrawdown && settings.max_drawdown !== null) {
         if (!Number.isFinite(settings.max_drawdown) ||
             settings.max_drawdown < 0 ||
             settings.max_drawdown > 100) {
@@ -2318,6 +2350,7 @@ async function saveNotificationSettings(showSuccess = false) {
         }
 
         notificationSettings = data.settings || settings;
+        updateDrawdownButton();
 
         if (showSuccess) {
             alert('บันทึกการตั้งค่าเรียบร้อยแล้ว ✓');
@@ -2348,7 +2381,7 @@ function scheduleSaveNotificationSettings() {
     clearTimeout(saveSettingsTimer);
 
     saveSettingsTimer = setTimeout(() => {
-        saveNotificationSettings(false);
+        saveNotificationSettings(false, false);
     }, 300);
 }
 
@@ -2401,6 +2434,8 @@ function updateMasterUI() {
             !risk ||
             !risk.checked;
     }
+
+    updateDrawdownButton();
 
     if (label) {
         label.textContent = master.checked
@@ -2460,11 +2495,42 @@ document.addEventListener('change', function (event) {
    RISK THRESHOLD
    ========================================================= */
 
+// Save only when the user presses "บันทึก" (or Enter), not on every arrow click.
+// The button is enabled only while the value differs from what is saved.
+function updateDrawdownButton() {
+    const input = document.getElementById('maxDrawdownInput');
+    const button = document.getElementById('saveDrawdownBtn');
+
+    if (!input || !button) return;
+
+    const hasSaved =
+        notificationSettings &&
+        notificationSettings.max_drawdown !== null &&
+        notificationSettings.max_drawdown !== undefined &&
+        notificationSettings.max_drawdown !== '';
+
+    const saved = hasSaved ? Number(notificationSettings.max_drawdown) : 10;
+    const current = input.value.trim() === '' ? null : Number(input.value);
+
+    button.disabled = input.disabled || current === saved;
+}
+
 const maxDrawdownInput = document.getElementById('maxDrawdownInput');
+const saveDrawdownBtn = document.getElementById('saveDrawdownBtn');
 
 if (maxDrawdownInput) {
-    maxDrawdownInput.addEventListener('change', function () {
-        saveNotificationSettings(true);
+    maxDrawdownInput.addEventListener('input', updateDrawdownButton);
+
+    maxDrawdownInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && saveDrawdownBtn && !saveDrawdownBtn.disabled) {
+            saveDrawdownBtn.click();
+        }
+    });
+}
+
+if (saveDrawdownBtn) {
+    saveDrawdownBtn.addEventListener('click', function () {
+        saveNotificationSettings(true, true);
     });
 }
 
