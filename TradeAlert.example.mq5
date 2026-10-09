@@ -10,6 +10,8 @@ input string webhook_secret      = "YOUR_WEBHOOK_SECRET";
 input int    webrequest_timeout  = 5000; // ms
 input int    send_delay_ms       = 150;  // ms
 input bool   send_pending_alerts = true; // แจ้งเตือน Pending order (ตั้ง/ยกเลิก)
+input int    drawdown_check_sec  = 30;   // ตรวจ Drawdown ทุกกี่วินาที (0 = ปิด) — server ตัดสินว่าถึงเกณฑ์หรือยัง
+input double drawdown_report_min = 0.5;  // ส่งค่า Drawdown ให้ server เมื่อ >= ค่านี้ (%) ต้องไม่เกิน Max Drawdown ที่ตั้งบนเว็บ
 
 // Disclaimer ต่อท้ายข้อความสัญญาณเทรดทุกอัน (HTML bold ตามที่ parse_mode=HTML ของ Telegram รองรับ)
 string DISCLAIMER = "This signal is for analytical and informational purposes only and <b>\"does not constitute investment advice\"</b>.\nPlease practice proper risk management to protect your own interests.";
@@ -259,13 +261,104 @@ void RemovePending(ulong ticket)
    ArrayResize(g_po_tp,     last);
 }
 
+//+------------------------------------------------------------------+
+//| Drawdown = เงินในบัญชี (equity) ลดลงจากจุดสูงสุดที่เคยทำได้ (%)    |
+//| EA แค่วัดและรายงาน — server เทียบกับ Max Drawdown ของผู้ใช้        |
+//+------------------------------------------------------------------+
+double g_last_dd_sent = 0.0;   // ค่าล่าสุดที่ส่งให้ server (0 = ยังไม่ได้ส่ง/ส่งค่ากลับสู่ปกติแล้ว)
+bool   g_dd_synced   = false;  // ส่งค่าแรกหลัง EA เริ่มทำงานให้ server แล้วหรือยัง
+
+string PeakKey()
+{
+   return("TA_PEAK_" + (string)AccountInfoInteger(ACCOUNT_LOGIN));
+}
+
+// เริ่มนับจุดสูงสุดใหม่จาก equity ปัจจุบัน — ฝาก/ถอนเงินจะทำให้จุดสูงสุดเก่าใช้ไม่ได้
+// (ถอนเงินแล้วจะดูเหมือน drawdown ทั้งที่ไม่ได้ขาดทุน)
+// (ไม่ล้าง g_last_dd_sent: ถ้าเคยส่งค่า drawdown สูงไปแล้ว รอบถัดไป CheckDrawdown จะเห็น
+//  drawdown ~0 แล้วส่ง "กลับสู่ปกติ" ให้ server ปลดการเตือน ไม่งั้นรอบหน้าจะไม่ถูกเตือน)
+void ResetPeakEquity()
+{
+   GlobalVariableSet(PeakKey(), AccountInfoDouble(ACCOUNT_EQUITY));
+}
+
+bool SendDrawdown(double dd, double equity, double peak)
+{
+   if(StringLen(webhook_url) == 0) return(false);
+   string url = webhook_url + "/drawdown"; // .../webhook/mt5/drawdown
+   string body = "{\"secret\":\"" + webhook_secret + "\","
+               + "\"drawdown\":" + DoubleToString(dd, 2) + ","
+               + "\"equity\":" + DoubleToString(equity, 2) + ","
+               + "\"peak\":" + DoubleToString(peak, 2) + ","
+               + "\"balance\":" + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + ","
+               + "\"currency\":\"" + AccountInfoString(ACCOUNT_CURRENCY) + "\"}";
+   uchar data[];
+   int dlen = StringToCharArray(body, data, 0, -1, CP_UTF8);
+   ArrayResize(data, dlen - 1);
+   char result[];
+   string headers = "Content-Type: application/json\r\n";
+   string result_headers = "";
+   int res = WebRequest("POST", url, headers, webrequest_timeout, data, result, result_headers);
+   if(res == -1)
+   {
+      PrintFormat("SendDrawdown error=%d (4014=URL not allowed in Options)", GetLastError());
+      ResetLastError();
+      return(false);
+   }
+   PrintFormat("SendDrawdown dd=%.2f%% status=%d", dd, res);
+   return(res >= 200 && res < 300);
+}
+
+void CheckDrawdown()
+{
+   double equity = AccountInfoDouble(ACCOUNT_EQUITY);
+   double peak = GlobalVariableCheck(PeakKey()) ? GlobalVariableGet(PeakKey()) : equity;
+   if(equity > peak) peak = equity;
+   GlobalVariableSet(PeakKey(), peak);
+   if(peak <= 0.0) return;
+
+   double dd = (peak - equity) / peak * 100.0;
+   bool above = (dd >= drawdown_report_min);
+
+   // ส่งค่าแรกทุกครั้งที่ EA เริ่มทำงาน: ถ้า drawdown ลดลงระหว่างที่ EA ปิดอยู่
+   // server จะได้ปลดการเตือนที่ค้างไว้ (ไม่งั้นรอบหน้าที่ข้ามเกณฑ์จะไม่ถูกเตือน)
+   if(!g_dd_synced)
+   {
+      if(SendDrawdown(dd, equity, peak))
+      {
+         g_dd_synced = true;
+         g_last_dd_sent = above ? dd : 0.0;
+      }
+      return;
+   }
+
+   // รายงานเมื่อถึงเกณฑ์ขั้นต่ำและค่าขยับ >= 0.5 จุดจากที่ส่งล่าสุด (กัน server ถูกยิงถี่ๆ)
+   // และรายงานอีกครั้งตอนกลับต่ำกว่าเกณฑ์ เพื่อให้ server "ปลด" การเตือนไว้เตือนรอบหน้า
+   // ถ้าส่งไม่สำเร็จจะไม่จำค่า → ลองใหม่รอบถัดไป
+   if(above && (g_last_dd_sent == 0.0 || MathAbs(dd - g_last_dd_sent) >= 0.5))
+   {
+      if(SendDrawdown(dd, equity, peak)) g_last_dd_sent = dd;
+   }
+   else if(!above && g_last_dd_sent > 0.0)
+   {
+      if(SendDrawdown(dd, equity, peak)) g_last_dd_sent = 0.0;
+   }
+}
+
 int OnInit()
 {
+   if(drawdown_check_sec > 0) EventSetTimer(drawdown_check_sec);
    return(INIT_SUCCEEDED);
 }
 
 void OnDeinit(const int reason)
 {
+   EventKillTimer();
+}
+
+void OnTimer()
+{
+   CheckDrawdown();
 }
 
 // helper: get position TP/SL for symbol; return "-" if not set or no position
@@ -396,6 +489,13 @@ void OnTradeTransaction(
 
    int deal_entry = (int)HistoryDealGetInteger(deal_ticket, DEAL_ENTRY);       // IN / OUT
    int deal_type  = (int)HistoryDealGetInteger(deal_ticket, DEAL_TYPE);        // BUY / SELL
+   // เงินเข้า/ออกบัญชี, เครดิต, คอมมิชชั่น ฯลฯ ไม่ใช่การเทรด → ไม่แจ้งเป็น "NEW TRADE"
+   // และไม่บันทึกเป็นไม้ (เดิม deal ชนิดอื่นจะถูกส่งเป็น sell) ฝาก/ถอนต้องเริ่มนับ Drawdown ใหม่
+   if(deal_type != DEAL_TYPE_BUY && deal_type != DEAL_TYPE_SELL)
+   {
+      if(deal_type == DEAL_TYPE_BALANCE) ResetPeakEquity();
+      return;
+   }
    double deal_volume = HistoryDealGetDouble(deal_ticket, DEAL_VOLUME);
    double deal_price  = HistoryDealGetDouble(deal_ticket, DEAL_PRICE);
    double deal_profit = HistoryDealGetDouble(deal_ticket, DEAL_PROFIT);
@@ -459,7 +559,13 @@ void OnTradeTransaction(
       msg += "💵 Exit     " + DoubleToString(deal_price, digits) + "\n";
       msg += "💰 Profit   <b>" + profit_str + "$</b>";
       // server ส่ง Telegram ให้ตามการตั้งค่าบนเว็บ — EA ส่งเองเฉพาะเมื่อ server ไม่รับเรื่อง
-      if(!SendWebhook("close", symbol, deal_price, deal_volume, deal_profit, pos_id, 0.0, 0.0, order_seq))
+      // เหตุผลที่ไม้ถูกปิด: ชน TP → "tp", ชน SL / stop out → "sl", ปิดเอง/อื่นๆ → "close"
+      // server ใช้แยกสวิตช์ TP/SL กับ "ปิดออเดอร์" บนเว็บ
+      long deal_reason = HistoryDealGetInteger(deal_ticket, DEAL_REASON);
+      string close_action = "close";
+      if(deal_reason == DEAL_REASON_TP) close_action = "tp";
+      else if(deal_reason == DEAL_REASON_SL || deal_reason == DEAL_REASON_SO) close_action = "sl";
+      if(!SendWebhook(close_action, symbol, deal_price, deal_volume, deal_profit, pos_id, 0.0, 0.0, order_seq))
          SendTelegram(WithDisclaimer(msg));
       // ปิดสนิทแล้ว (ไม่มี position เหลือ) → คืนเลขลำดับ กัน GlobalVariable สะสม
       if(!PositionSelectByTicket(pos_id)) ReleaseOrderSeq(pos_id);

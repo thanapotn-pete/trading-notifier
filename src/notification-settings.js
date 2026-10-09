@@ -290,41 +290,10 @@ function shouldNotifyTrade(
     }
   }
 
-  // ---------------------------------------------------
-  // Check Risk / Maximum Drawdown
-  // ---------------------------------------------------
-
-  const drawdown =
-    trade.drawdown !== undefined &&
-    trade.drawdown !== null
-      ? Number(trade.drawdown)
-      : null;
-
-  // ถ้าเป็น Trade ที่มี Drawdown
-  // และ Risk Alert ถูกปิด → ไม่ต้องแจ้ง
-  if (
-    drawdown !== null &&
-    settings.notify_risk === false
-  ) {
-    return false;
-  }
-
-  // ถ้ากำหนด Maximum Drawdown ไว้
-  if (
-    settings.max_drawdown !== null &&
-    settings.max_drawdown !== undefined &&
-    drawdown !== null &&
-    Number.isFinite(drawdown)
-  ) {
-    // แจ้งเตือนเมื่อ Drawdown
-    // มากกว่าหรือเท่ากับค่าที่กำหนด
-    if (
-      drawdown <
-      Number(settings.max_drawdown)
-    ) {
-      return false;
-    }
-  }
+  // Risk Alert / Maximum Drawdown are NOT checked here: drawdown is an
+  // account-level reading, not a property of one trade. It has its own
+  // alert (src/risk-alert.js, POST /webhook/mt5/drawdown). Checking it here
+  // would suppress normal trade alerts whenever drawdown is below the limit.
 
   return true;
 }

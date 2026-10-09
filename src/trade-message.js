@@ -66,12 +66,18 @@ function buildTradeMessage(trade, position) {
     lines.push(`💵 Entry    <b>${escapeHtml(trade.price ?? '-')}</b>`);
     lines.push(`🎯 TP       ${escapeHtml(level(trade.tp))}`);
     lines.push(`🛑 SL       ${escapeHtml(level(trade.sl))}`);
-  } else if (action === 'close') {
+  } else if (action === 'close' || action === 'tp' || action === 'sl') {
     const pnl = Number(trade.pnl);
     const hasPnl = trade.pnl !== undefined && trade.pnl !== null && Number.isFinite(pnl);
     const icon = !hasPnl || pnl === 0 ? '➖' : pnl > 0 ? '✅' : '❌';
 
-    lines.push(`${icon} <b>TRADE CLOSED</b>`);
+    // The EA reads MT5's close reason: tp / sl when the broker hit the level
+    // (a stop-out is reported as sl), close for a manual close.
+    lines.push(
+      action === 'tp' ? '🎯 <b>TAKE PROFIT HIT</b>'
+        : action === 'sl' ? '🛑 <b>STOP LOSS HIT</b>'
+        : `${icon} <b>TRADE CLOSED</b>`
+    );
     lines.push(headline(direction(position?.action), trade.symbol, trade.lot));
     lines.push(orderLine(trade));
     lines.push(SEPARATOR);
@@ -98,4 +104,25 @@ function buildTradeMessage(trade, position) {
   return lines.join('\n');
 }
 
-module.exports = { buildTradeMessage, escapeHtml };
+// Risk Alert text. reading: { drawdown, equity, peak, balance, currency } from the EA.
+function buildDrawdownMessage(reading, limit) {
+  const money = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n)
+      ? `${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${reading.currency ? ' ' + escapeHtml(reading.currency) : ''}`
+      : '-';
+  };
+
+  return [
+    '⚠️ <b>RISK ALERT — DRAWDOWN</b>',
+    `📉 Drawdown  <b>${Number(reading.drawdown).toFixed(2)}%</b>  (limit ${escapeHtml(limit)}%)`,
+    SEPARATOR,
+    `💰 Equity   ${money(reading.equity)}`,
+    `🏔 Peak      ${money(reading.peak)}`,
+    `🏦 Balance  ${money(reading.balance)}`,
+    SEPARATOR,
+    'Drawdown = fall from the highest equity reached. You will be alerted again only after it recovers below the limit and crosses it again.',
+  ].join('\n');
+}
+
+module.exports = { buildTradeMessage, buildDrawdownMessage, escapeHtml };

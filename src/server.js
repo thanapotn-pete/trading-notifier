@@ -13,8 +13,14 @@ const {
 } = require('./pnl/tracker');
 
 const {
-  buildTradeMessage
+  buildTradeMessage,
+  buildDrawdownMessage
 } = require('./trade-message');
+
+const {
+  evaluateDrawdown,
+  markAlerted
+} = require('./risk-alert');
 
 const {
   findUserBySecret
@@ -330,7 +336,7 @@ app.post(
 
       let position = null;
 
-      if (String(action).toLowerCase() === 'close') {
+      if (['close', 'tp', 'sl'].includes(String(action).toLowerCase())) {
 
         try {
 
@@ -404,6 +410,131 @@ app.post(
 
       console.error(
         '[MT5 Webhook] Error:',
+        err.message
+      );
+
+      res.status(500).json({
+        error: err.message
+      });
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// MT5 DRAWDOWN (Risk Alert)
+// =====================================================
+
+// The EA reports account drawdown (fall from peak equity) whenever it moves.
+// The user's "Risk Alert" switch and "Maximum Drawdown" limit decide here
+// whether it becomes a Telegram message — once per crossing (see risk-alert.js).
+
+const DEFAULT_MAX_DRAWDOWN = 10; // what the website shows when no limit is saved
+
+app.post(
+  '/webhook/mt5/drawdown',
+  lookupUser,
+  async (req, res) => {
+
+    try {
+
+      const drawdown = Number(req.body?.drawdown);
+
+      if (!Number.isFinite(drawdown) || drawdown < 0) {
+
+        return res.status(400).json({
+          error: 'drawdown must be a non-negative number'
+        });
+
+      }
+
+      if (!req.user.telegram_chat_id) {
+
+        return res.json({
+          ok: true,
+          notification_sent: false,
+          reason: 'no_chat_id'
+        });
+
+      }
+
+      const settings =
+        await getNotificationSettings(
+          req.user.id
+        );
+
+      if (
+        settings.enabled === false ||
+        settings.notify_risk === false
+      ) {
+
+        return res.json({
+          ok: true,
+          notification_sent: false,
+          reason: 'blocked_by_settings'
+        });
+
+      }
+
+      const savedLimit = Number(settings.max_drawdown);
+
+      const limit =
+        settings.max_drawdown !== null &&
+        settings.max_drawdown !== undefined &&
+        Number.isFinite(savedLimit)
+          ? savedLimit
+          : DEFAULT_MAX_DRAWDOWN;
+
+      const decision =
+        evaluateDrawdown(
+          req.user.id,
+          drawdown,
+          limit
+        );
+
+      if (decision !== 'alert') {
+
+        return res.json({
+          ok: true,
+          notification_sent: false,
+          reason: decision === 'rearm' ? 'rearmed' : 'no_new_alert'
+        });
+
+      }
+
+      await notify(
+        buildDrawdownMessage(
+          {
+            drawdown,
+            equity: req.body.equity,
+            peak: req.body.peak,
+            balance: req.body.balance,
+            currency: req.body.currency
+          },
+          limit
+        ),
+        req.user.telegram_chat_id
+      );
+
+      // Only after Telegram really accepted it, so a failed send is retried
+      markAlerted(req.user.id);
+
+      console.log(
+        `[MT5 Drawdown] Risk alert sent to user: ${req.user.id} (${drawdown}% >= ${limit}%)`
+      );
+
+      res.json({
+        ok: true,
+        notification_sent: true,
+        message: 'Drawdown alert sent'
+      });
+
+    } catch (err) {
+
+      console.error(
+        '[MT5 Drawdown] Error:',
         err.message
       );
 
