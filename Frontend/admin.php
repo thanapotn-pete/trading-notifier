@@ -41,6 +41,8 @@
         .button:hover { background: var(--primary-dark); }
         .button.secondary { background: #fff; color: #34423d; border: 1px solid var(--border); }
         .button.secondary:hover { background: #f1f5f4; }
+        .button.danger { background: #dc2626; }
+        .button.danger:hover { background: #b91c1c; }
         .button:disabled { opacity: .6; cursor: not-allowed; }
 
         .table-card { padding: 0; overflow: hidden; }
@@ -92,6 +94,8 @@
             .form-grid { grid-template-columns: 1fr; gap: 0; }
         }
     </style>
+    <script src="js/config.js"></script>
+    <script src="js/common.js"></script>
 </head>
 
 
@@ -101,58 +105,7 @@
      SIDEBAR
 ========================================================= -->
 
-<aside class="sidebar">
-
-    <div class="logo">
-        <i class="bi bi-graph-up-arrow"></i>
-        <span>TradeAnalytics</span>
-    </div>
-
-    <a href="dashboard.php" class="menu-item">
-        <i class="bi bi-grid"></i>
-        <span>Dashboard</span>
-    </a>
-
-    <a href="trade-history.php" class="menu-item">
-        <i class="bi bi-clock-history"></i>
-        <span>ประวัติการเทรด</span>
-    </a>
-
-    <a href="statistics.php" class="menu-item">
-        <i class="bi bi-bar-chart"></i>
-        <span>สถิติการเทรด</span>
-    </a>
-
-    <a href="reports.php" class="menu-item">
-        <i class="bi bi-file-earmark-text"></i>
-        <span>รายงาน</span>
-    </a>
-
-    <div class="menu-title">การตั้งค่า</div>
-
-    <a href="notifications.php" class="menu-item">
-        <i class="bi bi-telegram"></i>
-        <span>การแจ้งเตือน</span>
-    </a>
-
-    <a href="profile.php" class="menu-item">
-        <i class="bi bi-person"></i>
-        <span>บัญชีผู้ใช้งาน</span>
-    </a>
-
-    <a href="admin.php" class="menu-item active" id="adminMenuItem">
-        <i class="bi bi-shield-lock"></i>
-        <span>จัดการบัญชี</span>
-    </a>
-
-    <div class="logout">
-        <a href="#" id="sidebarLogout">
-            <i class="bi bi-box-arrow-right"></i>
-            <span>ออกจากระบบ</span>
-        </a>
-    </div>
-
-</aside>
+<?php $activePage = 'admin'; include __DIR__ . '/partials/sidebar.php'; ?>
 
 
 <!-- =========================================================
@@ -277,8 +230,40 @@
     </div>
 </dialog>
 
+<dialog id="passwordDialog">
+    <form id="passwordForm">
+        <div class="dialog-head"><h2>รีเซ็ตรหัสผ่าน</h2><button class="icon-btn" type="button" data-close="passwordDialog" aria-label="ปิด"><i class="bi bi-x-lg"></i></button></div>
+        <div class="dialog-body">
+            <div class="notice" id="passwordError"></div>
+            <p class="sub" id="passwordTarget" style="margin-bottom:14px"></p>
+            <div class="field"><label for="newPassword">รหัสผ่านใหม่</label><input id="newPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password" required><p class="help">อย่างน้อย 8 ตัวอักษร</p></div>
+            <div class="dialog-actions"><button class="button secondary" type="button" data-close="passwordDialog">ยกเลิก</button><button class="button" id="passwordSave" type="submit">บันทึกรหัสผ่าน</button></div>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="deleteDialog">
+    <form id="deleteForm">
+        <div class="dialog-head"><h2>ลบบัญชี</h2><button class="icon-btn" type="button" data-close="deleteDialog" aria-label="ปิด"><i class="bi bi-x-lg"></i></button></div>
+        <div class="dialog-body">
+            <div class="notice" id="deleteError"></div>
+            <p style="margin:0 0 14px;color:#53615b;font-size:14px;line-height:1.65">บัญชีนี้จะถูกลบ<b>ถาวร</b> รวมถึงประวัติการเทรดและการตั้งค่าทั้งหมด กู้คืนไม่ได้</p>
+            <div class="field"><label for="deleteConfirmInput">พิมพ์อีเมล <b id="deleteTarget"></b> เพื่อยืนยัน</label><input id="deleteConfirmInput" autocomplete="off" required></div>
+            <div class="dialog-actions"><button class="button secondary" type="button" data-close="deleteDialog">ยกเลิก</button><button class="button danger" id="deleteSave" type="submit" disabled>ลบบัญชี</button></div>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="confirmDialog">
+    <div class="dialog-head"><h2 id="confirmTitle">ยืนยัน</h2><button class="icon-btn" type="button" data-close="confirmDialog" aria-label="ปิด"><i class="bi bi-x-lg"></i></button></div>
+    <div class="dialog-body">
+        <p id="confirmMessage" style="margin:0;color:#53615b;font-size:14px;line-height:1.65"></p>
+        <div class="dialog-actions"><button class="button secondary" type="button" data-close="confirmDialog">ยกเลิก</button><button class="button" id="confirmOk" type="button">ยืนยัน</button></div>
+    </div>
+</dialog>
+
 <script>
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
 const TOKEN_KEY = 'auth_token';
 const token = localStorage.getItem(TOKEN_KEY);
 const userDialog = document.getElementById('userDialog');
@@ -313,12 +298,6 @@ function showNotice(message, type = 'success') {
     notice.className = `notice ${type}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (type === 'success') setTimeout(() => { notice.className = 'notice'; }, 4500);
-}
-
-function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-    }[char]));
 }
 
 function renderUsers() {
@@ -401,29 +380,7 @@ document.getElementById('closeDialog').addEventListener('click', () => userDialo
 document.getElementById('cancelDialog').addEventListener('click', () => userDialog.close());
 document.getElementById('closeSecret').addEventListener('click', () => secretDialog.close());
 document.getElementById('searchInput').addEventListener('input', renderUsers);
-function logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem('authToken');
-    window.location.href = 'login.php';
-}
 
-document.getElementById('sidebarLogout').addEventListener('click', (event) => {
-    event.preventDefault();
-    if (window.confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) logout();
-});
-document.getElementById('avatarLogout').addEventListener('click', (event) => {
-    event.preventDefault();
-    logout();
-});
-
-const userAvatar = document.getElementById('userAvatar');
-const profileDropdown = document.getElementById('profileDropdown');
-userAvatar.addEventListener('click', () => profileDropdown.classList.toggle('show'));
-document.addEventListener('click', (event) => {
-    if (!userAvatar.contains(event.target) && !profileDropdown.contains(event.target)) {
-        profileDropdown.classList.remove('show');
-    }
-});
 
 userForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -465,41 +422,113 @@ userForm.addEventListener('submit', async (event) => {
     }
 });
 
+document.querySelectorAll('[data-close]').forEach((button) => {
+    button.addEventListener('click', () => document.getElementById(button.dataset.close).close());
+});
+
+function setFormError(id, message) {
+    const element = document.getElementById(id);
+    element.textContent = message || '';
+    element.className = message ? 'notice error' : 'notice';
+}
+
+function askConfirm({ title, message, okLabel }) {
+    return new Promise((resolve) => {
+        const dialog = document.getElementById('confirmDialog');
+        const ok = document.getElementById('confirmOk');
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMessage').textContent = message;
+        ok.textContent = okLabel || 'ยืนยัน';
+        let result = false;
+        const onOk = () => { result = true; dialog.close(); };
+        const onClose = () => {
+            ok.removeEventListener('click', onOk);
+            dialog.removeEventListener('close', onClose);
+            resolve(result);
+        };
+        ok.addEventListener('click', onOk);
+        dialog.addEventListener('close', onClose);
+        dialog.showModal();
+    });
+}
+
+let passwordUserId = null;
+let deleteUser = null;
+
+function openPasswordDialog(user) {
+    passwordUserId = user.id;
+    document.getElementById('passwordForm').reset();
+    document.getElementById('passwordTarget').textContent = `ตั้งรหัสผ่านใหม่ให้ ${user.email}`;
+    setFormError('passwordError', '');
+    document.getElementById('passwordDialog').showModal();
+}
+
+function openDeleteDialog(user) {
+    deleteUser = user;
+    document.getElementById('deleteForm').reset();
+    document.getElementById('deleteTarget').textContent = user.email;
+    document.getElementById('deleteSave').disabled = true;
+    setFormError('deleteError', '');
+    document.getElementById('deleteDialog').showModal();
+}
+
+document.getElementById('deleteConfirmInput').addEventListener('input', (event) => {
+    document.getElementById('deleteSave').disabled =
+        !deleteUser || event.target.value.trim().toLowerCase() !== String(deleteUser.email || '').toLowerCase();
+});
+
+document.getElementById('passwordForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = document.getElementById('passwordSave');
+    button.disabled = true;
+    try {
+        await api(`/api/admin/users/${encodeURIComponent(passwordUserId)}/reset-password`, {
+            method: 'POST',
+            body: JSON.stringify({ password: document.getElementById('newPassword').value })
+        });
+        document.getElementById('passwordDialog').close();
+        showNotice('รีเซ็ตรหัสผ่านแล้ว');
+    } catch (error) {
+        setFormError('passwordError', error.message);
+    } finally {
+        button.disabled = false;
+    }
+});
+
+document.getElementById('deleteForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!deleteUser) return;
+    const button = document.getElementById('deleteSave');
+    button.disabled = true;
+    try {
+        await api(`/api/admin/users/${encodeURIComponent(deleteUser.id)}`, { method: 'DELETE' });
+        document.getElementById('deleteDialog').close();
+        showNotice('ลบบัญชีแล้ว');
+        await loadUsers();
+    } catch (error) {
+        setFormError('deleteError', error.message);
+        button.disabled = false;
+    }
+});
+
 document.getElementById('usersBody').addEventListener('click', async (event) => {
     const button = event.target.closest('button[data-action]');
     if (!button) return;
     const user = users.find((item) => item.id === button.dataset.id);
     if (!user) return;
     if (button.dataset.action === 'edit') return openEditDialog(user);
-    if (button.dataset.action === 'password') {
-        const password = window.prompt(`รหัสผ่านใหม่สำหรับ ${user.email} (อย่างน้อย 8 ตัวอักษร)`);
-        if (password === null) return;
-        try {
-            await api(`/api/admin/users/${encodeURIComponent(user.id)}/reset-password`, {
-                method: 'POST', body: JSON.stringify({ password })
-            });
-            showNotice('รีเซ็ตรหัสผ่านแล้ว');
-        } catch (error) { showNotice(error.message, 'error'); }
-        return;
-    }
-    if (button.dataset.action === 'delete') {
-        const typed = window.prompt(`ลบบัญชีนี้ถาวร รวมถึงประวัติการเทรดและการตั้งค่าทั้งหมด กู้คืนไม่ได้
-พิมพ์อีเมล ${user.email} เพื่อยืนยัน`);
-        if (typed === null) return;
-        if (typed.trim().toLowerCase() !== String(user.email || '').toLowerCase()) {
-            showNotice('อีเมลที่พิมพ์ไม่ตรงกัน ยกเลิกการลบ', 'error');
-            return;
-        }
-        try {
-            await api(`/api/admin/users/${encodeURIComponent(user.id)}`, { method: 'DELETE' });
-            showNotice('ลบบัญชีแล้ว');
-            await loadUsers();
-        } catch (error) { showNotice(error.message, 'error'); }
-        return;
-    }
+    if (button.dataset.action === 'password') return openPasswordDialog(user);
+    if (button.dataset.action === 'delete') return openDeleteDialog(user);
     if (button.dataset.action === 'toggle') {
         const next = !user.is_active;
-        if (!window.confirm(`${next ? 'เปิดใช้งาน' : 'ระงับ'}บัญชี ${user.email}?`)) return;
+        const confirmed = await askConfirm({
+            title: next ? 'เปิดใช้งานบัญชี' : 'ระงับบัญชี',
+            message: next
+                ? `เปิดใช้งานบัญชี ${user.email} อีกครั้ง?`
+                : `ระงับบัญชี ${user.email}? ผู้ใช้จะเข้าสู่ระบบและรับแจ้งเตือนไม่ได้จนกว่าจะเปิดใช้งานอีกครั้ง`,
+            okLabel: next ? 'เปิดใช้งาน' : 'ระงับบัญชี'
+        });
+        if (!confirmed) return;
         try {
             await api(`/api/admin/users/${encodeURIComponent(user.id)}`, {
                 method: 'PATCH', body: JSON.stringify({ is_active: next })
@@ -542,7 +571,7 @@ async function initialize() {
         }
         const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.name || profile.email || 'ผู้ดูแลระบบ';
         document.getElementById('welcomeText').textContent = `ยินดีต้อนรับ, ${fullName}`;
-        userAvatar.textContent = fullName.charAt(0).toUpperCase();
+        document.getElementById('userAvatar').textContent = fullName.charAt(0).toUpperCase();
         await loadUsers();
     } catch {
         showNotice('เชื่อมต่อ API ไม่สำเร็จ กรุณาตรวจสอบว่า Backend กำลังทำงาน', 'error');

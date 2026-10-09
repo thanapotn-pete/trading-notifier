@@ -842,6 +842,8 @@
 
     </style>
 
+    <script src="js/config.js"></script>
+    <script src="js/common.js"></script>
 </head>
 
 
@@ -852,133 +854,7 @@
      SIDEBAR
 ========================================================= -->
 
-<aside class="sidebar">
-
-    <!-- LOGO -->
-    <div class="logo">
-
-        <i class="bi bi-graph-up-arrow"></i>
-
-        <span>
-            TradeAnalytics
-        </span>
-
-    </div>
-
-
-    <!-- DASHBOARD -->
-    <a
-        href="dashboard.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-grid"></i>
-
-        <span>
-            Dashboard
-        </span>
-
-    </a>
-
-
-    <!-- TRADE HISTORY -->
-    <a
-        href="trade-history.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-clock-history"></i>
-
-        <span>
-            ประวัติการเทรด
-        </span>
-
-    </a>
-
-
-    <!-- STATISTICS -->
-    <a
-        href="statistics.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-bar-chart"></i>
-
-        <span>
-            สถิติการเทรด
-        </span>
-
-    </a>
-
-
-    <!-- REPORTS -->
-    <a
-        href="reports.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-file-earmark-text"></i>
-
-        <span>
-            รายงาน
-        </span>
-
-    </a>
-
-
-    <!-- SETTING -->
-    <div class="menu-title">
-        การตั้งค่า
-    </div>
-
-
-    <!-- NOTIFICATIONS -->
-    <a
-        href="notifications.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-telegram"></i>
-
-        <span>
-            การแจ้งเตือน
-        </span>
-
-    </a>
-
-
-    <!-- PROFILE -->
-    <a
-        href="profile.php"
-        class="menu-item active"
-    >
-
-        <i class="bi bi-person"></i>
-
-        <span>
-            บัญชีผู้ใช้งาน
-        </span>
-
-    </a>
-
-
-    <!-- LOGOUT -->
-    <div class="logout">
-
-        <a href="#">
-
-            <i class="bi bi-box-arrow-right"></i>
-
-            <span>
-                ออกจากระบบ
-            </span>
-
-        </a>
-
-    </div>
-
-
-</aside>
+<?php $activePage = 'profile'; include __DIR__ . '/partials/sidebar.php'; ?>
 
 
 
@@ -1742,10 +1618,10 @@
        API CONFIG
        Node/Express backend runs on port 3000.
     ===================================================== */
-    const API_BASE_URL = 'http://localhost:3000/api';
+    const API_BASE_URL = window.APP_CONFIG.API_BASE_URL + '/api';
 
     function getAuthToken() {
-        return localStorage.getItem('authToken') || localStorage.getItem('auth_token');
+        return localStorage.getItem('auth_token');
     }
 
     function authHeaders(json = false) {
@@ -1779,7 +1655,6 @@
         }
 
         if (response.status === 401) {
-            localStorage.removeItem('authToken');
             localStorage.removeItem('auth_token');
             alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
             window.location.href = 'login.php';
@@ -2024,7 +1899,6 @@
 
         if (!confirmLogout) return;
 
-        localStorage.removeItem('authToken');
         localStorage.removeItem('auth_token');
         window.location.href = 'login.php';
     }
@@ -2033,36 +1907,8 @@
        INITIALIZE
     ===================================================== */
     document.addEventListener('DOMContentLoaded', loadProfile);
-    // PROFILE DROPDOWN
-const userAvatar = document.getElementById('userAvatar');
-const profileDropdown = document.getElementById('profileDropdown');
-const avatarLogout = document.getElementById('avatarLogout');
-
-userAvatar?.addEventListener('click', function () {
-    profileDropdown?.classList.toggle('show');
-});
-
-avatarLogout?.addEventListener('click', function (e) {
-    e.preventDefault();
-
-    localStorage.removeItem('auth_token');
-    window.location.href = 'login.php';
-});
-
-document.addEventListener('click', function (e) {
-    if (
-        profileDropdown &&
-        userAvatar &&
-        !userAvatar.contains(e.target) &&
-        !profileDropdown.contains(e.target)
-    ) {
-        profileDropdown.classList.remove('show');
-    }
-});
 </script>
 
-
-<script src="js/admin-menu.js"></script>
 
 </body>
 

@@ -1047,6 +1047,8 @@
 
     </style>
 
+    <script src="js/config.js"></script>
+    <script src="js/common.js"></script>
 </head>
 
 
@@ -1057,143 +1059,7 @@
      SIDEBAR
 ========================================================= -->
 
-<aside class="sidebar">
-
-
-    <!-- LOGO -->
-
-    <div class="logo">
-
-        <i class="bi bi-graph-up-arrow"></i>
-
-        <span>
-            TradeAnalytics
-        </span>
-
-    </div>
-
-
-    <!-- DASHBOARD -->
-
-    <a
-        href="dashboard.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-grid"></i>
-
-        <span>
-            Dashboard
-        </span>
-
-    </a>
-
-
-    <!-- TRADE HISTORY -->
-
-    <a
-        href="trade-history.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-clock-history"></i>
-
-        <span>
-            ประวัติการเทรด
-        </span>
-
-    </a>
-
-
-    <!-- STATISTICS -->
-
-    <a
-        href="statistics.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-bar-chart"></i>
-
-        <span>
-            สถิติการเทรด
-        </span>
-
-    </a>
-
-
-    <!-- REPORTS -->
-
-    <a
-        href="reports.php"
-        class="menu-item active"
-    >
-
-        <i class="bi bi-file-earmark-text"></i>
-
-        <span>
-            รายงาน
-        </span>
-
-    </a>
-
-
-    <!-- SETTING -->
-
-    <div class="menu-title">
-        การตั้งค่า
-    </div>
-
-
-    <!-- NOTIFICATIONS -->
-
-    <a
-        href="notifications.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-telegram"></i>
-
-        <span>
-            การแจ้งเตือน
-        </span>
-
-    </a>
-
-
-    <!-- PROFILE -->
-
-    <a
-        href="profile.php"
-        class="menu-item"
-    >
-
-        <i class="bi bi-person"></i>
-
-        <span>
-            บัญชีผู้ใช้งาน
-        </span>
-
-    </a>
-
-
-    <!-- LOGOUT -->
-
-    <div class="logout">
-
-        <a href="#">
-
-            <i class="bi bi-box-arrow-right"></i>
-
-            <span>
-                ออกจากระบบ
-            </span>
-
-        </a>
-
-    </div>
-
-
-</aside>
+<?php $activePage = 'reports'; include __DIR__ . '/partials/sidebar.php'; ?>
 
 <!-- =========================================================
      MAIN
@@ -1365,14 +1231,13 @@
 ========================================================= -->
 
 <script>
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
 const TOKEN_KEY = 'auth_token';
 let allTrades = [];
 let filteredTrades = [];
 let profitChart = null;
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
-function escapeHtml(value) { return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 function num(v) { const n=Number(v); return Number.isFinite(n) ? n : 0; }
 function formatMoney(v) { const n=num(v); return (n>=0?'+$':'-$') + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function getPnl(t) { return t?.pnl == null ? null : num(t.pnl); }
@@ -1547,36 +1412,8 @@ if (userAvatar) {
 }
 
 document.addEventListener('DOMContentLoaded',loadReport);
-// PROFILE DROPDOWN
-const userAvatar = document.getElementById('userAvatar');
-const profileDropdown = document.getElementById('profileDropdown');
-const avatarLogout = document.getElementById('avatarLogout');
-
-userAvatar?.addEventListener('click', function () {
-    profileDropdown?.classList.toggle('show');
-});
-
-avatarLogout?.addEventListener('click', function (e) {
-    e.preventDefault();
-
-    localStorage.removeItem('auth_token');
-    window.location.href = 'login.php';
-});
-
-document.addEventListener('click', function (e) {
-    if (
-        profileDropdown &&
-        userAvatar &&
-        !userAvatar.contains(e.target) &&
-        !profileDropdown.contains(e.target)
-    ) {
-        profileDropdown.classList.remove('show');
-    }
-});
 </script>
 
-
-<script src="js/admin-menu.js"></script>
 
 </body>
 

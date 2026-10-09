@@ -162,6 +162,7 @@
             margin-top: 25px;
         }
     </style>
+    <script src="js/config.js"></script>
 </head>
 
 <body>
@@ -251,7 +252,7 @@
      * เปลี่ยนเป็น:
      * http://localhost:3000
      */
-    const API_BASE_URL = 'http://localhost:3000';
+    const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
 
     const loginForm = document.getElementById('loginForm');
     const loginButton = document.getElementById('loginButton');
@@ -357,6 +358,7 @@
 
             // เก็บ token เอาไว้ใช้เรียก API อื่น
             localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('user_role', data.role || 'user');
 
 
             showSuccess('เข้าสู่ระบบสำเร็จ กำลังเข้าสู่ระบบ...');

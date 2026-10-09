@@ -43,6 +43,8 @@
     <link rel="stylesheet" href="css/style.css">
 
 
+    <script src="js/config.js"></script>
+    <script src="js/common.js"></script>
 </head>
 
 
@@ -53,117 +55,7 @@
 
     <!-- ================= SIDEBAR ================= -->
     <!-- แถบเมนูด้านข้างระบบ -->
-    <aside class="sidebar">
-
-
-        <!-- LOGO -->
-        <!-- ส่วนแสดงโลโก้แอป -->
-        <div class="logo">
-
-            <i class="bi bi-graph-up-arrow"></i>
-
-            <span>TradeAnalytics</span>
-
-        </div>
-
-
-        <!-- MENU -->
-        <!-- รายการเมนูนำทางในระบบ -->
-        <div class="menu-section">
-
-
-            <!-- Dashboard -->
-            <!-- เมนูหน้า Dashboard (หน้าปัจจุบัน) -->
-            <a href="dashboard.php" class="menu-item active">
-
-                <i class="bi bi-grid"></i>
-
-                <span>Dashboard</span>
-
-            </a>
-
-
-            <!-- Trade History -->
-            <!-- เมนูไปหน้าประวัติการเทรด -->
-            <a href="trade-history.php" class="menu-item">
-
-                <i class="bi bi-clock-history"></i>
-
-                <span>ประวัติการเทรด</span>
-
-            </a>
-
-
-            <!-- Statistics -->
-            <!-- เมนูไปหน้าสถิติการเทรด -->
-            <a href="statistics.php" class="menu-item">
-
-                <i class="bi bi-bar-chart"></i>
-
-                <span>สถิติการเทรด</span>
-
-            </a>
-
-
-            <!-- Reports -->
-            <!-- เมนูไปหน้ารายงาน -->
-            <a href="reports.php" class="menu-item">
-
-                <i class="bi bi-file-earmark-text"></i>
-
-                <span>รายงาน</span>
-
-            </a>
-
-
-            <!-- Setting -->
-            <!-- หัวข้อการตั้งค่า -->
-            <div class="menu-title">
-                การตั้งค่า
-            </div>
-
-
-            <!-- Notifications -->
-            <!-- เมนูตั้งค่าการแจ้งเตือน Telegram -->
-            <a href="notifications.php" class="menu-item">
-
-                <i class="bi bi-telegram"></i>
-
-                <span>การแจ้งเตือน</span>
-
-            </a>
-
-
-            <!-- Profile -->
-            <!-- เมนูจัดการบัญชีผู้ใช้งาน -->
-            <a href="profile.php" class="menu-item">
-
-                <i class="bi bi-person"></i>
-
-                <span>บัญชีผู้ใช้งาน</span>
-
-            </a>
-
-
-        </div>
-
-
-        <!-- LOGOUT -->
-        <!-- ปุ่มออกจากระบบ -->
-        <div class="logout">
-
-            <a href="#">
-
-                <i class="bi bi-box-arrow-right"></i>
-
-                <span>ออกจากระบบ</span>
-
-            </a>
-
-        </div>
-
-
-    </aside>
+    <?php $activePage = 'dashboard'; include __DIR__ . '/partials/sidebar.php'; ?>
 
 
 
@@ -663,7 +555,6 @@
 
 
 
-<script src="./js/script.js"></script>
 
 
 
@@ -674,7 +565,7 @@
 |--------------------------------------------------------------------------
 */
 
-const DASHBOARD_API_BASE_URL = 'http://localhost:3000'; // กำหนด URL ของ Node.js API Server
+const DASHBOARD_API_BASE_URL = window.APP_CONFIG.API_BASE_URL; // กำหนด URL ของ Node.js API Server
 
 let dashboardTrades = [];          // ตัวแปรเก็บรายการเทรดทั้งหมด
 let dashboardEquityChart = null;   // ตัวแปรเก็บอินสแตนซ์ของกราฟ Equity Curve
@@ -1690,89 +1581,15 @@ document
 // ESCAPE HTML (ฟังก์ชันป้องกัน Cross-Site Scripting - XSS)
 // =====================================================
 
-function escapeHtml(value) {
-
-    return String(value)
-
-        .replace(
-            /&/g,
-            '&amp;'
-        )
-
-        .replace(
-            /</g,
-            '&lt;'
-        )
-
-        .replace(
-            />/g,
-            '&gt;'
-        )
-
-        .replace(
-            /"/g,
-            '&quot;'
-        )
-
-        .replace(
-            /'/g,
-            '&#039;'
-        );
-
-}
-
-
 // =====================================================
 // LOGOUT (ฟังก์ชันออกจากระบบจาก Sidebar)
 // =====================================================
 
-document
-    .querySelector('.logout a')
-    ?.addEventListener(
-        'click',
-        function(e) {
-
-            e.preventDefault();
-
-            localStorage.removeItem(
-                'auth_token'
-            );
-
-            window.location.href =
-                'login.php';
-
-        }
-    );
 
 // =====================================================
 // PROFILE DROPDOWN (จัดการเปิด-ปิดเมนูโปรไฟล์ขวาบน)
 // =====================================================
 
-const userAvatar = document.getElementById('userAvatar');
-const profileDropdown = document.getElementById('profileDropdown');
-const avatarLogout = document.getElementById('avatarLogout');
-
-userAvatar?.addEventListener('click', function () {
-    profileDropdown?.classList.toggle('show');
-});
-
-avatarLogout?.addEventListener('click', function (e) {
-    e.preventDefault();
-
-    localStorage.removeItem('auth_token');
-    window.location.href = 'login.php';
-});
-
-document.addEventListener('click', function (e) {
-    if (
-        profileDropdown &&
-        userAvatar &&
-        !userAvatar.contains(e.target) &&
-        !profileDropdown.contains(e.target)
-    ) {
-        profileDropdown.classList.remove('show');
-    }
-});
 
 
 // =====================================================
@@ -1789,8 +1606,6 @@ document.addEventListener(
 );
 
 </script>
-
-<script src="js/admin-menu.js"></script>
 
 </body>
 
