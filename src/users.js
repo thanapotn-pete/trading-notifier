@@ -100,19 +100,14 @@ async function updateManagedUser(userId, fields) {
   return data;
 }
 
-// Removes the account and its dependent rows (trades / notification settings
-// reference users.id without ON DELETE CASCADE, so they go first).
+// Removes the account together with its trades and notification settings.
+// Done by the delete_user_cascade() SQL function (supabase/schema.sql) so the
+// three deletes run in ONE transaction: if any step fails nothing is removed,
+// instead of wiping the trade history and then leaving the account behind.
 async function deleteManagedUser(userId) {
   const supabase = getClient();
-  for (const table of ['trades', 'notification_settings']) {
-    const { error } = await supabase.from(table).delete().eq('user_id', userId);
-    if (error) throw new Error(`${table}: ${error.message}`);
-  }
-  const { data, error } = await supabase.from('users').delete().eq('id', userId).select('id');
-  if (error) throw new Error(`users: ${error.message}`);
-  if (!data || data.length === 0) {
-    throw new Error('users: no row deleted (Supabase RLS policy is probably blocking DELETE)');
-  }
+  const { error } = await supabase.rpc('delete_user_cascade', { p_user_id: userId });
+  if (error) throw new Error(error.message);
 }
 
 async function countActiveAdmins() {

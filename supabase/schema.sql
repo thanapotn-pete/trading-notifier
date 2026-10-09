@@ -98,6 +98,28 @@ create table if not exists notification_settings (
   updated_at timestamptz not null default now()
 );
 
+-- Deleting an account must remove its trades + settings + the user row
+-- atomically (the admin page's delete button calls this via supabase.rpc).
+-- A plpgsql function runs as one transaction, so a failure rolls everything back.
+-- Only the server (service_role) may call it.
+create or replace function delete_user_cascade(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from trades                where user_id = p_user_id;
+  delete from notification_settings where user_id = p_user_id;
+  delete from users                 where id      = p_user_id;
+  if not found then
+    raise exception 'user % not found', p_user_id;
+  end if;
+end $$;
+
+revoke all on function delete_user_cascade(uuid) from public, anon, authenticated;
+grant execute on function delete_user_cascade(uuid) to service_role;
+
 -- Row Level Security: enabled with NO policies, so the public anon key can
 -- read/write nothing. The Node server uses the service_role key
 -- (SUPABASE_SERVICE_KEY), which bypasses RLS. The browser never talks to
