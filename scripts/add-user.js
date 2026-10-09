@@ -1,7 +1,8 @@
 // Register a friend to share this server/database.
 // Usage: node scripts/add-user.js "<name>" "<telegram_chat_id>" ["<email>" "<password>"]
-// Email/password are optional — set them now to skip a separate
-// /api/setup-password call, or leave them out and run that later.
+// Email/password are optional — set them now so the user can log in to the
+// website, or leave them out and have an administrator set the password on the
+// account-management page.
 require('dotenv').config();
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');

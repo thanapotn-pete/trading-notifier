@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const { notify } = require('./notifications');
 
 const {
@@ -8,7 +9,6 @@ const {
 } = require('./notification-settings');
 
 const {
-  findUserBySecret,
   findUserById,
   findUserByEmail,
   listManagedUsers,
@@ -56,66 +56,53 @@ async function emailTakenByOther(email, userId) {
 
 
 // =====================================================
-// SETUP PASSWORD
+// LOGIN RATE LIMITS
 // =====================================================
+// Only FAILED attempts count (skipSuccessfulRequests): someone who mistypes
+// a few times is fine, a script guessing passwords gets cut off.
+// Counters live in memory, so they reset when the server restarts — fine for
+// a single server instance.
 
-router.post('/setup-password', async (req, res) => {
-  try {
-    const {
-      secret,
-      email,
-      password
-    } = req.body || {};
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
-    if (!secret || !email || !password) {
-      return res.status(400).json({
-        error: 'secret, email and password required'
-      });
-    }
+function tooManyAttempts(req, res) {
+  const seconds =
+    Number(res.getHeader('Retry-After')) ||
+    Math.ceil(LOGIN_WINDOW_MS / 1000);
 
-    const user = await findUserBySecret(secret);
+  const minutes = Math.max(1, Math.ceil(seconds / 60));
 
-    if (!user) {
-      return res.status(401).json({
-        error: 'Invalid secret'
-      });
-    }
+  res.status(429).json({
+    error:
+      `Too many failed login attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`
+  });
+}
 
-    const normalizedEmail = normalizeEmail(email);
+// Per IP: stops one machine from guessing.
+// (server.js sets "trust proxy" so this is the real client IP, not Render's proxy.)
+const loginIpLimiter = rateLimit({
+  windowMs: LOGIN_WINDOW_MS,
+  limit: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  handler: tooManyAttempts
+});
 
-    if (!normalizedEmail) {
-      return res.status(400).json({
-        error: 'Enter a valid email address'
-      });
-    }
-
-    if (await emailTakenByOther(normalizedEmail, user.id)) {
-      return res.status(409).json({
-        error: 'An account with this email already exists'
-      });
-    }
-
-    const passwordHash = await hashPassword(password);
-
-    await setPassword(user.id, {
-      email: normalizedEmail,
-      passwordHash
-    });
-
-    res.json({
-      ok: true
-    });
-
-  } catch (err) {
-    console.error(
-      '[API /setup-password] Error:',
-      err.message
-    );
-
-    res.status(500).json({
-      error: err.message
-    });
-  }
+// Per email: stops one account being guessed from many IPs. The limit is
+// higher than the IP one so that hammering a victim's email can only lock
+// them out briefly, never for long.
+const loginEmailLimiter = rateLimit({
+  windowMs: LOGIN_WINDOW_MS,
+  limit: 20,
+  skipSuccessfulRequests: true,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    return email ? `email:${email}` : ipKeyGenerator(req.ip);
+  },
+  handler: tooManyAttempts
 });
 
 
@@ -123,7 +110,7 @@ router.post('/setup-password', async (req, res) => {
 // LOGIN
 // =====================================================
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginIpLimiter, loginEmailLimiter, async (req, res) => {
   try {
     const email = String(req.body?.email || '').trim().toLowerCase();
     const password = String(req.body?.password || '');

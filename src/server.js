@@ -44,6 +44,11 @@ const apiRouter = require('./api');
 
 const app = express();
 
+// Render puts one proxy in front of the server. Trust it so req.ip is the real
+// client address (from X-Forwarded-For) — otherwise every visitor looks like the
+// proxy's IP and the login rate limit would be shared by the whole world.
+app.set('trust proxy', 1);
+
 app.use(express.json());
 
 
