@@ -189,6 +189,9 @@
         document.getElementById('losingTrades').textContent =
             Number(stats.losses || 0).toLocaleString('en-US');
 
+        document.getElementById('losingTradesDetails').textContent =
+            Number(stats.losses || 0).toLocaleString('en-US');
+
         const netProfit = Number(stats.totalPnl || 0);
         const netProfitSign = document.getElementById('netProfitSign');
 
