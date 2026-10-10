@@ -29,7 +29,19 @@
             .replace(/'/g, '&#039;');
     }
 
-    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml, buildSidebarHtml };
+    // รูปแบบเงินสำหรับแกนกราฟ/ตัวเลข: "-$0.2", "$1,234.5" — กัน floating point เช่น -0.2000000000000001
+    function formatMoney(value, digits = 2) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return '';
+        const rounded = Number(n.toFixed(digits));
+        const text = Math.abs(rounded).toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: digits
+        });
+        return (rounded < 0 ? '-' : '') + '$' + text;
+    }
+
+    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml, formatMoney, buildSidebarHtml };
     // หน้าเดิมเรียก escapeHtml() แบบ global อยู่แล้ว
     window.escapeHtml = escapeHtml;
 

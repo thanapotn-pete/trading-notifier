@@ -1870,7 +1870,7 @@ function buildPerformanceData(trades) {
                                 color: '#8a9793',
 
                                 callback: function(value) {
-                                    return '$' + value;
+                                    return App.formatMoney(value);
                                 }
                             }
                         }
