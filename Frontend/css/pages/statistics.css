@@ -1,0 +1,606 @@
+        /* =====================================================
+           PAGE DESCRIPTION
+        ===================================================== */
+
+        .page-description {
+
+            color: #8a9793;
+
+            font-size: 12px;
+
+            margin-top: 4px;
+
+        }
+
+
+        /* =====================================================
+           DATE FILTER
+        ===================================================== */
+
+        .statistics-filter {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+        }
+
+
+        .statistics-select {
+
+            height: 36px;
+
+            border: 1px solid #dfe8e5;
+
+            border-radius: 7px;
+
+            padding: 0 12px;
+
+            background: #ffffff;
+
+            color: #53635e;
+
+            font-family: inherit;
+
+            font-size: 11px;
+
+            outline: none;
+
+            cursor: pointer;
+
+        }
+
+
+        .statistics-select:focus {
+
+            border-color: #8acabb;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(8, 127, 104, 0.07);
+
+        }
+
+
+        /* =====================================================
+           SUMMARY CARD
+        ===================================================== */
+
+        .statistics-card {
+
+            background: #ffffff;
+
+            border: 1px solid #e5ebe9;
+
+            border-radius: 12px;
+
+            min-height: 120px;
+
+            padding: 19px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            box-shadow:
+                0 1px 3px
+                rgba(15, 23, 42, 0.025);
+
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+
+        }
+
+
+        .statistics-card:hover {
+
+            transform: translateY(-1px);
+
+            box-shadow:
+                0 5px 18px
+                rgba(15, 23, 42, 0.055);
+
+        }
+
+
+        .statistics-title {
+
+            color: #71807b;
+
+            font-size: 11px;
+
+            font-weight: 500;
+
+            margin-bottom: 7px;
+
+        }
+
+
+        .statistics-value {
+
+            color: #17211f;
+
+            font-size: 25px;
+
+            font-weight: 600;
+
+            letter-spacing: -0.5px;
+
+            line-height: 1.2;
+
+        }
+
+
+        .statistics-value.green {
+
+            color: #087f68;
+
+        }
+
+
+        .statistics-description {
+
+            color: #9aa7a3;
+
+            font-size: 10px;
+
+            margin-top: 6px;
+
+        }
+
+
+        .statistics-icon {
+
+            width: 40px;
+
+            height: 40px;
+
+            border-radius: 10px;
+
+            background: #eef8f5;
+
+            color: #087f68;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            flex-shrink: 0;
+
+        }
+
+
+        .statistics-icon i {
+
+            font-size: 17px;
+
+        }
+
+
+        /* =====================================================
+           CONTENT CARD
+        ===================================================== */
+
+        .statistics-box {
+
+            background: #ffffff;
+
+            border: 1px solid #e5ebe9;
+
+            border-radius: 12px;
+
+            padding: 19px;
+
+            box-shadow:
+                0 1px 3px
+                rgba(15, 23, 42, 0.025);
+
+        }
+
+
+        .statistics-box-header {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .statistics-box-title {
+
+            margin: 0;
+
+            color: #1c2825;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+        }
+
+
+        .statistics-box-subtitle {
+
+            color: #9aa7a3;
+
+            font-size: 10px;
+
+        }
+
+
+        /* =====================================================
+           CHART
+        ===================================================== */
+
+        .statistics-chart {
+
+            position: relative;
+
+            height: 315px;
+
+        }
+
+
+        /* =====================================================
+           WIN LOSS
+        ===================================================== */
+
+        .winloss-chart {
+
+            height: 245px;
+
+            position: relative;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+        }
+
+
+        .winloss-summary {
+
+            text-align: center;
+
+            margin-top: 5px;
+
+        }
+
+
+        .winloss-main {
+
+            color: #087f68;
+
+            font-size: 25px;
+
+            font-weight: 600;
+
+        }
+
+
+        .winloss-label {
+
+            color: #8a9793;
+
+            font-size: 10px;
+
+            margin-top: 2px;
+
+        }
+
+
+        .winloss-legend {
+
+            display: flex;
+
+            justify-content: center;
+
+            gap: 25px;
+
+            margin-top: 5px;
+
+        }
+
+
+        .legend-item {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 6px;
+
+            color: #64736e;
+
+            font-size: 10px;
+
+        }
+
+
+        .legend-dot {
+
+            width: 7px;
+
+            height: 7px;
+
+            border-radius: 50%;
+
+        }
+
+
+        .legend-dot.win {
+
+            background: #087f68;
+
+        }
+
+
+        .legend-dot.loss {
+
+            background: #dc2626;
+
+        }
+
+
+        /* =====================================================
+           SYMBOL TABLE
+        ===================================================== */
+
+        .symbol-table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+        }
+
+
+        .symbol-table th {
+
+            padding: 11px 12px;
+
+            background: #fafcfb;
+
+            border-bottom: 1px solid #eef2f1;
+
+            color: #82908c;
+
+            font-size: 10px;
+
+            font-weight: 500;
+
+            text-align: left;
+
+        }
+
+
+        .symbol-table td {
+
+            padding: 14px 12px;
+
+            border-bottom: 1px solid #f0f3f2;
+
+            color: #35423e;
+
+            font-size: 11px;
+
+        }
+
+
+        .symbol-table tbody tr:last-child td {
+
+            border-bottom: none;
+
+        }
+
+
+        .symbol-table tbody tr:hover {
+
+            background: #fbfdfc;
+
+        }
+
+
+        .symbol-name {
+
+            color: #26332f;
+
+            font-size: 12px;
+
+            font-weight: 600;
+
+        }
+
+
+        .symbol-subtitle {
+
+            display: block;
+
+            color: #9aa7a3;
+
+            font-size: 9px;
+
+            margin-top: 2px;
+
+        }
+
+
+        .winrate-value {
+
+            color: #087f68;
+
+            font-weight: 600;
+
+        }
+
+
+        .pnl-positive {
+
+            color: #087f68;
+
+            font-weight: 600;
+
+        }
+
+
+        /* =====================================================
+           PROGRESS
+        ===================================================== */
+
+        .progress-wrapper {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 9px;
+
+        }
+
+
+        .progress-bar-bg {
+
+            width: 85px;
+
+            height: 5px;
+
+            background: #edf1ef;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+        }
+
+
+        .progress-bar-fill {
+
+            height: 100%;
+
+            background: #087f68;
+
+            border-radius: 10px;
+
+        }
+
+
+        /* =====================================================
+           PERFORMANCE BOX
+        ===================================================== */
+
+        .performance-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
+            gap: 10px;
+
+        }
+
+
+        .performance-item {
+
+            padding: 13px;
+
+            background: #fafcfb;
+
+            border: 1px solid #eef2f1;
+
+            border-radius: 9px;
+
+        }
+
+
+        .performance-label {
+
+            color: #8a9793;
+
+            font-size: 10px;
+
+            margin-bottom: 5px;
+
+        }
+
+
+        .performance-value {
+
+            color: #26332f;
+
+            font-size: 16px;
+
+            font-weight: 600;
+
+        }
+
+
+        .performance-value.green {
+
+            color: #087f68;
+
+        }
+
+
+        .performance-value.red {
+
+            color: #dc2626;
+
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 768px) {
+
+            .statistics-filter {
+
+                display: none;
+
+            }
+
+
+            .statistics-chart {
+
+                height: 260px;
+
+            }
+
+
+            .winloss-chart {
+
+                height: 230px;
+
+            }
+
+
+            .symbol-table {
+
+                min-width: 650px;
+
+            }
+
+
+            .table-wrapper {
+
+                overflow-x: auto;
+
+            }
+
+        }

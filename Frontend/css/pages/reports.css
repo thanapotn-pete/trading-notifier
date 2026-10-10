@@ -1,0 +1,991 @@
+        /* =====================================================
+           GENERAL
+        ===================================================== */
+
+        body {
+
+            font-family:
+                'IBM Plex Sans Thai',
+                'Noto Sans Thai',
+                Arial,
+                sans-serif;
+
+            background: #f7f9f8;
+
+            color: #1f2937;
+
+        }
+
+
+        /* =====================================================
+           REPORT PAGE
+        ===================================================== */
+
+        .report-page {
+
+            padding: 30px 28px 40px;
+
+        }
+
+
+        /* =====================================================
+           PAGE HEADER
+        ===================================================== */
+
+        .report-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-end;
+
+            margin-bottom: 24px;
+
+        }
+
+
+        .report-title h2 {
+
+            margin: 0 0 7px;
+
+            font-size: 24px;
+
+            line-height: 1.3;
+
+            font-weight: 700;
+
+            color: #111917;
+
+        }
+
+
+        .report-title p {
+
+            margin: 0;
+
+            font-size: 13px;
+
+            color: #82908c;
+
+        }
+
+
+        /* =====================================================
+           HEADER ACTION
+        ===================================================== */
+
+        .report-actions {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+        }
+
+
+        .date-select {
+
+            height: 40px;
+
+            padding: 0 13px;
+
+            border:
+                1px solid
+                #dbe4e1;
+
+            border-radius: 8px;
+
+            background: white;
+
+            color: #475569;
+
+            font-family: inherit;
+
+            font-size: 12px;
+
+            outline: none;
+
+            cursor: pointer;
+
+        }
+
+
+        .date-select:focus {
+
+            border-color: #087f68;
+
+        }
+
+
+        .export-button {
+
+            height: 40px;
+
+            padding: 0 16px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background: #087f68;
+
+            color: white;
+
+            font-family: inherit;
+
+            font-size: 12px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 7px;
+
+            transition: 0.2s;
+
+        }
+
+
+        .export-button:hover {
+
+            background: #066b58;
+
+            transform: translateY(-1px);
+
+        }
+
+
+        /* =====================================================
+           SUMMARY GRID
+        ===================================================== */
+
+        .summary-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 14px;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .summary-card {
+
+            background: white;
+
+            border:
+                1px solid
+                #e5ebe9;
+
+            border-radius: 11px;
+
+            padding: 19px;
+
+            min-height: 125px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            box-shadow:
+                0 1px 3px
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.025
+                );
+
+        }
+
+
+        .summary-label {
+
+            font-size: 11px;
+
+            color: #82908c;
+
+            margin-bottom: 8px;
+
+        }
+
+
+        .summary-value {
+
+            font-size: 24px;
+
+            font-weight: 700;
+
+            line-height: 1.2;
+
+            color: #111827;
+
+        }
+
+
+        .summary-value.green {
+
+            color: #087f68;
+
+        }
+
+
+        .summary-value.red {
+
+            color: #dc2626;
+
+        }
+
+
+        .summary-description {
+
+            margin-top: 7px;
+
+            font-size: 10px;
+
+            color: #9aa6a2;
+
+        }
+
+
+        .summary-icon {
+
+            width: 40px;
+
+            height: 40px;
+
+            border-radius: 9px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background: #edf8f5;
+
+            color: #087f68;
+
+            font-size: 17px;
+
+        }
+
+
+        .summary-icon.red {
+
+            background: #fff1f2;
+
+            color: #dc2626;
+
+        }
+
+
+        .summary-icon.blue {
+
+            background: #eff6ff;
+
+            color: #2563eb;
+
+        }
+
+
+        /* =====================================================
+           MAIN GRID
+        ===================================================== */
+
+        .report-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                minmax(0, 1.55fr)
+                minmax(300px, 0.75fr);
+
+            gap: 18px;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        /* =====================================================
+           CARD
+        ===================================================== */
+
+        .report-card {
+
+            background: white;
+
+            border:
+                1px solid
+                #e5ebe9;
+
+            border-radius: 11px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.025
+                );
+
+        }
+
+
+        .card-heading {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        .card-heading h3 {
+
+            margin: 0 0 4px;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            color: #1f2937;
+
+        }
+
+
+        .card-heading p {
+
+            margin: 0;
+
+            font-size: 11px;
+
+            color: #94a3b8;
+
+        }
+
+
+        /* =====================================================
+           CHART
+        ===================================================== */
+
+        .chart-container {
+
+            position: relative;
+
+            height: 300px;
+
+        }
+
+
+        /* =====================================================
+           PROFIT BREAKDOWN
+        ===================================================== */
+
+        .profit-breakdown {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 15px;
+
+        }
+
+
+        .breakdown-item {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding-bottom: 14px;
+
+            border-bottom:
+                1px solid
+                #f1f5f9;
+
+        }
+
+
+        .breakdown-item:last-child {
+
+            border-bottom: none;
+
+            padding-bottom: 0;
+
+        }
+
+
+        .breakdown-left {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+        }
+
+
+        .breakdown-dot {
+
+            width: 9px;
+
+            height: 9px;
+
+            border-radius: 50%;
+
+            background: #087f68;
+
+        }
+
+
+        .breakdown-dot.loss {
+
+            background: #dc2626;
+
+        }
+
+
+        .breakdown-dot.neutral {
+
+            background: #94a3b8;
+
+        }
+
+
+        .breakdown-name {
+
+            font-size: 12px;
+
+            color: #64748b;
+
+        }
+
+
+        .breakdown-value {
+
+            font-size: 13px;
+
+            font-weight: 600;
+
+            color: #1f2937;
+
+        }
+
+
+        .breakdown-value.green {
+
+            color: #087f68;
+
+        }
+
+
+        .breakdown-value.red {
+
+            color: #dc2626;
+
+        }
+
+
+        /* =====================================================
+           PROGRESS
+        ===================================================== */
+
+        .progress-section {
+
+            margin-top: 18px;
+
+        }
+
+
+        .progress-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            margin-bottom: 7px;
+
+        }
+
+
+        .progress-label {
+
+            font-size: 11px;
+
+            color: #64748b;
+
+        }
+
+
+        .progress-percent {
+
+            font-size: 11px;
+
+            font-weight: 600;
+
+            color: #087f68;
+
+        }
+
+
+        .progress-bar {
+
+            width: 100%;
+
+            height: 7px;
+
+            background: #edf2f0;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+        }
+
+
+        .progress-fill {
+
+            height: 100%;
+
+            background: #087f68;
+
+            border-radius: 10px;
+
+        }
+
+
+        /* =====================================================
+           SYMBOL TABLE
+        ===================================================== */
+
+        .table-card {
+
+            background: white;
+
+            border:
+                1px solid
+                #e5ebe9;
+
+            border-radius: 11px;
+
+            overflow: hidden;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .table-card-header {
+
+            padding: 19px 20px;
+
+            border-bottom:
+                1px solid
+                #eef2f1;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+        }
+
+
+        .table-card-header h3 {
+
+            margin: 0 0 4px;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+        }
+
+
+        .table-card-header p {
+
+            margin: 0;
+
+            font-size: 11px;
+
+            color: #94a3b8;
+
+        }
+
+
+        .table-count {
+
+            font-size: 11px;
+
+            color: #94a3b8;
+
+        }
+
+
+        table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+        }
+
+
+        thead {
+
+            background: #fafcfb;
+
+        }
+
+
+        th {
+
+            padding: 12px 14px;
+
+            text-align: left;
+
+            font-size: 10px;
+
+            font-weight: 600;
+
+            color: #7b8985;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.2px;
+
+            border-bottom:
+                1px solid
+                #eef2f1;
+
+        }
+
+
+        td {
+
+            padding: 14px;
+
+            font-size: 11px;
+
+            color: #475569;
+
+            border-bottom:
+                1px solid
+                #f1f5f9;
+
+        }
+
+
+        tbody tr:hover {
+
+            background: #fbfdfc;
+
+        }
+
+
+        tbody tr:last-child td {
+
+            border-bottom: none;
+
+        }
+
+
+        .symbol-name {
+
+            font-weight: 700;
+
+            color: #1f2937;
+
+        }
+
+
+        .symbol-sub {
+
+            display: block;
+
+            margin-top: 3px;
+
+            font-size: 9px;
+
+            color: #a0aba8;
+
+        }
+
+
+        .win-badge {
+
+            display: inline-flex;
+
+            padding: 5px 9px;
+
+            border-radius: 6px;
+
+            background: #edf8f5;
+
+            color: #087f68;
+
+            font-size: 10px;
+
+            font-weight: 600;
+
+        }
+
+
+        .profit-text {
+
+            color: #087f68;
+
+            font-weight: 700;
+
+        }
+
+
+        .loss-text {
+
+            color: #dc2626;
+
+            font-weight: 700;
+
+        }
+
+
+        /* =====================================================
+           TRADE REPORT
+        ===================================================== */
+
+        .trade-table-wrapper {
+
+            overflow-x: auto;
+
+        }
+
+
+        .action-badge {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            min-width: 42px;
+
+            padding: 5px 8px;
+
+            border-radius: 6px;
+
+            font-size: 9px;
+
+            font-weight: 700;
+
+        }
+
+
+        .action-buy {
+
+            background: #edf8f5;
+
+            color: #087f68;
+
+        }
+
+
+        .action-sell {
+
+            background: #fff1f2;
+
+            color: #dc2626;
+
+        }
+
+
+        .status-text {
+
+            font-size: 10px;
+
+            color: #64748b;
+
+        }
+
+
+        .date-text {
+
+            font-size: 10px;
+
+            color: #64748b;
+
+            white-space: nowrap;
+
+        }
+
+
+        /* =====================================================
+           SIDEBAR / TOPBAR OVERRIDE
+        ===================================================== */
+
+        .logo {
+
+            font-size: 17px !important;
+
+        }
+
+
+        .menu-item {
+
+            font-size: 14px !important;
+
+            padding: 11px 12px;
+
+        }
+
+
+        .menu-title {
+
+            font-size: 12px !important;
+
+        }
+
+
+        .logout a {
+
+            font-size: 14px !important;
+
+        }
+
+
+        .welcome {
+
+            font-size: 13px;
+
+        }
+
+
+        .topbar h1 {
+
+            font-size: 24px;
+
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 1100px) {
+
+            .summary-grid {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+
+            .report-grid {
+
+                grid-template-columns: 1fr;
+
+            }
+
+        }
+
+
+        @media (max-width: 700px) {
+
+            .report-page {
+
+                padding:
+                    22px
+                    16px
+                    30px;
+
+            }
+
+
+            .report-header {
+
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+
+            }
+
+
+            .report-actions {
+
+                width: 100%;
+
+            }
+
+
+            .date-select {
+
+                flex: 1;
+
+            }
+
+
+            .export-button {
+
+                flex-shrink: 0;
+
+            }
+
+
+            .summary-grid {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .report-title h2 {
+
+                font-size: 21px;
+
+            }
+
+
+            .report-card {
+
+                padding: 16px;
+
+            }
+
+
+            .chart-container {
+
+                height: 240px;
+
+            }
+
+        }
