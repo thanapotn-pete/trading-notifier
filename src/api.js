@@ -23,6 +23,7 @@ const {
 const {
   hashPassword,
   verifyPassword,
+  passwordLengthError,
   createSessionToken,
   verifySessionToken
 } = require('./auth');
@@ -123,12 +124,14 @@ router.post('/login', loginIpLimiter, loginEmailLimiter, async (req, res) => {
 
     const user = await findUserByEmail(email);
 
+    // Always run the bcrypt comparison, even for an unknown email
+    // (verifyPassword burns the same time against a dummy hash), so the
+    // response time doesn't tell which emails have accounts.
     const ok =
-      user &&
-      (await verifyPassword(
+      await verifyPassword(
         password,
-        user.password_hash
-      ));
+        user ? user.password_hash : null
+      ) && !!user;
 
     if (!ok) {
       return res.status(401).json({
@@ -250,8 +253,9 @@ router.post('/admin/users', requireAdmin, async (req, res) => {
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Enter a valid email address' });
     }
-    if (password.length < 8 || password.length > 72) {
-      return res.status(400).json({ error: 'Initial password must be between 8 and 72 characters' });
+    const initialPasswordError = passwordLengthError(password);
+    if (initialPasswordError) {
+      return res.status(400).json({ error: initialPasswordError });
     }
     if (telegramChatId && !/^-?\d+$/.test(telegramChatId)) {
       return res.status(400).json({ error: 'Telegram Chat ID must contain only numbers' });
@@ -375,8 +379,9 @@ router.post('/admin/users/:id/reset-password', requireAdmin, async (req, res) =>
     if (!user) return res.status(404).json({ error: 'Account not found' });
 
     const password = String(req.body?.password || '');
-    if (password.length < 8 || password.length > 72) {
-      return res.status(400).json({ error: 'Password must be between 8 and 72 characters' });
+    const resetPasswordError = passwordLengthError(password);
+    if (resetPasswordError) {
+      return res.status(400).json({ error: resetPasswordError });
     }
     await setPassword(user.id, {
       email: user.email,
@@ -615,15 +620,22 @@ router.patch('/profile', async (req, res) => {
     }
 
     if (password !== undefined && password !== null && password !== '') {
-      if (
-        typeof password !== 'string' ||
-        password.length < 8 ||
-        password.length > 72
-      ) {
+      const passwordError = passwordLengthError(password);
+      if (passwordError) {
+        return res.status(400).json({ error: passwordError });
+      }
+    }
+
+    if (profileFields.telegram_chat_id !== undefined) {
+      const chatId = String(profileFields.telegram_chat_id || '').trim();
+
+      if (chatId && !/^-?\d+$/.test(chatId)) {
         return res.status(400).json({
-          error: 'Password must be between 8 and 72 characters'
+          error: 'Telegram Chat ID must be a number'
         });
       }
+
+      profileFields.telegram_chat_id = chatId || null;
     }
 
     if (password) {

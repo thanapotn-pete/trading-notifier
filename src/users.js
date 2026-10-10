@@ -84,6 +84,17 @@ async function updateManagedUser(userId, fields) {
   for (const key of ['first_name', 'last_name', 'email', 'telegram_chat_id', 'role', 'is_active']) {
     if (fields[key] !== undefined) update[key] = fields[key];
   }
+
+  // Nothing editable was sent: return the row as it is instead of an empty update
+  if (Object.keys(update).length === 0) {
+    const { data, error } = await supabase
+      .from('users')
+      .select()
+      .eq('id', userId)
+      .single();
+    if (error) throw error;
+    return data;
+  }
   if (update.first_name !== undefined || update.last_name !== undefined) {
     const current = await findUserById(userId);
     if (!current) return null;
@@ -130,13 +141,24 @@ async function setPassword(userId, { email, passwordHash }) {
   if (error) throw error;
 }
 
-const PROFILE_FIELDS = ['first_name', 'last_name', 'email'];
+const PROFILE_FIELDS = ['first_name', 'last_name', 'email', 'telegram_chat_id'];
 
 async function updateUserProfile(userId, fields) {
   const supabase = getClient();
   const update = {};
   for (const key of PROFILE_FIELDS) {
     if (fields[key] !== undefined) update[key] = fields[key];
+  }
+
+  // Nothing editable was sent: return the row as it is instead of an empty update
+  if (Object.keys(update).length === 0) {
+    const { data, error } = await supabase
+      .from('users')
+      .select()
+      .eq('id', userId)
+      .single();
+    if (error) throw error;
+    return data;
   }
 
   const { data, error } = await supabase

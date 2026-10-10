@@ -81,23 +81,31 @@ app.use(express.json());
 // CORS
 // =====================================================
 
-// Dashboard API is called directly from the browser
+// The pages are served by this server, so they call the API on the same
+// origin and need no CORS. Cross-origin access is only opened for a local dev
+// page on another port (e.g. Live Server on :5500 calling localhost:3000).
+const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
 app.use('/api', (req, res, next) => {
 
-  res.header(
-    'Access-Control-Allow-Origin',
-    '*'
-  );
+  const origin = req.headers.origin;
 
-  res.header(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PATCH, DELETE'
-  );
+  if (origin && LOCAL_ORIGIN.test(origin)) {
 
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization'
-  );
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+
+    res.header(
+      'Access-Control-Allow-Methods',
+      'GET, POST, PATCH, DELETE'
+    );
+
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization'
+    );
+
+  }
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
