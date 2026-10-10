@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- admin.html — หน้า "จัดการบัญชี" เฉพาะผู้ดูแลระบบ (role = admin) -->
+<!-- ตารางบัญชีทั้งหมด + เพิ่ม/แก้ไข/รีเซ็ตรหัสผ่าน/ระงับ/ลบ — ทำงานโดย js/pages/admin.js -->
+<!-- เรียก /api/admin/* -->
 <html lang="th">
 
 <head>
@@ -19,6 +22,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
 
     <link rel="stylesheet" href="css/pages/admin.css">
+    <!-- โหลดค่าตั้งต้น (config.js) และฟังก์ชันกลาง (common.js) ก่อนสคริปต์ของหน้า -->
+    <!-- common.js จะสร้างเมนูข้าง ผูกปุ่ม และจัดการการเรียก API/token ให้ทุกหน้า -->
     <script src="js/config.js"></script>
     <script src="js/common.js"></script>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -31,6 +36,8 @@
      SIDEBAR
 ========================================================= -->
 
+<!-- เมนูข้างซ้าย: เป็นกล่องว่างในไฟล์นี้ — common.js สร้างรายการเมนูใส่ให้ (แก้เมนูที่ -->
+<!-- MENU_ITEMS ที่เดียวทุกหน้าเปลี่ยนตาม) -->
 <aside class="sidebar"><!-- สร้างโดย js/common.js (MENU_ITEMS) --></aside>
 
 
@@ -38,8 +45,11 @@
      MAIN
 ========================================================= -->
 
+<!-- พื้นที่เนื้อหาหลักทางขวาของเมนูข้าง (style.css เว้นซ้ายเท่าความกว้างเมนู) -->
 <main class="main-content">
 
+    <!-- แถบบน: ข้อความต้อนรับ + ชื่อหน้า "จัดการบัญชี" ทางซ้าย / ป้ายสถานะ MT5-Telegram, -->
+    <!-- กระดิ่งแจ้งเตือน, อวตารผู้ใช้ ทางขวา -->
     <header class="topbar">
 
         <div>
@@ -54,6 +64,8 @@
             </button>
 
             <div class="profile-menu">
+                <!-- อวตาร (ตัวอักษรแรกของชื่อ) กดเพื่อเปิด/ปิดเมนูโปรไฟล์ — common.js -->
+                <!-- เพิ่ม/ลบ class "show" ให้เมนูด้านล่าง -->
                 <div class="avatar" id="userAvatar">A</div>
 
                 <div class="profile-dropdown" id="profileDropdown">
@@ -73,6 +85,7 @@
     </header>
 
 
+    <!-- เนื้อหาของหน้า: หัวส่วน + การ์ดสรุป + ตารางบัญชี (ข้อมูลทั้งหมดใส่โดย admin.js) -->
     <div class="content">
 
         <div class="page-head">
@@ -83,8 +96,11 @@
             <button class="button" id="createButton" type="button"><i class="bi bi-person-plus"></i> เพิ่มบัญชี</button>
         </div>
 
+        <!-- แถบข้อความแจ้งผล (ซ่อนไว้ก่อน แสดงเมื่อเพิ่ม/แก้/ลบสำเร็จหรือผิดพลาด) -->
         <div id="notice" class="notice" role="status"></div>
 
+        <!-- การ์ดสรุป 3 ใบ: บัญชีทั้งหมด / ผู้ใช้งาน / แอดมินที่ใช้งานอยู่ -->
+        <!-- (ตัวเลขนับจากรายชื่อที่โหลดมา) -->
         <section class="admin-stats" aria-label="สรุปบัญชี">
             <div class="stat-card">
                 <div>
@@ -109,6 +125,7 @@
             </div>
         </section>
 
+        <!-- การ์ดตารางบัญชี: ช่องค้นหา (กรองตามชื่อ/อีเมลทันที) + ตาราง -->
         <section class="card-box table-card">
             <div class="toolbar">
                 <input class="search" id="searchInput" type="search" placeholder="ค้นหาชื่อหรืออีเมล..." aria-label="ค้นหาบัญชี">
@@ -116,6 +133,8 @@
             </div>
             <div class="table-wrap"><table>
                 <thead><tr><th>บัญชี</th><th>Telegram Chat ID</th><th>บทบาท</th><th>สถานะ</th><th>วันที่สร้าง</th><th>จัดการ</th></tr></thead>
+                <!-- ตัวตารางที่ admin.js สร้างแถวของแต่ละบัญชีใส่ลงมา (ตอนนี้แสดงข้อความ -->
+                <!-- "กำลังโหลด") -->
                 <tbody id="usersBody"><tr><td colspan="6" class="loading">กำลังโหลดบัญชี...</td></tr></tbody>
             </table></div>
         </section>
@@ -124,6 +143,8 @@
 
 </main>
 
+<!-- [กล่องเพิ่ม/แก้ไขบัญชี] <dialog> คือกล่องป๊อปอัปมาตรฐานของเบราว์เซอร์ เปิดด้วย -->
+<!-- showModal() ปิดด้วย close() -->
 <dialog id="userDialog">
     <form id="userForm">
         <div class="dialog-head"><h2 id="dialogTitle">เพิ่มบัญชีผู้ใช้</h2><button class="icon-btn" type="button" id="closeDialog" aria-label="ปิด"><i class="bi bi-x-lg"></i></button></div>
@@ -147,6 +168,7 @@
     </form>
 </dialog>
 
+<!-- กล่องแสดง webhook secret ของบัญชีที่เพิ่งสร้าง (แสดงครั้งเดียว ให้คัดลอกไปใส่ใน EA) -->
 <dialog id="secretDialog">
     <div class="dialog-head"><h2>บัญชีพร้อมใช้งาน</h2><button class="icon-btn" type="button" id="closeSecret" aria-label="ปิด"><i class="bi bi-x-lg"></i></button></div>
     <div class="dialog-body">
@@ -156,6 +178,7 @@
     </div>
 </dialog>
 
+<!-- กล่องรีเซ็ตรหัสผ่านของบัญชีที่เลือก -->
 <dialog id="passwordDialog">
     <form id="passwordForm">
         <div class="dialog-head"><h2>รีเซ็ตรหัสผ่าน</h2><button class="icon-btn" type="button" data-close="passwordDialog" aria-label="ปิด"><i class="bi bi-x-lg"></i></button></div>
@@ -168,6 +191,7 @@
     </form>
 </dialog>
 
+<!-- กล่องยืนยันการลบบัญชี: ต้องพิมพ์อีเมลของบัญชีให้ตรงก่อน ปุ่มลบจึงจะกดได้ -->
 <dialog id="deleteDialog">
     <form id="deleteForm">
         <div class="dialog-head"><h2>ลบบัญชี</h2><button class="icon-btn" type="button" data-close="deleteDialog" aria-label="ปิด"><i class="bi bi-x-lg"></i></button></div>
@@ -180,6 +204,7 @@
     </form>
 </dialog>
 
+<!-- กล่องถามยืนยันทั่วไป (ใช้ตอนระงับ/เปิดใช้งานบัญชี) -->
 <dialog id="confirmDialog">
     <div class="dialog-head"><h2 id="confirmTitle">ยืนยัน</h2><button class="icon-btn" type="button" data-close="confirmDialog" aria-label="ปิด"><i class="bi bi-x-lg"></i></button></div>
     <div class="dialog-body">
@@ -188,6 +213,7 @@
     </div>
 </dialog>
 
+<!-- สคริปต์ของหน้านี้ — รายละเอียดอยู่ใน js/pages/admin.js -->
 <script src="js/pages/admin.js"></script>
 
 </body>

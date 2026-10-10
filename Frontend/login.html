@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- login.html — หน้าเข้าสู่ระบบ (เปิดเว็บที่ "/" แล้วเซิร์ฟเวอร์จะพามาหน้านี้) -->
+<!-- ฟอร์มอีเมล + รหัสผ่านส่งไป POST /api/login โดย js/pages/login.js -->
+<!-- ไม่มีเมนูข้างเพราะยังไม่ได้ล็อกอิน -->
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -6,13 +9,16 @@
 
     <title>เข้าสู่ระบบ - TradeAnalytics</title>
 
+    <!-- สไตล์ของหน้านี้ (หน้า login ไม่ใช้ style.css เพราะไม่มีเมนูข้าง/แถบบน) -->
     <link rel="stylesheet" href="css/pages/login.css">
+    <!-- ค่าตั้งต้นของหน้าเว็บ (หน้านี้ไม่ใช้ common.js เพราะยังไม่มี token) -->
     <script src="js/config.js"></script>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 
 <body>
 
+<!-- ตัวห่อทั้งหน้า: จัดกล่อง login ไว้กลางจอ -->
 <div class="login-container">
 
     <div class="logo">
@@ -25,10 +31,14 @@
         <h2>เข้าสู่ระบบ</h2>
         <p class="subtitle">กรุณาเข้าสู่ระบบเพื่อใช้งานระบบ</p>
 
+        <!-- กล่องข้อความ error (สีแดง) และข้อความสำเร็จ (สีเขียว) — ซ่อนอยู่ก่อน -->
+        <!-- js/pages/login.js เป็นคนแสดง -->
         <div id="errorMessage" class="error-message"></div>
 
         <div id="successMessage" class="success-message"></div>
 
+        <!-- ฟอร์มเข้าสู่ระบบ: เมื่อกดส่ง login.js จะยกเลิกการส่งแบบปกติ แล้วเรียก API ด้วย -->
+        <!-- fetch แทน -->
         <form id="loginForm">
 
             <div class="form-group">
@@ -47,6 +57,7 @@
             <div class="form-group">
                 <label for="password">รหัสผ่าน</label>
 
+                <!-- ช่องรหัสผ่านพร้อมปุ่ม "แสดง/ซ่อน" (สลับ type ระหว่าง password กับ text) -->
                 <div class="password-wrapper">
 
                     <input
@@ -87,6 +98,7 @@
 
 </div>
 
+<!-- สคริปต์ของหน้านี้ — รายละเอียดอยู่ใน js/pages/login.js -->
 <script src="js/pages/login.js"></script>
 
 </body>
