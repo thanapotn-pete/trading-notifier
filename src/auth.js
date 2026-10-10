@@ -26,17 +26,27 @@ async function verifyPassword(password, hash) {
   return bcrypt.compare(password, hash);
 }
 
-// bcrypt only reads the first 72 BYTES (a Thai character is 3 bytes), so the
-// limit is checked in bytes — otherwise a long Thai password is silently cut
-// and a much shorter one would log in.
-function passwordLengthError(password) {
+// Passwords: printable ASCII only (English letters, digits, symbols, space),
+// 8-72 characters. ASCII also keeps every character at 1 byte, which matters
+// because bcrypt only reads the first 72 BYTES of a password.
+function passwordProblem(password) {
   if (typeof password !== 'string' || password.length < 8) {
     return 'Password must be at least 8 characters';
   }
-  if (Buffer.byteLength(password, 'utf8') > 72) {
-    return 'Password is too long: at most 72 bytes (a Thai character counts as 3, so about 24 characters)';
+  if (password.length > 72) {
+    return 'Password must be at most 72 characters';
+  }
+  if (!/^[ -~]+$/.test(password)) {
+    return 'Password may only contain English letters, digits and symbols';
   }
   return null;
+}
+
+// Emails: ASCII only, exactly one "@", a dot in the domain, no spaces.
+const EMAIL_PATTERN = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
+
+function isValidEmail(email) {
+  return typeof email === 'string' && email.length <= 254 && EMAIL_PATTERN.test(email);
 }
 
 function createSessionToken(user) {
@@ -53,4 +63,4 @@ function verifySessionToken(token) {
   }
 }
 
-module.exports = { hashPassword, verifyPassword, passwordLengthError, createSessionToken, verifySessionToken };
+module.exports = { hashPassword, verifyPassword, passwordProblem, isValidEmail, createSessionToken, verifySessionToken };

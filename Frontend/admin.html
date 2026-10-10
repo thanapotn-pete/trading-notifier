@@ -134,7 +134,7 @@
                 <div class="field"><label for="lastName">Lastname</label><input id="lastName" maxlength="100" required></div>
             </div>
             <div class="field"><label for="email">Email</label><input id="email" type="email" maxlength="254" required></div>
-            <div class="field" id="initialPasswordField"><label for="initialPassword">รหัสผ่านเริ่มต้น</label><input id="initialPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password"><p class="help">กำหนดรหัสผ่านเริ่มต้นให้ผู้ใช้ แล้วส่งข้อมูลเข้าสู่ระบบให้ผู้ใช้ผ่านช่องทางที่ปลอดภัย</p></div>
+            <div class="field" id="initialPasswordField"><label for="initialPassword">รหัสผ่านเริ่มต้น</label><input id="initialPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password"><p class="help">กำหนดรหัสผ่านเริ่มต้นให้ผู้ใช้ (8–72 ตัว ภาษาอังกฤษ ตัวเลข สัญลักษณ์เท่านั้น) แล้วส่งข้อมูลเข้าสู่ระบบให้ผู้ใช้ผ่านช่องทางที่ปลอดภัย</p></div>
             <div class="field"><label for="chatId">Telegram Chat ID <span class="help">(ไม่บังคับ)</span></label><input id="chatId" inputmode="numeric" placeholder="เช่น 123456789"></div>
             <div id="editFields" hidden>
                 <div class="form-grid">
@@ -162,7 +162,7 @@
         <div class="dialog-body">
             <div class="notice" id="passwordError"></div>
             <p class="sub" id="passwordTarget" style="margin-bottom:14px"></p>
-            <div class="field"><label for="newPassword">รหัสผ่านใหม่</label><input id="newPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password" required><p class="help">อย่างน้อย 8 ตัวอักษร</p></div>
+            <div class="field"><label for="newPassword">รหัสผ่านใหม่</label><input id="newPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password" required><p class="help">8–72 ตัว ภาษาอังกฤษ ตัวเลข สัญลักษณ์เท่านั้น</p></div>
             <div class="dialog-actions"><button class="button secondary" type="button" data-close="passwordDialog">ยกเลิก</button><button class="button" id="passwordSave" type="submit">บันทึกรหัสผ่าน</button></div>
         </div>
     </form>

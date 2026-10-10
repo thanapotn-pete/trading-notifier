@@ -23,7 +23,8 @@ const {
 const {
   hashPassword,
   verifyPassword,
-  passwordLengthError,
+  passwordProblem,
+  isValidEmail,
   createSessionToken,
   verifySessionToken
 } = require('./auth');
@@ -43,7 +44,7 @@ const router = express.Router();
 function normalizeEmail(value) {
   const email = String(value ?? '').trim().toLowerCase();
 
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!isValidEmail(email)) {
     return null;
   }
 
@@ -250,10 +251,10 @@ router.post('/admin/users', requireAdmin, async (req, res) => {
     if (firstName.length > 100 || lastName.length > 100) {
       return res.status(400).json({ error: 'Names must be 100 characters or fewer' });
     }
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!isValidEmail(email)) {
       return res.status(400).json({ error: 'Enter a valid email address' });
     }
-    const initialPasswordError = passwordLengthError(password);
+    const initialPasswordError = passwordProblem(password);
     if (initialPasswordError) {
       return res.status(400).json({ error: initialPasswordError });
     }
@@ -307,7 +308,7 @@ router.patch('/admin/users/:id', requireAdmin, async (req, res) => {
     }
     if (fields.email !== undefined) {
       fields.email = String(fields.email).trim().toLowerCase();
-      if (fields.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
+      if (!isValidEmail(fields.email)) {
         return res.status(400).json({ error: 'Enter a valid email address' });
       }
     }
@@ -379,7 +380,7 @@ router.post('/admin/users/:id/reset-password', requireAdmin, async (req, res) =>
     if (!user) return res.status(404).json({ error: 'Account not found' });
 
     const password = String(req.body?.password || '');
-    const resetPasswordError = passwordLengthError(password);
+    const resetPasswordError = passwordProblem(password);
     if (resetPasswordError) {
       return res.status(400).json({ error: resetPasswordError });
     }
@@ -620,7 +621,7 @@ router.patch('/profile', async (req, res) => {
     }
 
     if (password !== undefined && password !== null && password !== '') {
-      const passwordError = passwordLengthError(password);
+      const passwordError = passwordProblem(password);
       if (passwordError) {
         return res.status(400).json({ error: passwordError });
       }
