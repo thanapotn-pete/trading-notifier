@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<!-- dashboard.html — หน้า Dashboard (หน้าหลักหลังล็อกอิน): ภาพรวมการเทรด -->
+<!-- การ์ดกำไรสุทธิ / Win Rate / Profit Factor / ความเสี่ยง, กราฟ Equity Curve, -->
+<!-- ออเดอร์ล่าสุด และสถานะการแจ้งเตือน Telegram -->
+<!-- ข้อมูลทั้งหมดใส่โดย js/pages/dashboard.js (เรียก /api/trades, /api/profile, -->
+<!-- /api/notification-settings) -->
 <html lang="th">
 
 <head>
@@ -43,6 +48,8 @@
     <link rel="stylesheet" href="css/style.css">
 
 
+    <!-- โหลดค่าตั้งต้น (config.js) และฟังก์ชันกลาง (common.js) ก่อนสคริปต์ของหน้า -->
+    <!-- common.js จะสร้างเมนูข้าง ผูกปุ่ม และจัดการการเรียก API/token ให้ทุกหน้า -->
     <script src="js/config.js"></script>
     <script src="js/common.js"></script>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -56,17 +63,22 @@
 
     <!-- ================= SIDEBAR ================= -->
     <!-- แถบเมนูด้านข้างระบบ -->
+    <!-- เมนูข้างซ้าย: เป็นกล่องว่างในไฟล์นี้ — common.js สร้างรายการเมนูใส่ให้ (แก้เมนูที่ -->
+    <!-- MENU_ITEMS ที่เดียว ทุกหน้าเปลี่ยนตาม) -->
     <aside class="sidebar"><!-- สร้างโดย js/common.js (MENU_ITEMS) --></aside>
 
 
 
     <!-- ================= MAIN ================= -->
     <!-- พื้นที่เนื้อหาหลักด้านขวา -->
+    <!-- พื้นที่เนื้อหาหลักทางขวาของเมนูข้าง (style.css เว้นซ้ายเท่าความกว้างเมนู) -->
     <main class="main-content">
 
 
         <!-- ================= TOPBAR ================= -->
         <!-- แถบด้านบนสุดของหน้า Dashboard -->
+        <!-- แถบบน: ข้อความต้อนรับ + ชื่อหน้า "Dashboard" ทางซ้าย / ป้ายสถานะ MT5-Telegram, -->
+        <!-- กระดิ่งแจ้งเตือน, อวตารผู้ใช้ ทางขวา -->
         <header class="topbar">
 
 
@@ -130,6 +142,8 @@
                 <!-- AVATAR -->
                 <!-- เมนูโปรไฟล์และ Dropdown ขวาบน -->
                <div class="profile-menu">
+    <!-- อวตาร (ตัวอักษรแรกของชื่อ) กดเพื่อเปิด/ปิดเมนูโปรไฟล์ — common.js เพิ่ม/ลบ class -->
+    <!-- "show" ให้เมนูด้านล่าง -->
     <div class="avatar" id="userAvatar">
         U
     </div>
@@ -157,6 +171,8 @@
 
         <!-- ================= CONTENT ================= -->
         <!-- เนื้อหาภายในหน้า Dashboard -->
+        <!-- เนื้อหาของ Dashboard แบ่งเป็น 3 ส่วน: (1) การ์ดสรุป 4 ใบ (2) กราฟ Equity Curve -->
+        <!-- + ออเดอร์ล่าสุด (3) สถานะการแจ้งเตือน Telegram -->
         <section class="content">
 
 
@@ -371,6 +387,7 @@
                         <!-- พื้นที่สำหรับแสดงกราฟ Chart.js -->
                         <div class="chart-area">
 
+                            <!-- ผืนผ้าใบที่ Chart.js วาดกราฟ Equity Curve (กำไรสะสม) ลงไป -->
                             <canvas id="equityChart"></canvas>
 
                         </div>
@@ -405,6 +422,8 @@
 
 
                         <!-- รายการออเดอร์ที่จะถูกเรนเดอร์ผ่าน JS -->
+                        <!-- กล่องรายการออเดอร์ล่าสุด 4 รายการ — dashboard.js -->
+                        <!-- สร้างรายการใส่ที่นี่ -->
                         <div class="trade-list" id="recentTrades">
 
                             <div class="text-center py-4 text-muted">
@@ -551,6 +570,8 @@
 
 <!-- ================= CHART.JS ================= -->
 <!-- โหลดไลบรารี Chart.js สำหรับวาดกราฟ -->
+<!-- ไลบรารีกราฟ Chart.js: ปักเวอร์ชัน 4.5.1 และใส่ integrity (SRI) -->
+<!-- เพื่อให้เบราว์เซอร์ตรวจว่าไฟล์จาก CDN ไม่ถูกแก้ไข -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 
 
@@ -559,6 +580,7 @@
 
 
 
+<!-- สคริปต์ของหน้านี้ — รายละเอียดอยู่ใน js/pages/dashboard.js -->
 <script src="js/pages/dashboard.js"></script>
 
 </body>

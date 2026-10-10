@@ -1,7 +1,13 @@
-const express = require('express');
-const crypto = require('crypto');
-const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
-const { notify } = require('./notifications');
+// api.js — REST API ของหน้าเว็บ (ทุกเส้นทางอยู่ใต้ /api — server.js ส่งต่อคำขอมาที่ไฟล์นี้)
+// • POST /login  ไม่ต้องมี token (เป็นเส้นทางเดียวที่เปิดให้ทุกคน)
+// • หลังบรรทัด router.use(requireSession) ทุกเส้นทางต้องมี token ที่ถูกต้อง:
+//     /profile (ดู/แก้โปรไฟล์ เปลี่ยนรหัสผ่าน)  /trades  /summary  /statistics
+//     /notification-settings  /notifications  /notifications/test
+// • เฉพาะ admin (requireAdmin): /admin/users — ดู/สร้าง/แก้/ลบบัญชี และรีเซ็ตรหัสผ่าน
+const express = require('express');  // เฟรมเวิร์กเว็บ
+const crypto = require('crypto');  // ใช้สุ่ม webhook secret
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');  // จำกัดจำนวนครั้งที่เรียก (กันการเดารหัสผ่าน)
+const { notify } = require('./notifications');  // ส่ง Telegram (ใช้ตอนทดสอบการแจ้งเตือน)
 
 const {
   getNotificationSettings,
@@ -35,9 +41,11 @@ const {
   getStatistics
 } = require('./pnl/tracker');
 
-const router = express.Router();
+const router = express.Router();  // ตัวรวมเส้นทางของ API (server.js เอาไปติดที่ /api)
 
 
+// [สรุป] ทำอีเมลให้เป็นตัวพิมพ์เล็กและตรวจรูปแบบ กัน "A@x.com" กับ "a@x.com" กลายเป็นสองบัญชี
+// คืนอีเมลที่ใช้ได้ หรือ null ถ้ารูปแบบไม่ถูกต้อง
 // Emails are stored lowercase and compared case-insensitively, so
 // "A@x.com" and "a@x.com" can never become two different accounts.
 // Returns the normalized email, or null when it is not a valid address.
@@ -51,6 +59,7 @@ function normalizeEmail(value) {
   return email;
 }
 
+// อีเมลนี้ถูกบัญชีอื่น (ที่ไม่ใช่ตัวเอง) ใช้อยู่แล้วหรือไม่
 async function emailTakenByOther(email, userId) {
   const other = await findUserByEmail(email);
   return Boolean(other && other.id !== userId);
@@ -60,13 +69,17 @@ async function emailTakenByOther(email, userId) {
 // =====================================================
 // LOGIN RATE LIMITS
 // =====================================================
+// [สรุป] จำกัดจำนวนครั้งที่ login "ผิด": ต่อ IP ไม่เกิน 10 ครั้ง และต่ออีเมลไม่เกิน 20 ครั้ง ใน
+// 15 นาที
+// เกินแล้วตอบ 429 — กันการเดารหัสผ่าน (ครั้งที่ login สำเร็จไม่นับ)
 // Only FAILED attempts count (skipSuccessfulRequests): someone who mistypes
 // a few times is fine, a script guessing passwords gets cut off.
 // Counters live in memory, so they reset when the server restarts — fine for
 // a single server instance.
 
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;  // ช่วงเวลานับ = 15 นาที (หน่วยมิลลิวินาที)
 
+// ข้อความตอบเมื่อโดนจำกัด (429) พร้อมบอกว่าต้องรอกี่นาที
 function tooManyAttempts(req, res) {
   const seconds =
     Number(res.getHeader('Retry-After')) ||
@@ -80,23 +93,25 @@ function tooManyAttempts(req, res) {
   });
 }
 
+// [สรุป] ตัวจำกัดตาม IP: กันเครื่องเดียวสุ่มรหัสผ่านต่อเนื่อง
 // Per IP: stops one machine from guessing.
 // (server.js sets "trust proxy" so this is the real client IP, not Render's proxy.)
 const loginIpLimiter = rateLimit({
   windowMs: LOGIN_WINDOW_MS,
-  limit: 10,
+  limit: 10,  // ผิดได้ไม่เกิน 10 ครั้ง
   skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   handler: tooManyAttempts
 });
 
+// [สรุป] ตัวจำกัดตามอีเมล: กันการเดารหัสผ่านของบัญชีเดียวจากหลาย IP
 // Per email: stops one account being guessed from many IPs. The limit is
 // higher than the IP one so that hammering a victim's email can only lock
 // them out briefly, never for long.
 const loginEmailLimiter = rateLimit({
   windowMs: LOGIN_WINDOW_MS,
-  limit: 20,
+  limit: 20,  // ผิดได้ไม่เกิน 20 ครั้ง
   skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
@@ -112,6 +127,9 @@ const loginEmailLimiter = rateLimit({
 // LOGIN
 // =====================================================
 
+// [สรุป] POST /login: รับอีเมล + รหัสผ่าน → ค้นผู้ใช้ → ตรวจรหัสผ่านด้วย bcrypt
+// ถูกต้องและบัญชีไม่ถูกระงับ → ส่ง JWT token + role (user/admin) กลับไป
+// ผิด → 401 "Invalid email or password" (ข้อความเดียวกันทุกกรณี ไม่บอกว่าอีเมลมีอยู่หรือไม่)
 router.post('/login', loginIpLimiter, loginEmailLimiter, async (req, res) => {
   try {
     const email = String(req.body?.email || '').trim().toLowerCase();
@@ -123,7 +141,7 @@ router.post('/login', loginIpLimiter, loginEmailLimiter, async (req, res) => {
       });
     }
 
-    const user = await findUserByEmail(email);
+    const user = await findUserByEmail(email);  // ค้นผู้ใช้จากอีเมล (ไม่สนตัวพิมพ์เล็กใหญ่)
 
     // Always run the bcrypt comparison, even for an unknown email
     // (verifyPassword burns the same time against a dummy hash), so the
@@ -142,7 +160,7 @@ router.post('/login', loginIpLimiter, loginEmailLimiter, async (req, res) => {
 
     // Only someone who knows the password learns the account is suspended —
     // checking earlier would let anyone probe which emails exist.
-    if (user.is_active === false) {
+    if (user.is_active === false) {  // รหัสถูกแต่บัญชีถูกระงับ → แจ้งให้ติดต่อ admin
       return res.status(401).json({ error: 'This account is disabled. Contact an administrator.' });
     }
 
@@ -151,7 +169,7 @@ router.post('/login', loginIpLimiter, loginEmailLimiter, async (req, res) => {
     );
 
     res.json({
-      token: createSessionToken(user),
+      token: createSessionToken(user),  // สร้าง JWT ให้หน้าเว็บเก็บไว้ใช้เรียก API ครั้งต่อไป
       role: user.role || 'user'
     });
 
@@ -172,6 +190,10 @@ router.post('/login', loginIpLimiter, loginEmailLimiter, async (req, res) => {
 // AUTHENTICATION
 // =====================================================
 
+// [สรุป] middleware "ตรวจบัตรผ่าน": อ่าน token จากหัว Authorization: Bearer ... →
+// ตรวจลายเซ็นและวันหมดอายุ
+// → โหลดผู้ใช้จากฐานข้อมูล → ถ้าไม่พบหรือถูกระงับ ตอบ 401 ถ้าผ่านแนบผู้ใช้ไว้ที่ req.user
+// (เช็กกับฐานข้อมูลทุกครั้ง ทำให้การระงับบัญชี/เปลี่ยน role มีผลทันที ไม่ต้องรอ token หมดอายุ)
 async function requireSession(req, res, next) {
   try {
     const header =
@@ -219,8 +241,11 @@ async function requireSession(req, res, next) {
 }
 
 
+// ตั้งแต่บรรทัดนี้ลงไป ทุกเส้นทางต้องมี token ที่ถูกต้อง (/login อยู่ด้านบนจึงไม่ต้องใช้)
 router.use(requireSession);
 
+// middleware เช็กสิทธิ์: ต้องเป็น admin เท่านั้น ไม่ใช่ → 403
+// ตรวจที่เซิร์ฟเวอร์ทุกครั้ง (ไม่ได้พึ่งแค่การซ่อนปุ่มในหน้าเว็บ)
 async function requireAdmin(req, res, next) {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Administrator access required' });
@@ -228,6 +253,7 @@ async function requireAdmin(req, res, next) {
   next();
 }
 
+// GET /admin/users — รายชื่อบัญชีทั้งหมด (เฉพาะ admin)
 router.get('/admin/users', requireAdmin, async (req, res) => {
   try {
     res.json({ users: await listManagedUsers() });
@@ -237,6 +263,10 @@ router.get('/admin/users', requireAdmin, async (req, res) => {
   }
 });
 
+// [สรุป] POST /admin/users — admin สร้างบัญชีใหม่: ตรวจชื่อ อีเมล รหัสผ่าน (กฎใน auth.js) Chat
+// ID และอีเมลซ้ำ
+// → เข้ารหัสรหัสผ่าน → สุ่ม webhook_secret ให้ → คืนบัญชีที่สร้าง พร้อม secret (แสดงครั้งเดียว
+// ไว้ใส่ใน EA)
 router.post('/admin/users', requireAdmin, async (req, res) => {
   try {
     const firstName = String(req.body?.first_name || '').trim();
@@ -265,7 +295,7 @@ router.post('/admin/users', requireAdmin, async (req, res) => {
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
 
-    const webhookSecret = crypto.randomBytes(32).toString('hex');
+    const webhookSecret = crypto.randomBytes(32).toString('hex');  // สุ่ม secret 64 ตัวอักษร (hex) ไว้ระบุตัวผู้ใช้ตอนยิง webhook
     const user = await createManagedUser({
       firstName,
       lastName,
@@ -276,7 +306,7 @@ router.post('/admin/users', requireAdmin, async (req, res) => {
     });
     res.status(201).json({ user, webhook_secret: webhookSecret });
   } catch (err) {
-    if (err.code === '23505') {
+    if (err.code === '23505') {  // รหัส 23505 = ชน unique index (อีเมลซ้ำ จากการแข่งกันสร้างพร้อมกัน)
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
     console.error('[API /admin/users POST] Error:', err.message);
@@ -284,6 +314,9 @@ router.post('/admin/users', requireAdmin, async (req, res) => {
   }
 });
 
+// [สรุป] PATCH /admin/users/:id — admin แก้บัญชี (ชื่อ อีเมล chat id role เปิด/ระงับ)
+// ตรวจข้อมูลทุกฟิลด์ก่อนบันทึก และมีกฎกัน admin ล็อกตัวเอง: ห้ามลดสิทธิ์/ระงับตัวเอง
+// และต้องเหลือ admin ที่ใช้งานอยู่อย่างน้อย 1 คนเสมอ
 router.patch('/admin/users/:id', requireAdmin, async (req, res) => {
   try {
     const current = await findUserById(req.params.id);
@@ -291,7 +324,7 @@ router.patch('/admin/users/:id', requireAdmin, async (req, res) => {
 
     const patch = req.body || {};
     const fields = {};
-    for (const key of ['first_name', 'last_name', 'email', 'telegram_chat_id', 'role', 'is_active']) {
+    for (const key of ['first_name', 'last_name', 'email', 'telegram_chat_id', 'role', 'is_active']) {  // คัดเฉพาะฟิลด์ที่อนุญาตให้แก้
       if (Object.prototype.hasOwnProperty.call(patch, key)) fields[key] = patch[key];
     }
     if (!Object.keys(fields).length) {
@@ -330,6 +363,8 @@ router.patch('/admin/users/:id', requireAdmin, async (req, res) => {
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
 
+    // ถ้าการแก้นี้ทำให้ admin หมดสิทธิ์ (เปลี่ยนเป็น user หรือถูกระงับ) ต้องผ่านกฎกัน admin
+    // ล็อกตัวเอง
     const becomesInactiveAdmin = current.role === 'admin' && current.is_active !== false && (
       fields.role === 'user' || fields.is_active === false
     );
@@ -346,7 +381,7 @@ router.patch('/admin/users/:id', requireAdmin, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'Account not found' });
     res.json({ user });
   } catch (err) {
-    if (err.code === '23505') {
+    if (err.code === '23505') {  // อีเมลซ้ำ (ชน unique index)
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
     console.error('[API /admin/users PATCH] Error:', err.message);
@@ -354,6 +389,8 @@ router.patch('/admin/users/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// [สรุป] DELETE /admin/users/:id — ลบบัญชีถาวร (พร้อมประวัติเทรดและการตั้งค่า)
+// ห้ามลบตัวเอง และห้ามลบ admin คนสุดท้ายที่ยังใช้งานอยู่
 router.delete('/admin/users/:id', requireAdmin, async (req, res) => {
   try {
     const target = await findUserById(req.params.id);
@@ -374,6 +411,8 @@ router.delete('/admin/users/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// POST /admin/users/:id/reset-password — admin ตั้งรหัสผ่านใหม่ให้บัญชี (ตรวจกฎรหัสผ่านก่อน
+// แล้วเก็บเป็น hash)
 router.post('/admin/users/:id/reset-password', requireAdmin, async (req, res) => {
   try {
     const user = await findUserById(req.params.id);
@@ -399,6 +438,8 @@ router.post('/admin/users/:id/reset-password', requireAdmin, async (req, res) =>
 // NOTIFICATION SETTINGS
 // =====================================================
 
+// GET /notification-settings — การตั้งค่าแจ้งเตือนของผู้ใช้ที่ login อยู่ (หน้า "การแจ้งเตือน"
+// และ Dashboard ใช้)
 router.get('/notification-settings', async (req, res) => {
   try {
     const settings =
@@ -423,6 +464,8 @@ router.get('/notification-settings', async (req, res) => {
 });
 
 
+// PATCH /notification-settings — บันทึกการตั้งค่า (รับเฉพาะฟิลด์ที่ notification-settings.js
+// อนุญาต)
 router.patch('/notification-settings', async (req, res) => {
   try {
     const settings =
@@ -456,8 +499,11 @@ router.patch('/notification-settings', async (req, res) => {
 // TRADES
 // =====================================================
 
+// GET /trades?limit=N — รายการเทรดของผู้ใช้ เรียงใหม่ → เก่า (หน้า Dashboard / ประวัติเทรด /
+// รายงานใช้)
 router.get('/trades', async (req, res) => {
   try {
+    // อ่านจำนวนที่ขอจาก query string (ค่าเริ่มต้น 50, สูงสุด 1000) กันการขอข้อมูลมากเกินไป
     const limit = Math.min(
       parseInt(req.query.limit, 10) || 50,
       1000
@@ -498,6 +544,7 @@ router.get('/trades', async (req, res) => {
 // SUMMARY
 // =====================================================
 
+// GET /summary — สรุปผลเทรดของวันนี้ (จำนวนเทรด ชนะ แพ้ กำไรสุทธิ)
 router.get('/summary', async (req, res) => {
   try {
     const summary =
@@ -524,6 +571,8 @@ router.get('/summary', async (req, res) => {
 // STATISTICS
 // =====================================================
 
+// GET /statistics — สถิติรวมจากเทรดที่ปิดแล้ว (Win Rate, Profit Factor ฯลฯ) หน้า Statistics /
+// Reports ใช้
 router.get('/statistics', async (req, res) => {
   try {
     console.log(
@@ -558,6 +607,8 @@ router.get('/statistics', async (req, res) => {
 // PROFILE
 // =====================================================
 
+// ตัดฟิลด์ลับ (webhook_secret, password_hash) ออกก่อนส่งข้อมูลผู้ใช้ให้หน้าเว็บ —
+// ห้ามส่งสองตัวนี้ออกไปเด็ดขาด
 function toProfile(user) {
   const {
     webhook_secret,
@@ -569,6 +620,7 @@ function toProfile(user) {
 }
 
 
+// GET /profile — ข้อมูลของผู้ใช้ที่ login อยู่ (ทุกหน้าเรียกเพื่อรู้ชื่อ, role, Chat ID)
 router.get('/profile', (req, res) => {
   res.json(
     toProfile(req.user)
@@ -580,8 +632,13 @@ router.get('/profile', (req, res) => {
 // UPDATE PROFILE
 // =====================================================
 
+// [สรุป] PATCH /profile — ผู้ใช้แก้ข้อมูลของตัวเอง: ชื่อ นามสกุล อีเมล Telegram Chat ID
+// และเปลี่ยนรหัสผ่าน
+// (เปลี่ยนรหัสต้องส่งรหัสผ่านปัจจุบันมาด้วย) ตรวจข้อมูลทุกอย่างให้ผ่านก่อน แล้วค่อยบันทึก
+// จะได้ไม่เกิดกรณีเปลี่ยนรหัสผ่านไปแล้วแต่แก้อีเมลไม่ผ่าน
 router.patch('/profile', async (req, res) => {
   try {
+    // แยกรหัสผ่านออกจากฟิลด์ข้อมูลทั่วไป (profileFields = ฟิลด์ที่เหลือ)
     const {
       password,
       current_password,
@@ -639,6 +696,8 @@ router.patch('/profile', async (req, res) => {
       profileFields.telegram_chat_id = chatId || null;
     }
 
+    // เปลี่ยนรหัสผ่าน: ต้องเทียบ "รหัสผ่านปัจจุบัน" ถูกต้องก่อน
+    // แล้วจึงเข้ารหัสรหัสใหม่และบันทึก
     if (password) {
       const ok =
         await verifyPassword(
@@ -662,6 +721,7 @@ router.patch('/profile', async (req, res) => {
       );
     }
 
+    // บันทึกฟิลด์ที่แก้ (ถ้ามี) แล้วคืนโปรไฟล์ล่าสุด (ไม่รวมความลับ)
     const updated =
       Object.keys(profileFields).length > 0
         ? await updateUserProfile(
@@ -678,7 +738,7 @@ router.patch('/profile', async (req, res) => {
 
   } catch (err) {
     // Unique index on lower(email) — lost a race with another sign-up
-    if (err.code === '23505') {
+    if (err.code === '23505') {  // อีเมลซ้ำ (ชน unique index)
       return res.status(409).json({
         error: 'An account with this email already exists'
       });
@@ -700,6 +760,8 @@ router.patch('/profile', async (req, res) => {
 // NOTIFICATION MESSAGE
 // =====================================================
 
+// สร้างข้อความสั้น ๆ ของแต่ละเทรด เพื่อแสดงในรายการ "การแจ้งเตือนล่าสุด" บนหน้าเว็บ
+// (ไม่ได้ส่ง Telegram — ข้อความที่ส่งจริงสร้างใน trade-message.js)
 function notificationMessage(trade) {
     if (trade.status === 'closed') {
         const pnl =
@@ -729,6 +791,7 @@ Status: OPEN`;
 // NOTIFICATIONS
 // =====================================================
 
+// GET /notifications — รายการแจ้งเตือนล่าสุดของผู้ใช้ (สร้างจากเทรดล่าสุด) สูงสุด 100 รายการ
 router.get('/notifications', async (req, res) => {
   try {
     const limit = Math.min(
@@ -775,6 +838,8 @@ router.get('/notifications', async (req, res) => {
 // TEST TELEGRAM
 // =====================================================
 
+// POST /notifications/test — ส่งข้อความทดสอบเข้า Telegram ของผู้ใช้ เพื่อเช็กว่า Chat ID
+// ถูกและบอทส่งข้อความได้
 router.post('/notifications/test', async (req, res) => {
   try {
     const chatId = req.user.telegram_chat_id;
@@ -819,4 +884,5 @@ router.post('/notifications/test', async (req, res) => {
 });
 
 
+// ส่งออก router ให้ server.js ติดที่ /api
 module.exports = router;

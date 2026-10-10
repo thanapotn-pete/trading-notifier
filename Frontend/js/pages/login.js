@@ -1,3 +1,8 @@
+// login.js — สคริปต์ของหน้าเข้าสู่ระบบ (login.html)
+// ขั้นตอน: กรอกอีเมล+รหัสผ่าน → ส่งไป POST /api/login → ได้ token (บัตรผ่าน) กับ role → เก็บใน
+// localStorage
+// → พาไปหน้า admin (ถ้าเป็นผู้ดูแล) หรือ Dashboard (ผู้ใช้ทั่วไป)
+// ถ้าล็อกอินค้างอยู่แล้วจะข้ามหน้านี้ไปเลย
     /*
      * Backend API
      *
@@ -8,9 +13,12 @@
      * เปลี่ยนเป็น:
      * http://localhost:3000
      */
-    const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
+    const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;  // ที่อยู่ API อ่านจาก config.js (ค่าว่าง = origin เดียวกับหน้าเว็บ)
 
     // ล็อกอินค้างอยู่แล้ว → ข้ามหน้านี้ (ตรวจกับ server ก่อน เพื่อไม่ให้วนลูปเมื่อ token หมดอายุ)
+    // [สรุป] ถ้ามี token เก็บไว้อยู่แล้ว ให้ถามเซิร์ฟเวอร์ (GET /api/profile) ว่ายังใช้ได้ไหม
+    // ใช้ได้ → ข้ามไปหน้าของตัวเองเลย / หมดอายุ → ล้างทิ้งแล้วแสดงฟอร์ม login ตามปกติ
+    // (ตรวจกับเซิร์ฟเวอร์ก่อน กันวนลูป)
     (async function redirectIfSignedIn() {
         let token = null;
         try { token = localStorage.getItem('auth_token'); } catch (_) { return; }
@@ -21,7 +29,7 @@
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (response.status === 401) {
+            if (response.status === 401) {  // token ใช้ไม่ได้/หมดอายุ → ล้างทิ้ง แล้วแสดงฟอร์ม login
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('user_role');
                 return;
@@ -30,12 +38,15 @@
 
             const profile = await response.json();
             localStorage.setItem('user_role', profile.role || 'user');
+            // ไปหน้าของตัวเอง: admin → หน้าจัดการบัญชี, ผู้ใช้ทั่วไป → Dashboard
+            // (replace = ไม่เก็บหน้า login ไว้ในประวัติ กดย้อนกลับแล้วจะไม่วนกลับมา)
             window.location.replace(profile.role === 'admin' ? 'admin.html' : 'dashboard.html');
         } catch (_) {
             // API ไม่ตอบ: อยู่หน้า login ต่อไป
         }
     })();
 
+    // อ้างอิงองค์ประกอบในหน้า: ฟอร์ม ปุ่ม กล่องข้อความ error/สำเร็จ และช่องรหัสผ่าน
     const loginForm = document.getElementById('loginForm');
     const loginButton = document.getElementById('loginButton');
 
@@ -47,6 +58,8 @@
 
 
     // แสดง / ซ่อน Password
+    // ปุ่ม "แสดง/ซ่อน" รหัสผ่าน: สลับชนิดของช่องระหว่าง password (จุดดำ) กับ text
+    // (เห็นตัวอักษร)
     togglePassword.addEventListener('click', function () {
 
         if (passwordInput.type === 'password') {
@@ -65,9 +78,13 @@
 
 
     // Login
+    // [สรุป] เมื่อกดเข้าสู่ระบบ: ตรวจว่ากรอกครบ → ส่งอีเมล+รหัสผ่านไป POST /api/login → ได้
+    // token กับ role → เก็บไว้ → เปลี่ยนหน้า
+    // ถ้าไม่สำเร็จแสดงข้อความ error (เซิร์ฟเวอร์ตอบข้อความเดียวกันทุกกรณี
+    // ไม่บอกว่าอีเมลมีอยู่หรือไม่)
     loginForm.addEventListener('submit', async function (event) {
 
-        event.preventDefault();
+        event.preventDefault();  // กันไม่ให้เบราว์เซอร์ส่งฟอร์มแบบเดิมและรีโหลดหน้า
 
         // ซ่อนข้อความเก่า
         errorMessage.style.display = 'none';
@@ -91,7 +108,7 @@
 
         try {
 
-            const response = await fetch(`${API_BASE_URL}/api/login`, {
+            const response = await fetch(`${API_BASE_URL}/api/login`, {  // ใช้ fetch ตรง ๆ (ไม่ใช้ App.apiFetch) เพราะ 401 ตรงนี้แปลว่า "รหัสผิด" ไม่ใช่ "session หมดอายุ"
 
                 method: 'POST',
 
@@ -139,8 +156,8 @@
 
 
             // เก็บ token เอาไว้ใช้เรียก API อื่น
-            localStorage.setItem('auth_token', data.token);
-            localStorage.setItem('user_role', data.role || 'user');
+            localStorage.setItem('auth_token', data.token);  // เก็บ token (บัตรผ่าน) ไว้ใช้เรียก API ทุกหน้า
+            localStorage.setItem('user_role', data.role || 'user');  // เก็บ role ไว้โชว์เมนู admin ได้เร็ว (การตรวจสิทธิ์จริงอยู่ที่เซิร์ฟเวอร์เสมอ)
 
 
             showSuccess('เข้าสู่ระบบสำเร็จ กำลังเข้าสู่ระบบ...');
@@ -175,6 +192,7 @@
     });
 
 
+    // แสดงข้อความ error สีแดงใต้ฟอร์ม
     function showError(message) {
 
         errorMessage.textContent = message;
@@ -183,6 +201,7 @@
     }
 
 
+    // แสดงข้อความสำเร็จสีเขียวใต้ฟอร์ม
     function showSuccess(message) {
 
         successMessage.textContent = message;

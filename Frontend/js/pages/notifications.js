@@ -1,19 +1,30 @@
+// notifications.js — สคริปต์ของหน้า "การแจ้งเตือน" (notifications.html)
+// • สวิตช์เปิด/ปิดการแจ้งเตือนแต่ละแบบ (เปิดออเดอร์ ปิดออเดอร์ TP/SL Risk Alert
+// สรุปรายวัน/รายสัปดาห์) และสวิตช์หลัก
+// • กำหนดเกณฑ์ Maximum Drawdown (%)  • ตั้ง Telegram Chat ID  •
+// ปุ่มทดสอบการเชื่อมต่อและส่งข้อความทดสอบเข้า Telegram
+// • แสดงรายการแจ้งเตือนล่าสุด  การตั้งค่าทั้งหมดบันทึกลงฐานข้อมูลผ่าน API
+// (/api/notification-settings)
+// เซิร์ฟเวอร์จะใช้ค่าเหล่านี้ตัดสินว่าจะส่ง Telegram ให้ผู้ใช้หรือไม่ (ดู
+// notification-settings.js ฝั่งหลังบ้าน)
 /* =========================================================
    NOTIFICATION PAGE - API
    ========================================================= */
 
-const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
-const TOKEN_KEY = 'auth_token';
+const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;  // ประกาศไว้ แต่ตอนนี้เรียก API ผ่าน App.apiFetch จึงไม่ได้ใช้ตัวแปรนี้โดยตรง
+const TOKEN_KEY = 'auth_token';  // ชื่อ key ที่เก็บ token ใน localStorage
 
-let notificationSettings = null;
-let saveSettingsTimer = null;
-let isLoadingSettings = false;
-let isSavingSettings = false;
+let notificationSettings = null;  // การตั้งค่าล่าสุดที่โหลด/บันทึกแล้ว (ใช้เทียบว่าผู้ใช้แก้ Max Drawdown ไปหรือยัง)
+let saveSettingsTimer = null;  // ตัวจับเวลาหน่วง 0.3 วินาทีก่อนบันทึก (รวมการกดสวิตช์ถี่ ๆ เป็นครั้งเดียว)
+let isLoadingSettings = false;  // กำลังโหลดค่าลงหน้าจออยู่ไหม (ระหว่างนั้นไม่บันทึกกลับ กันบันทึกซ้อน)
+let isSavingSettings = false;  // กำลังบันทึกอยู่ไหม
 
+// อ่าน token ที่เก็บไว้ในเบราว์เซอร์
 function getToken() {
     return localStorage.getItem(TOKEN_KEY);
 }
 
+// ตัวห่อให้โค้ดในไฟล์นี้เรียก apiFetch ได้สั้น ๆ — ภายในใช้ App.apiFetch ของ common.js
 function apiFetch(path, options = {}) {
     // แนบ token และจัดการ session หมดอายุ (401) ที่ App.apiFetch ที่เดียว
     return App.apiFetch(path, options);
@@ -23,6 +34,7 @@ function apiFetch(path, options = {}) {
    NOTIFICATION SETTINGS - DATABASE
    ========================================================= */
 
+// ดึงการตั้งค่าแจ้งเตือนของผู้ใช้จาก GET /api/notification-settings
 async function fetchNotificationSettings() {
     const response = await apiFetch('/api/notification-settings');
 
@@ -37,6 +49,8 @@ async function fetchNotificationSettings() {
     return data.settings || data;
 }
 
+// [สรุป] นำการตั้งค่าที่ได้จากเซิร์ฟเวอร์มาตั้งสวิตช์/ช่องกรอกบนหน้าจอ
+// หน้าเว็บมีสวิตช์ "เปิดออเดอร์" 1 ตัวแทน BUY+SELL และสวิตช์ "TP/SL" 1 ตัวแทน TP+SL
 function applyNotificationSettings(settings) {
     if (!settings) return;
 
@@ -99,6 +113,9 @@ function applyNotificationSettings(settings) {
     updateMasterUI();
 }
 
+// [สรุป] อ่านค่าจากสวิตช์/ช่องกรอกบนหน้าจอ แปลงเป็นฟิลด์ตามชื่อคอลัมน์ในฐานข้อมูล
+// เพื่อส่งไปบันทึก
+// (สวิตช์ 1 ตัวควบคุมหลายฟิลด์ เช่น เปิดออเดอร์ = notify_buy + notify_sell)
 // includeDrawdown=false leaves max_drawdown out of the PATCH, so toggling a
 // switch never saves a half-edited Maximum Drawdown (it has its own save button).
 function getSettingsFromUI(includeDrawdown = true) {
@@ -136,6 +153,9 @@ function getSettingsFromUI(includeDrawdown = true) {
     return settings;
 }
 
+// [สรุป] ส่งการตั้งค่าไป PATCH /api/notification-settings: ตรวจเกณฑ์ Max Drawdown ต้องอยู่
+// 0-100 ก่อน → ส่ง → แจ้งผล
+// ไม่บันทึกระหว่างกำลังโหลดค่า และบันทึกเกณฑ์ Drawdown เฉพาะตอนผู้ใช้กดปุ่ม "บันทึก"
 async function saveNotificationSettings(showSuccess = false, includeDrawdown = true) {
     if (isLoadingSettings) return;
 
@@ -197,6 +217,8 @@ async function saveNotificationSettings(showSuccess = false, includeDrawdown = t
     }
 }
 
+// บันทึกแบบหน่วงเวลา (debounce) 0.3 วินาที:
+// ถ้ากดสวิตช์ติดกันหลายครั้งจะบันทึกแค่ครั้งสุดท้ายครั้งเดียว
 function scheduleSaveNotificationSettings() {
     clearTimeout(saveSettingsTimer);
 
@@ -205,6 +227,7 @@ function scheduleSaveNotificationSettings() {
     }, 300);
 }
 
+// โหลดการตั้งค่าจากเซิร์ฟเวอร์มาแสดง (ถ้าโหลดไม่ได้ ใช้ค่าตั้งต้นใน HTML)
 async function loadNotificationSettings() {
     try {
         isLoadingSettings = true;
@@ -234,6 +257,8 @@ async function loadNotificationSettings() {
    MASTER SWITCH
    ========================================================= */
 
+// สวิตช์หลักปิด → ปิดการกดสวิตช์ย่อยทั้งหมดและช่อง Drawdown (ค่าของสวิตช์ย่อยยังอยู่ในฐานข้อมูล
+// เปิดกลับมาได้) พร้อมเปลี่ยนข้อความ เปิด/ปิดใช้งาน
 function updateMasterUI() {
     const master = document.getElementById('masterSwitch');
     const switches =
@@ -264,6 +289,7 @@ function updateMasterUI() {
     }
 }
 
+// ถูกเรียกเมื่อกดสวิตช์หลัก (ผูกผ่าน data-change ใน HTML) → อัปเดตหน้าจอแล้วบันทึก
 function toggleAllNotifications() {
     const master =
         document.getElementById('masterSwitch');
@@ -285,6 +311,8 @@ function toggleAllNotifications() {
    INDIVIDUAL SWITCHES
    ========================================================= */
 
+// เมื่อกดสวิตช์ย่อยตัวใดตัวหนึ่ง: ถ้าสวิตช์ย่อยปิดหมดทุกตัว ให้ปิดสวิตช์หลักด้วย
+// แล้วบันทึกอัตโนมัติ
 document.addEventListener('change', function (event) {
     if (
         event.target.classList &&
@@ -317,6 +345,8 @@ document.addEventListener('change', function (event) {
 
 // Save only when the user presses "บันทึก" (or Enter), not on every arrow click.
 // The button is enabled only while the value differs from what is saved.
+// เปิดปุ่ม "บันทึก" ของ Max Drawdown เฉพาะเมื่อค่าในช่องต่างจากค่าที่บันทึกไว้
+// (กันบันทึกค่าที่ยังไม่เสร็จหรือซ้ำ)
 function updateDrawdownButton() {
     const input = document.getElementById('maxDrawdownInput');
     const button = document.getElementById('saveDrawdownBtn');
@@ -335,6 +365,8 @@ function updateDrawdownButton() {
     button.disabled = input.disabled || current === saved;
 }
 
+// ผูกช่องกรอกเกณฑ์ Drawdown: พิมพ์แล้วอัปเดตปุ่ม, กด Enter = กดบันทึก, กดปุ่มบันทึก =
+// ส่งไปเซิร์ฟเวอร์
 const maxDrawdownInput = document.getElementById('maxDrawdownInput');
 const saveDrawdownBtn = document.getElementById('saveDrawdownBtn');
 
@@ -359,6 +391,7 @@ if (saveDrawdownBtn) {
    CHAT ID
    ========================================================= */
 
+// นำ Telegram Chat ID จากโปรไฟล์มาใส่ในช่องกรอก
 function loadChatIdFromProfile(profile) {
     const input = document.getElementById('chatId');
 
@@ -370,6 +403,7 @@ function loadChatIdFromProfile(profile) {
     }
 }
 
+// โหลดโปรไฟล์จาก GET /api/profile เพื่อเอา Chat ID ปัจจุบันมาแสดง
 async function loadChatId() {
     try {
         const response =
@@ -394,6 +428,9 @@ async function loadChatId() {
     }
 }
 
+// [สรุป] บันทึก Chat ID: ตรวจว่ากรอกและเป็นตัวเลข → PATCH /api/profile →
+// จะแจ้งว่าสำเร็จก็ต่อเมื่อเซิร์ฟเวอร์ส่งค่าที่บันทึกกลับมา "ตรงกับที่ส่ง"
+// (กันกรณีบอกว่าบันทึกแล้วทั้งที่ไม่ได้บันทึกจริง)
 async function saveChatId() {
     const input =
         document.getElementById('chatId');
@@ -462,6 +499,8 @@ async function saveChatId() {
    TELEGRAM / API CONNECTION TEST
    ========================================================= */
 
+// ปุ่ม "ทดสอบการเชื่อมต่อ": ลองเรียก GET /api/notifications เพื่อเช็กว่าเซิร์ฟเวอร์ตอบและ token
+// ยังใช้ได้ แล้วแสดงสถานะ
 async function testTelegram() {
     const button =
         document.getElementById('testConnectionButton');
@@ -528,6 +567,7 @@ async function testTelegram() {
     }
 }
 
+// แสดงสถานะการเชื่อมต่อ (เขียว = พร้อมใช้งาน / แดง = ไม่พร้อม) พร้อมข้อความ
 function setConnectionStatus(
     connected,
     text
@@ -568,6 +608,9 @@ function setConnectionStatus(
    SEND TEST MESSAGE
    ========================================================= */
 
+// ปุ่ม "ส่งข้อความทดสอบ": เรียก POST /api/notifications/test ให้เซิร์ฟเวอร์ส่งข้อความเข้า
+// Telegram ของผู้ใช้จริง
+// เพื่อยืนยันว่า Chat ID ถูกต้องและบอทส่งถึง
 async function sendTestMessage() {
     const button =
         document.querySelector('.test-button');
@@ -640,6 +683,7 @@ async function sendTestMessage() {
    LOAD RECENT NOTIFICATIONS
    ========================================================= */
 
+// โหลดรายการแจ้งเตือนล่าสุดจาก GET /api/notifications (สร้างจากเทรดล่าสุดของผู้ใช้)
 async function loadRecentNotifications() {
     const container =
         document.getElementById(
@@ -692,6 +736,7 @@ async function loadRecentNotifications() {
     }
 }
 
+// แสดงรายการแจ้งเตือนล่าสุด 5 รายการ (ถ้าไม่มีแสดงข้อความ "ยังไม่มีการแจ้งเตือน")
 function renderRecentNotifications(
     notifications
 ) {
@@ -808,6 +853,7 @@ function renderRecentNotifications(
    PROFILE / USER DISPLAY
    ========================================================= */
 
+// โหลดโปรไฟล์เพื่อแสดงชื่อในข้อความต้อนรับและตัวอักษรในอวตาร
 async function loadProfile() {
     try {
         const response =
@@ -859,6 +905,8 @@ async function loadProfile() {
    LOGOUT
    ========================================================= */
 
+// [หมายเหตุ] ผูกปุ่มออกจากระบบใน sidebar — ทำงานซ้ำกับ common.js (ผลเหมือนกัน คือล้าง token
+// แล้วไปหน้า login)
 document.addEventListener(
     'DOMContentLoaded',
     function () {
@@ -886,6 +934,7 @@ document.addEventListener(
    HELPERS
    ========================================================= */
 
+// แปลงเวลาเป็นข้อความภาษาไทยอ่านง่าย (ถ้าแปลงไม่ได้แสดงค่าเดิมแบบ escape HTML)
 function formatNotificationTime(value) {
     if (!value) return '';
 
@@ -908,6 +957,9 @@ function formatNotificationTime(value) {
    INITIALIZE
    ========================================================= */
 
+// [สรุป] เริ่มหน้า: ไม่มี token → ไปหน้า login / โหลดโปรไฟล์ + Chat ID →
+// โหลดการตั้งค่าจากฐานข้อมูล → โหลดรายการแจ้งเตือนล่าสุด
+// → ตรวจว่า API ตอบได้และแสดงสถานะการเชื่อมต่อ
 async function initializeNotificationPage() {
     if (!getToken()) {
         window.location.href = 'login.html';
@@ -953,6 +1005,7 @@ async function initializeNotificationPage() {
     }
 }
 
+// เมื่อหน้าพร้อม เริ่มโหลดทุกอย่างของหน้าการแจ้งเตือน
 document.addEventListener(
     'DOMContentLoaded',
     initializeNotificationPage

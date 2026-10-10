@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- reports.html — หน้า "รายงาน": สรุปผลเทรดตามช่วงเวลาที่เลือก + กราฟกำไรสะสม + -->
+<!-- ตารางแยกรายคู่เงิน + ตารางรายการเทรด + ส่งออก CSV -->
+<!-- ข้อมูลทั้งหมดใส่โดย js/pages/reports.js (เรียก /api/trades และ /api/profile) -->
 <html lang="th">
 
 <head>
@@ -46,11 +49,15 @@
 
     <!-- Chart.js -->
 
+    <!-- ไลบรารีกราฟ Chart.js: ปักเวอร์ชัน 4.5.1 และใส่ integrity (SRI) -->
+    <!-- เพื่อให้เบราว์เซอร์ตรวจว่าไฟล์จาก CDN ไม่ถูกแก้ไข -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 
 
     <link rel="stylesheet" href="css/pages/reports.css">
 
+    <!-- โหลดค่าตั้งต้น (config.js) และฟังก์ชันกลาง (common.js) ก่อนสคริปต์ของหน้า -->
+    <!-- common.js จะสร้างเมนูข้าง ผูกปุ่ม และจัดการการเรียก API/token ให้ทุกหน้า -->
     <script src="js/config.js"></script>
     <script src="js/common.js"></script>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -64,12 +71,15 @@
      SIDEBAR
 ========================================================= -->
 
+<!-- เมนูข้างซ้าย: เป็นกล่องว่างในไฟล์นี้ — common.js สร้างรายการเมนูใส่ให้ (แก้เมนูที่ -->
+<!-- MENU_ITEMS ที่เดียว ทุกหน้าเปลี่ยนตาม) -->
 <aside class="sidebar"><!-- สร้างโดย js/common.js (MENU_ITEMS) --></aside>
 
 <!-- =========================================================
      MAIN
 ========================================================= -->
 
+<!-- พื้นที่เนื้อหาหลักทางขวาของเมนูข้าง (style.css เว้นซ้ายเท่าความกว้างเมนู) -->
 <main class="main-content">
 
 
@@ -77,6 +87,8 @@
          TOPBAR
     ====================================================== -->
 
+    <!-- แถบบน: ข้อความต้อนรับ + ชื่อหน้า "รายงาน" ทางซ้าย / ป้ายสถานะ MT5-Telegram, -->
+    <!-- กระดิ่งแจ้งเตือน, อวตารผู้ใช้ ทางขวา -->
     <header class="topbar">
 
 
@@ -128,6 +140,8 @@
 
 
             <div class="profile-menu">
+    <!-- อวตาร (ตัวอักษรแรกของชื่อ) กดเพื่อเปิด/ปิดเมนูโปรไฟล์ — common.js เพิ่ม/ลบ class -->
+    <!-- "show" ให้เมนูด้านล่าง -->
     <div class="avatar" id="userAvatar">
         U
     </div>
@@ -157,6 +171,8 @@
          CONTENT
     ====================================================== -->
 
+    <!-- เนื้อหาของหน้ารายงาน: หัวหน้า → การ์ดสรุป 4 ใบ → กราฟ + สรุปผล → ตารางแยกรายคู่เงิน -->
+    <!-- → ตารางรายการเทรด -->
     <div class="content report-page">
 
         <div class="report-header">
@@ -165,6 +181,8 @@
                 <p>สรุปผลการเทรดและประสิทธิภาพการลงทุนจากข้อมูลจริง</p>
             </div>
             <div class="report-actions">
+                <!-- เมนูเลือกช่วงเวลา: เมื่อเปลี่ยนค่า common.js จะเรียก changePeriod() ใน -->
+                <!-- reports.js (ผูกด้วย data-change) -->
                 <select class="date-select" id="periodSelect" data-change="changePeriod">
                     <option value="today">วันนี้</option>
                     <option value="7">7 วันที่ผ่านมา</option>
@@ -172,10 +190,14 @@
                     <option value="90">90 วันที่ผ่านมา</option>
                     <option value="all">ทั้งหมด</option>
                 </select>
+                <!-- ปุ่มส่งออกรายการเทรดที่กรองอยู่เป็นไฟล์ CSV (ผูกด้วย data-action → -->
+                <!-- exportReport()) -->
                 <button class="export-button" data-action="exportReport">↓ Export รายงาน</button>
             </div>
         </div>
 
+        <!-- การ์ดสรุป 4 ใบ: กำไรสุทธิ / จำนวนเทรด / Win Rate / Profit Factor -->
+        <!-- (ตัวเลขเริ่มต้นเป็น 0 แล้ว reports.js ใส่ค่าจริง) -->
         <div class="summary-grid">
             <div class="summary-card">
                 <div><div class="summary-label">กำไรสุทธิ</div><div id="netProfit" class="summary-value green">$0.00</div><div id="profitDescription" class="summary-description">จากข้อมูลการเทรด</div></div>
@@ -195,13 +217,16 @@
             </div>
         </div>
 
+        <!-- แบ่ง 2 คอลัมน์: การ์ดกราฟกำไรสะสม (ซ้าย) และการ์ดสรุปผลเทรด (ขวา) -->
         <div class="report-grid">
             <div class="report-card">
                 <div class="card-heading"><div><h3>กำไรสะสม</h3><p>การเปลี่ยนแปลงของกำไรตามช่วงเวลา</p></div></div>
+                <!-- กรอบที่ Chart.js วาดกราฟกำไรสะสมลงใน <canvas id="profitChart"> -->
                 <div class="chart-container"><canvas id="profitChart"></canvas></div>
             </div>
             <div class="report-card">
                 <div class="card-heading"><div><h3>สรุปผลการเทรด</h3><p>ภาพรวมกำไรและขาดทุน</p></div></div>
+                <!-- รายการสรุป: เทรดที่ชนะ / แพ้ / กำไรเฉลี่ย / ขาดทุนเฉลี่ย + แถบ Win Rate -->
                 <div class="profit-breakdown">
                     <div class="breakdown-item"><div class="breakdown-left"><span class="breakdown-dot"></span><span class="breakdown-name">Winning Trades</span></div><span id="winningTrades" class="breakdown-value green">0</span></div>
                     <div class="breakdown-item"><div class="breakdown-left"><span class="breakdown-dot loss"></span><span class="breakdown-name">Losing Trades</span></div><span id="losingTrades" class="breakdown-value red">0</span></div>
@@ -212,19 +237,23 @@
             </div>
         </div>
 
+        <!-- การ์ดตาราง "Performance by Symbol": สถิติแยกรายคู่เงิน -->
         <div class="table-card">
             <div class="table-card-header"><div><h3>Performance by Symbol</h3><p>ประสิทธิภาพแยกตามคู่เงินและสินทรัพย์</p></div><span id="symbolCount" class="table-count">0 Symbols</span></div>
             <table>
                 <thead><tr><th>SYMBOL</th><th>TRADES</th><th>WIN RATE</th><th>AVG. WIN</th><th>AVG. LOSS</th><th>P/L</th></tr></thead>
+                <!-- แถวของตารางนี้ reports.js เป็นคนสร้างใส่ (ตอนนี้แสดง "กำลังโหลดข้อมูล") -->
                 <tbody id="symbolStatsBody"><tr><td colspan="6" style="text-align:center;padding:25px;color:#9aa7a3">กำลังโหลดข้อมูล...</td></tr></tbody>
             </table>
         </div>
 
+        <!-- การ์ดตารางรายการเทรดในรายงาน (เลื่อนแนวนอนได้เมื่อจอแคบ) -->
         <div class="table-card">
             <div class="table-card-header"><div><h3>รายการเทรดในรายงาน</h3><p>รายละเอียดการเทรดจากข้อมูลจริง</p></div><span id="tradeCount" class="table-count">0 รายการ</span></div>
             <div class="trade-table-wrapper">
                 <table>
                     <thead><tr><th>SYMBOL</th><th>ACTION</th><th>PRICE</th><th>LOT</th><th>P/L</th><th>STATUS</th><th>DATE / TIME</th></tr></thead>
+                    <!-- แถวของตารางนี้ reports.js เป็นคนสร้างใส่ (เรียงใหม่ → เก่า) -->
                     <tbody id="tradeReportBody"><tr><td colspan="7" style="text-align:center;padding:25px;color:#9aa7a3">กำลังโหลดข้อมูล...</td></tr></tbody>
                 </table>
             </div>
@@ -235,6 +264,7 @@
      JAVASCRIPT
 ========================================================= -->
 
+<!-- สคริปต์ของหน้านี้ — รายละเอียดอยู่ใน js/pages/reports.js -->
 <script src="js/pages/reports.js"></script>
 
 

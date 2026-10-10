@@ -1,15 +1,23 @@
+// profile.js — สคริปต์ของหน้า "บัญชีผู้ใช้งาน" (profile.html)
+// • ดู/แก้ไขชื่อ นามสกุล อีเมล  • เปลี่ยนรหัสผ่าน (ต้องใส่รหัสปัจจุบัน)  •
+// แสดงสถานะการเชื่อมต่อ Telegram / MT5
+// • ออกจากระบบ  กฎต่าง ๆ ที่ตรวจในไฟล์นี้ (อีเมล/รหัสผ่าน) เป็นการเตือนผู้ใช้ให้เร็ว
+// ส่วนด่านจริงอยู่ที่เซิร์ฟเวอร์ (auth.js / api.js)
     /* =====================================================
        API CONFIG
        Node/Express backend runs on port 3000.
     ===================================================== */
-    const API_BASE_URL = window.APP_CONFIG.API_BASE_URL + '/api';
+    const API_BASE_URL = window.APP_CONFIG.API_BASE_URL + '/api';  // ประกาศไว้ แต่ตอนนี้เรียกผ่าน App.apiFetch จึงไม่ได้ใช้ตัวแปรนี้โดยตรง
 
+    // อ่าน token ที่เก็บไว้ในเบราว์เซอร์
     function getAuthToken() {
         return localStorage.getItem('auth_token');
     }
 
 
 
+    // เรียก API ของหน้านี้ (path ไม่ต้องมี /api นำหน้า) ผ่าน App.apiFetch แล้วแปลงผลเป็น JSON
+    // ถ้าไม่ ok โยน error พร้อมข้อความจากเซิร์ฟเวอร์
     async function apiRequest(path, options = {}) {
         const token = getAuthToken();
         if (!token) {
@@ -33,17 +41,20 @@
         return data;
     }
 
+    // ประกอบชื่อเต็มจากชื่อ + นามสกุล (ถ้าไม่มีใช้ username หรืออีเมลแทน)
     function getFullName(user) {
         const first = user.first_name ?? user.firstName ?? user.name ?? '';
         const last = user.last_name ?? user.lastName ?? user.surname ?? '';
         return `${first} ${last}`.trim() || user.username || user.email || 'ผู้ใช้งาน';
     }
 
+    // ตัวอักษรแรกของชื่อ (พิมพ์ใหญ่) ใช้เป็นข้อความในวงกลมอวตาร
     function getInitial(user) {
         const fullName = getFullName(user).trim();
         return fullName ? fullName.charAt(0).toUpperCase() : 'U';
     }
 
+    // แปลงวันที่เป็นรูปแบบไทย วว/ดด/ปปปป (ปี พ.ศ.)
     function formatDate(value) {
         if (!value) return '-';
         const date = new Date(value);
@@ -55,11 +66,16 @@
         });
     }
 
+    // ใส่ข้อความลงองค์ประกอบตาม id (ถ้าไม่มีค่าให้ใส่ "-")
     function setText(id, value) {
         const el = document.getElementById(id);
         if (el) el.textContent = value ?? '-';
     }
 
+    // [สรุป] นำข้อมูลผู้ใช้ที่ได้จากเซิร์ฟเวอร์มาใส่ในหน้า: ช่องฟอร์ม ชื่อ อีเมล วันที่สมัคร
+    // สถานะ และอวตาร
+    // และเก็บค่าเดิมไว้ที่ window.originalProfile (ใช้เทียบว่าผู้ใช้แก้อะไรบ้าง และใช้กับปุ่ม
+    // "ยกเลิก")
     function setUserToPage(user) {
         const firstName = user.first_name ?? user.firstName ?? user.name ?? '';
         const lastName = user.last_name ?? user.lastName ?? user.surname ?? '';
@@ -91,6 +107,8 @@
     /* =====================================================
        CONNECTION STATUS (ข้อมูลจริงจากบัญชีและเทรดล่าสุด)
     ===================================================== */
+    // ใส่ข้อความและสีสถานะให้การ์ด "การเชื่อมต่อ" (เขียว = ปกติ, เหลือง = ยังไม่ตั้งค่า, เทา =
+    // ไม่มีข้อมูล)
     function setConnection(prefix, state, detail, label) {
         const detailEl = document.getElementById(`${prefix}Detail`);
         const statusEl = document.getElementById(`${prefix}Status`);
@@ -105,6 +123,8 @@
         }
     }
 
+    // แสดงสถานะ Telegram (ดูจากว่ามี chat id ไหม) และ MT5
+    // (ดูจากเวลาเทรดล่าสุดที่เซิร์ฟเวอร์ได้รับ)
     async function renderConnections(user) {
         if (user.telegram_chat_id) {
             setConnection('telegram', 'ok', `Chat ID · ${user.telegram_chat_id}`, 'Connected');
@@ -132,6 +152,7 @@
     /* =====================================================
        LOAD PROFILE
     ===================================================== */
+    // โหลดโปรไฟล์จาก GET /api/profile แล้วแสดงในหน้า (ถ้าไม่สำเร็จแสดง toast)
     async function loadProfile() {
         try {
             const data = await apiRequest('/profile');
@@ -148,6 +169,9 @@
     /* =====================================================
        SAVE PROFILE
     ===================================================== */
+    // [สรุป] กดบันทึก: ตรวจว่าชื่อ นามสกุล อีเมลไม่ว่าง → ตรวจรูปแบบอีเมล (เฉพาะเมื่อแก้อีเมล)
+    // → ส่ง "เฉพาะฟิลด์ที่เปลี่ยน" ไป PATCH /api/profile → แสดงผล (ไม่มีอะไรเปลี่ยนก็ไม่ยิง
+    // API)
     async function saveProfile() {
         const firstName = document.getElementById('firstName').value.trim();
         const lastName = document.getElementById('lastName').value.trim();
@@ -225,6 +249,7 @@
     /* =====================================================
        RESET PROFILE
     ===================================================== */
+    // ปุ่ม "ยกเลิก": คืนค่าในฟอร์มกลับเป็นค่าเดิมที่โหลดมา
     function resetProfile() {
         const original = window.originalProfile || {
             firstName: '',
@@ -240,6 +265,7 @@
     /* =====================================================
        TOGGLE PASSWORD
     ===================================================== */
+    // ปุ่มรูปตา: สลับช่องรหัสผ่านระหว่างซ่อน (password) กับแสดง (text)
     function togglePassword(inputId, button) {
         const input = document.getElementById(inputId);
         if (!input) return;
@@ -256,6 +282,10 @@
     /* =====================================================
        CHANGE PASSWORD
     ===================================================== */
+    // [สรุป] เปลี่ยนรหัสผ่าน: ตรวจฝั่งหน้าเว็บก่อน (กรอกครบ, 8-72 ตัว, ASCII เท่านั้น,
+    // ยืนยันตรงกัน, ไม่ซ้ำรหัสเดิม)
+    // แล้วส่ง PATCH /api/profile พร้อมรหัสผ่านปัจจุบัน —
+    // เซิร์ฟเวอร์ตรวจรหัสปัจจุบันและกฎซ้ำอีกครั้ง (ไม่เชื่อแค่ฝั่งหน้าเว็บ)
     async function changePassword() {
         const current = document.getElementById('currentPassword').value;
         const newPassword = document.getElementById('newPassword').value;
@@ -282,6 +312,9 @@
             return;
         }
 
+        // ต้องเป็นอักขระ ASCII (ตั้งแต่เว้นวรรคถึง ~) เท่านั้น เพราะ bcrypt อ่านแค่ 72 "ไบต์"
+        // แรก
+        // ภาษาไทย 1 ตัวนับ 3 ไบต์ ถ้าอนุญาตจะถูกตัดเงียบ ๆ จนรหัสสั้นกว่าที่ผู้ใช้คิด
         if (!/^[ -~]+$/.test(newPassword)) {
             App.toast('รหัสผ่านใหม่ต้องเป็นตัวอักษรภาษาอังกฤษ ตัวเลข หรือสัญลักษณ์เท่านั้น (ห้ามใช้ภาษาไทย)');
             return;
@@ -329,6 +362,7 @@
     /* =====================================================
        LOGOUT
     ===================================================== */
+    // ปุ่มออกจากระบบ: ถามยืนยันด้วยกล่องในหน้า แล้วล้าง token และกลับไปหน้า login
     async function logout() {
         const confirmed = await App.confirm('คุณต้องการออกจากระบบใช่หรือไม่?', { okLabel: 'ออกจากระบบ' });
 
@@ -340,4 +374,5 @@
     /* =====================================================
        INITIALIZE
     ===================================================== */
+    // เมื่อหน้าพร้อม เริ่มโหลดโปรไฟล์
     document.addEventListener('DOMContentLoaded', loadProfile);

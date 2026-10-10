@@ -1,14 +1,21 @@
-    const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
+// statistics.js — สคริปต์ของหน้า "สถิติการเทรด" (statistics.html)
+// ดึงเทรด (สูงสุด 1,000 รายการล่าสุด) + โปรไฟล์ → คำนวณสถิติในหน้าเว็บตามช่วงเวลาที่เลือก (7
+// วัน / 30 วัน / 3 เดือน / ทั้งหมด)
+// → แสดงการ์ดสถิติ ตารางแยกรายคู่เงิน กราฟกำไรสะสม และกราฟโดนัทสัดส่วนชนะ/แพ้
+    const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;  // ที่อยู่ API อ่านจาก config.js (ค่าว่าง = origin เดียวกับหน้าเว็บ)
 
-    let performanceChart = null;
-    let winLossChart = null;
-    let allTrades = [];
-    let allStatistics = null;
+    let performanceChart = null;  // กราฟเส้นกำไรสะสม (เก็บไว้เพื่อทำลายก่อนวาดใหม่)
+    let winLossChart = null;  // กราฟโดนัทสัดส่วนชนะ/แพ้
+    let allTrades = [];  // เทรดทั้งหมดที่โหลดมา (กรองตามช่วงเวลาในหน้าเว็บ ไม่ต้องเรียก API ซ้ำ)
+    let allStatistics = null;  // ประกาศไว้ แต่ตอนนี้สถิติคำนวณในหน้าเว็บโดย calculateStatistics จึงไม่ได้ใช้ค่านี้
 
+    // อ่าน token ที่เก็บไว้ในเบราว์เซอร์
     function getToken() {
         return localStorage.getItem('auth_token');
     }
 
+    // เรียก API โดยรับ URL เต็ม (ขึ้นต้นด้วย API_BASE_URL) แล้วตัดเหลือ path ส่งให้
+    // App.apiFetch จากนั้นแปลงผลเป็น JSON
     async function apiFetch(url) {
         // url เป็น `${API_BASE_URL}/api/...` ส่วน App.apiFetch ต้องการเฉพาะ path
         const path = url.startsWith(API_BASE_URL) ? url.slice(API_BASE_URL.length) : url;
@@ -23,6 +30,7 @@
         return data;
     }
 
+    // จัดตัวเลขให้มีทศนิยมคงที่และคั่นหลักพัน (เช่น 1,234.50)
     function formatNumber(value, decimals = 2) {
         const number = Number(value || 0);
         return number.toLocaleString('en-US', {
@@ -31,12 +39,14 @@
         });
     }
 
+    // แสดงเงินพร้อมเครื่องหมาย +$ / -$
     function formatMoney(value) {
         const number = Number(value || 0);
         const sign = number >= 0 ? '+$' : '-$';
         return sign + formatNumber(Math.abs(number), 2);
     }
 
+    // เวลาของเทรด (ใช้เวลาปิดก่อน ถ้าไม่มีใช้เวลาเปิด) ถ้าไม่ถูกต้องคืน null
     function getTradeDate(trade) {
         const value = trade.closed_at || trade.timestamp || trade.created_at;
         if (!value) return null;
@@ -45,6 +55,7 @@
         return Number.isNaN(date.getTime()) ? null : date;
     }
 
+    // กรองเทรดตามช่วงเวลา: "all" = ทั้งหมด, ตัวเลข = ย้อนหลังกี่วัน
     function getFilteredTrades(period) {
         if (period === 'all') {
             return [...allTrades];
@@ -60,6 +71,11 @@
         });
     }
 
+    // [สรุป] คำนวณสถิติจากเทรดที่ปิดแล้วในช่วงที่เลือก: จำนวนเทรด ชนะ/แพ้ กำไรรวม/ขาดทุนรวม Win
+    // Rate Profit Factor
+    // กำไร-ขาดทุนเฉลี่ย เทรดดี/แย่สุด และสถิติรายคู่เงิน (ตรรกะเดียวกับฝั่งเซิร์ฟเวอร์
+    // แต่คำนวณในหน้าเว็บ
+    // เพื่อให้เปลี่ยนช่วงเวลาได้ทันทีโดยไม่ต้องเรียก API ซ้ำ)
     function calculateStatistics(trades) {
         const completedTrades = trades.filter(
             (trade) => trade.pnl !== null && trade.pnl !== undefined
@@ -90,10 +106,12 @@
             0
         );
 
+        // Win Rate (%) = เทรดที่ชนะ ÷ เทรดทั้งหมด × 100
         const winRate = totalTrades > 0
             ? (wins.length / totalTrades) * 100
             : 0;
 
+        // Profit Factor = กำไรรวม ÷ |ขาดทุนรวม| (ไม่มีขาดทุนแต่มีกำไร = ∞)
         const profitFactor = totalLoss < 0
             ? totalProfit / Math.abs(totalLoss)
             : (totalProfit > 0 ? Infinity : 0);
@@ -106,6 +124,7 @@
             ? totalLoss / losses.length
             : 0;
 
+        // เทรดที่กำไรมากที่สุด และขาดทุนมากที่สุด
         const bestTrade = completedTrades.length > 0
             ? completedTrades.reduce((best, trade) =>
                 Number(trade.pnl || 0) > Number(best.pnl || 0)
@@ -122,6 +141,7 @@
             )
             : null;
 
+        // รวมสถิติแยกรายคู่เงิน: นับเทรด ชนะ แพ้ และกำไรรวมของแต่ละ symbol
         const symbolMap = {};
 
         completedTrades.forEach((trade) => {
@@ -176,6 +196,8 @@
         };
     }
 
+    // ใส่ตัวเลขสถิติลงการ์ดและรายละเอียดบนหน้า (จำนวนเทรด Win Rate ชนะ/แพ้ กำไรสุทธิ Profit
+    // Factor เฉลี่ย เทรดดี/แย่สุด)
     function updateSummary(stats) {
         document.getElementById('totalTrades').textContent =
             Number(stats.totalTrades || 0).toLocaleString('en-US');
@@ -187,6 +209,9 @@
             Number(stats.wins || 0).toLocaleString('en-US');
 
         document.getElementById('losingTrades').textContent =
+            Number(stats.losses || 0).toLocaleString('en-US');
+
+        document.getElementById('losingTradesDetails').textContent =
             Number(stats.losses || 0).toLocaleString('en-US');
 
         const netProfit = Number(stats.totalPnl || 0);
@@ -246,6 +271,8 @@
         }
     }
 
+    // สร้างตารางสถิติแยกรายคู่เงิน พร้อมแถบแสดง Win Rate (ค่าที่มาจากข้อมูลผ่าน escapeHtml
+    // เพื่อกัน XSS)
     function updateSymbolTable(symbolStats) {
         const body = document.getElementById('symbolStatsBody');
 
@@ -310,6 +337,8 @@
         }).join('');
     }
 
+// เตรียมข้อมูลกราฟกำไรสะสม: เรียงเทรดที่ปิดแล้วตามเวลา แล้วบวกสะสมทีละเทรด ได้ป้ายแกน X
+// (วันที่) กับค่าแกน Y
 function buildPerformanceData(trades) {
         const completed = trades
             .filter((trade) => trade.pnl !== null && trade.pnl !== undefined)
@@ -336,6 +365,7 @@ function buildPerformanceData(trades) {
         return { labels, values };
     }
 
+    // วาดกราฟเส้นกำไรสะสม (ทำลายกราฟเดิมก่อนวาดใหม่ กันกราฟซ้อนกัน)
     function updatePerformanceChart(trades) {
         const { labels, values } = buildPerformanceData(trades);
 
@@ -438,6 +468,7 @@ function buildPerformanceData(trades) {
         );
     }
 
+    // วาดกราฟโดนัทสัดส่วน เทรดชนะ : เทรดแพ้
     function updateWinLossChart(stats) {
         if (winLossChart) {
             winLossChart.destroy();
@@ -488,6 +519,9 @@ function buildPerformanceData(trades) {
         );
     }
 
+    // [สรุป] โหลดข้อมูลตอนเปิดหน้า: เรียก trades (สูงสุด 1,000) กับ profile พร้อมกัน →
+    // แสดงชื่อและอวตาร
+    // → กรองตามช่วงเวลาที่เลือก (ค่าเริ่มต้น 30 วัน) → คำนวณและแสดงการ์ด ตาราง และกราฟ
     async function loadStatistics() {
         try {
             const [trades, profileData] = await Promise.all([
@@ -522,6 +556,7 @@ if (userAvatar) {
             const filter = document.getElementById('periodFilter');
 
             // ค่าเริ่มต้นของหน้าเป็น 30 วัน
+            // แปลงข้อความในเมนูช่วงเวลา (เช่น "7 วันที่ผ่านมา") เป็นค่าที่ฟังก์ชันกรองเข้าใจ
             const filteredTrades = getFilteredTrades(filter.value === '7 วันที่ผ่านมา'
                 ? '7'
                 : filter.value === '3 เดือน'
@@ -554,6 +589,7 @@ if (userAvatar) {
         }
     }
 
+    // แปลงข้อความที่เลือกในเมนูช่วงเวลาเป็นค่า "7" / "30" / "90" / "all"
     function getPeriodValue() {
         const value = document.getElementById('periodFilter').value;
 
@@ -564,6 +600,7 @@ if (userAvatar) {
         return '30';
     }
 
+    // เมื่อเปลี่ยนช่วงเวลา: กรองและคำนวณใหม่ในหน้าเว็บทันที (ไม่ต้องเรียก API ซ้ำ)
     document.getElementById('periodFilter').addEventListener(
         'change',
         function() {
@@ -577,4 +614,5 @@ if (userAvatar) {
         }
     );
 
+    // เมื่อหน้าพร้อม เริ่มโหลดข้อมูลสถิติ
     document.addEventListener('DOMContentLoaded', loadStatistics);
