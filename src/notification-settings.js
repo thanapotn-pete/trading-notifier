@@ -1,6 +1,11 @@
+// notification-settings.js — การตั้งค่าแจ้งเตือนรายผู้ใช้ (ตาราง notification_settings)
+// เก็บ/อ่านสวิตช์ที่ผู้ใช้ตั้งในหน้า "การแจ้งเตือน" และมีฟังก์ชัน shouldNotifyTrade
+// ที่ตัดสินว่า
+// "เทรดนี้ควรส่ง Telegram ไหม" ตามการตั้งค่าเหล่านั้น
 const { createClient } = require('@supabase/supabase-js');
 
 // Server-side only: the service key bypasses RLS, so never send it to the browser.
+// ตัวเชื่อมต่อฐานข้อมูล (service key — ใช้ฝั่งเซิร์ฟเวอร์เท่านั้น)
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
@@ -11,23 +16,25 @@ const supabase = createClient(
 // DEFAULT SETTINGS
 // =====================================================
 
+// ค่าเริ่มต้นของผู้ใช้ที่ยังไม่เคยตั้งค่า: เปิดแจ้งเตือนเกือบทั้งหมด (ยกเว้นสรุปรายสัปดาห์)
+// ไม่จำกัดกำไรขั้นต่ำและคู่เงิน
 const DEFAULT_SETTINGS = {
-  enabled: true,
+  enabled: true,  // สวิตช์หลัก: ปิด = ไม่แจ้งเตือนอะไรเลย
 
-  notify_buy: true,
-  notify_sell: true,
-  notify_tp: true,
-  notify_sl: true,
-  notify_close: true,
+  notify_buy: true,  // แจ้งเมื่อเปิดออเดอร์ Buy
+  notify_sell: true,  // แจ้งเมื่อเปิดออเดอร์ Sell
+  notify_tp: true,  // แจ้งเมื่อถึง Take Profit
+  notify_sl: true,  // แจ้งเมื่อชน Stop Loss
+  notify_close: true,  // แจ้งเมื่อปิดออเดอร์
 
-  notify_risk: true,
-  notify_daily_summary: true,
-  notify_weekly_summary: false,
+  notify_risk: true,  // แจ้งเตือนความเสี่ยง (Drawdown)
+  notify_daily_summary: true,  // ส่งสรุปรายวัน
+  notify_weekly_summary: false,  // ส่งสรุปรายสัปดาห์ (ปิดไว้เป็นค่าเริ่มต้น)
 
-  min_pnl: null,
-  max_drawdown: null,
+  min_pnl: null,  // กำไร/ขาดทุนขั้นต่ำที่จะแจ้งตอนปิดออเดอร์ (null = ไม่จำกัด)
+  max_drawdown: null,  // เกณฑ์ Drawdown (%) ที่จะเตือน (null = ใช้ค่ามาตรฐาน 10)
 
-  symbols: []
+  symbols: []  // เฉพาะคู่เงินที่เลือก (ว่าง = ทุกตัว)
 };
 
 
@@ -35,6 +42,7 @@ const DEFAULT_SETTINGS = {
 // GET SETTINGS
 // =====================================================
 
+// อ่านการตั้งค่าของผู้ใช้ — ถ้ายังไม่เคยมี จะสร้างแถวค่าเริ่มต้นให้ แล้วคืนค่านั้น
 async function getNotificationSettings(userId) {
   const {
     data,
@@ -78,10 +86,12 @@ async function getNotificationSettings(userId) {
 // UPDATE SETTINGS
 // =====================================================
 
+// บันทึกการตั้งค่า (upsert: ยังไม่มีก็สร้าง มีแล้วก็แก้) และบันทึกเวลาที่แก้ไขล่าสุด
 async function updateNotificationSettings(
   userId,
   settings
 ) {
+  // รายชื่อฟิลด์ที่อนุญาตให้แก้ — ฟิลด์อื่นที่ถูกส่งมาจะถูกเมิน (กันการแก้คอลัมน์ที่ไม่ควรแก้)
   const allowedFields = [
     'enabled',
 
@@ -141,6 +151,8 @@ async function updateNotificationSettings(
 // NORMALIZE ACTION
 // =====================================================
 
+// แปลงชื่อ action หลายแบบ (open_buy, take_profit, closed ...) ให้เป็นชื่อมาตรฐาน buy / sell /
+// tp / sl / close
 function normalizeAction(action) {
   const value =
     String(action || '')
@@ -180,6 +192,8 @@ function normalizeAction(action) {
 // CHECK SYMBOL
 // =====================================================
 
+// คู่เงินนี้อยู่ในรายการที่ผู้ใช้เลือกไหม — ถ้ารายการว่างถือว่าอนุญาตทุกตัว
+// เทียบแบบไม่สนตัวพิมพ์เล็กใหญ่
 function isSymbolAllowed(
   symbol,
   symbols
@@ -208,6 +222,9 @@ function isSymbolAllowed(
 // CHECK TRADE NOTIFICATION
 // =====================================================
 
+// [สรุป] ตัดสินว่า "เทรดนี้ควรแจ้ง Telegram ไหม" ตามการตั้งค่าของผู้ใช้ เรียงตามลำดับ:
+// 1) สวิตช์หลัก  2) สวิตช์ของชนิด action (buy/sell/tp/sl/close)  3) คู่เงินที่เลือก
+// 4) กำไรขั้นต่ำ (เฉพาะตอนปิดออเดอร์)  — คืน true = แจ้ง, false = ไม่แจ้ง
 function shouldNotifyTrade(
   settings,
   trade
@@ -303,6 +320,7 @@ function shouldNotifyTrade(
 // EXPORT
 // =====================================================
 
+// ส่งออกให้ api.js, server.js และ scheduler.js ใช้
 module.exports = {
   getNotificationSettings,
   updateNotificationSettings,

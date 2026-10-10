@@ -1,5 +1,12 @@
+// tracker.js — บันทึกและคำนวณ "ผลการเทรด" (ตาราง trades ใน Supabase)
+// • recordTrade  บันทึกเทรดที่ได้จาก webhook ของ MT5   • getPosition
+// ดึงข้อมูลออเดอร์ที่เปิดไว้
+// • listTrades  รายการเทรด   • getPeriodSummary / getDailySummary  สรุปรายวัน-รายสัปดาห์
+// • getStatistics  สถิติรวม (Win Rate, Profit Factor ฯลฯ) ที่หน้า Statistics/Reports ใช้
 const { createClient } = require('@supabase/supabase-js');
 
+// สร้างตัวเชื่อมต่อ Supabase (service key, ฝั่งเซิร์ฟเวอร์เท่านั้น) ถ้า env ไม่ครบจะ throw
+// error
 function getClient() {
   const url = process.env.SUPABASE_URL;
   // Server-side only: the service key bypasses RLS, so never send it to the browser.
@@ -15,6 +22,9 @@ function getClient() {
 }
 
 
+// [สรุป] หา "เที่ยงคืนของวันนี้" ตามเขตเวลาของเทรดเดอร์ (เช่น ไทย) ในรูปเวลา UTC
+// ใช้เป็นจุดเริ่มต้นของวันตอนนับสรุปรายวัน (เซิร์ฟเวอร์ Render ใช้เวลา UTC ถ้าไม่แปลง
+// วันจะเริ่มผิดเวลา)
 // Midnight of "today" in the given IANA timezone, as a UTC instant.
 // (`new Date().setHours(0,0,0,0)` uses the server's own local time,
 // which on Render is UTC — not the trader's timezone — so day boundaries were off.)
@@ -40,6 +50,8 @@ function startOfDayInTimezone(tz) {
       {}
     );
 
+  // นำเวลาบนนาฬิกาของเขตเวลานั้นมาตีเป็น UTC เพื่อหาส่วนต่าง (offset) ระหว่างเวลาท้องถิ่นกับ
+  // UTC
   const wallClockAsUTC = Date.UTC(
     parts.year,
     parts.month - 1,
@@ -51,8 +63,9 @@ function startOfDayInTimezone(tz) {
 
   // `parts` is whole seconds, so compare against the whole-second instant
   // (otherwise the day boundary drifts by the current milliseconds)
-  const offsetMs = wallClockAsUTC - Math.floor(now.getTime() / 1000) * 1000;
+  const offsetMs = wallClockAsUTC - Math.floor(now.getTime() / 1000) * 1000;  // ส่วนต่างเวลา (มิลลิวินาที)
 
+  // เที่ยงคืนของวันนี้บนนาฬิกาท้องถิ่น (ตอนนี้ยังตีเป็น UTC อยู่)
   const midnightWallClockAsUTC = Date.UTC(
     parts.year,
     parts.month - 1,
@@ -62,16 +75,21 @@ function startOfDayInTimezone(tz) {
     0
   );
 
-  return new Date(midnightWallClockAsUTC - offsetMs);
+  return new Date(midnightWallClockAsUTC - offsetMs);  // ลบส่วนต่างออก ได้เวลาจริงของเที่ยงคืนท้องถิ่น
 }
 
 
+// [สรุป] บันทึกเทรดจาก webhook โดย "1 ออเดอร์ (position) = 1 แถว"
+// • ตอนเปิด (buy/sell) → เพิ่มแถวใหม่ status = open
+// • ตอนปิด (close/tp/sl) → อัปเดตแถวเดิมที่ position_id เดียวกัน ใส่ราคาปิด กำไร/ขาดทุน และ
+// status = closed
+// ทำให้แสดงเปิด-ปิด-TP-SL ของออเดอร์เดียวรวมกันในตารางประวัติเทรดได้
 // A position is one row, inserted on open and updated in place on close
 // (matched by position_id) so open/close/TP/SL can be shown together.
 async function recordTrade(trade) {
   const supabase = getClient();
 
-  if (trade.action === 'buy' || trade.action === 'sell') {
+  if (trade.action === 'buy' || trade.action === 'sell') {  // เปิดออเดอร์ → เพิ่มแถวใหม่
     const { error } = await supabase
       .from('trades')
       .insert({
@@ -82,7 +100,7 @@ async function recordTrade(trade) {
         tp: trade.tp,
         sl: trade.sl,
         position_id: trade.position_id,
-        status: 'open',
+        status: 'open',  // สถานะ: ยังเปิดอยู่
         user_id: trade.user_id,
       });
 
@@ -93,6 +111,7 @@ async function recordTrade(trade) {
     return;
   }
 
+  // ปิดออเดอร์ → อัปเดตแถวของ position นี้ (ของผู้ใช้คนนี้) ที่ยังเปิดอยู่
   const { error } = await supabase
     .from('trades')
     .update({
@@ -103,7 +122,7 @@ async function recordTrade(trade) {
     })
     .eq('position_id', trade.position_id)
     .eq('user_id', trade.user_id)
-    .eq('status', 'open');
+    .eq('status', 'open');  // เฉพาะแถวที่ยัง open เท่านั้น (กันปิดซ้ำ)
 
   if (error) {
     throw error;
@@ -111,6 +130,8 @@ async function recordTrade(trade) {
 }
 
 
+// [สรุป] ดึงแถวของออเดอร์หนึ่ง (ล่าสุดของ position_id นั้น) — ใช้สร้างข้อความตอนปิด เพราะ EA
+// ไม่ได้ส่ง BUY/SELL และราคาเข้ามาซ้ำ
 // The stored row for one position — the close message needs the original
 // BUY/SELL and entry price, which the EA doesn't resend on close.
 async function getPosition(userId, positionId) {
@@ -133,6 +154,9 @@ async function getPosition(userId, positionId) {
 }
 
 
+// [สรุป] สรุปเทรดที่ "ปิดแล้ว" ย้อนหลัง N วันตามเขตเวลาของเทรดเดอร์ (1 = วันนี้, 7 = 7
+// วันรวมวันนี้)
+// คืนจำนวนเทรด ชนะ แพ้ และกำไรสุทธิ — ใช้ในสรุปรายวัน/รายสัปดาห์ที่ส่งทาง Telegram
 // Closed-trade totals for the last `days` calendar days in the trader's
 // timezone (days = 1 -> today only, 7 -> today and the 6 days before).
 async function getPeriodSummary(userId, days = 1) {
@@ -142,7 +166,8 @@ async function getPeriodSummary(userId, days = 1) {
   const formatDay = (date) =>
     date.toLocaleDateString('en-GB', { timeZone: tz });
 
-  const startOfToday = startOfDayInTimezone(tz);
+  const startOfToday = startOfDayInTimezone(tz);  // จุดเริ่มของวันนี้
+  // จุดเริ่มของช่วงที่ต้องการ = เริ่มวันนี้ ลบย้อนหลัง (days − 1) วัน
   const startOfPeriod = new Date(
     startOfToday.getTime() - (days - 1) * 24 * 60 * 60 * 1000
   );
@@ -151,20 +176,20 @@ async function getPeriodSummary(userId, days = 1) {
     .from('trades')
     .select('*')
     .eq('user_id', userId)
-    .gte('closed_at', startOfPeriod.toISOString())
-    .not('pnl', 'is', null);
+    .gte('closed_at', startOfPeriod.toISOString())  // เฉพาะเทรดที่ปิดตั้งแต่ต้นช่วง
+    .not('pnl', 'is', null);  // เฉพาะเทรดที่มีกำไร/ขาดทุนแล้ว (คือปิดแล้ว)
 
   if (error) {
     throw error;
   }
 
-  const totalPnl = data.reduce(
+  const totalPnl = data.reduce(  // รวมกำไร/ขาดทุนทุกเทรดในช่วง
     (sum, t) => sum + (t.pnl || 0),
     0
   );
 
-  const wins = data.filter((t) => t.pnl > 0).length;
-  const losses = data.filter((t) => t.pnl < 0).length;
+  const wins = data.filter((t) => t.pnl > 0).length;  // ชนะ = กำไรมากกว่า 0
+  const losses = data.filter((t) => t.pnl < 0).length;  // แพ้ = ขาดทุน (น้อยกว่า 0)
 
   const today = formatDay(new Date());
 
@@ -180,11 +205,14 @@ async function getPeriodSummary(userId, days = 1) {
 }
 
 
+// ทางลัด: สรุปของวันนี้ (= ย้อนหลัง 1 วัน)
 async function getDailySummary(userId) {
   return getPeriodSummary(userId, 1);
 }
 
 
+// [สรุป] รายการเทรดล่าสุดของผู้ใช้ เรียงใหม่ → เก่า จำกัดจำนวนด้วย limit
+// หน้า Dashboard / ประวัติเทรดเรียกผ่าน GET /api/trades
 async function listTrades(userId, limit = 100) {
   const supabase = getClient();
 
@@ -209,6 +237,9 @@ async function listTrades(userId, limit = 100) {
    GET STATISTICS
 ===================================================== */
 
+// [สรุป] คำนวณสถิติทั้งหมดของผู้ใช้จาก "เทรดที่ปิดแล้ว": จำนวนเทรด ชนะ/แพ้ กำไรรวม Win Rate
+// Profit Factor กำไร-ขาดทุนเฉลี่ย เทรดที่ดี/แย่ที่สุด และสถิติแยกรายคู่เงิน
+// หน้า Statistics / Reports เรียกผ่าน GET /api/statistics
 async function getStatistics(userId) {
   const supabase = getClient();
 
@@ -216,7 +247,7 @@ async function getStatistics(userId) {
     .from('trades')
     .select('*')
     .eq('user_id', userId)
-    .not('pnl', 'is', null);
+    .not('pnl', 'is', null);  // เฉพาะเทรดที่ปิดแล้ว (มีค่ากำไร/ขาดทุน)
 
   if (error) {
     throw error;
@@ -231,6 +262,7 @@ async function getStatistics(userId) {
 
   const totalTrades = trades.length;
 
+  // แยกเทรดที่กำไร (pnl > 0) และเทรดที่ขาดทุน (pnl < 0)
   const winningTrades = trades.filter(
     (trade) =>
       Number(trade.pnl || 0) > 0
@@ -249,18 +281,21 @@ async function getStatistics(userId) {
   // Profit / Loss
   // ==========================================
 
+  // กำไรรวมเฉพาะเทรดที่ชนะ
   const totalProfit = winningTrades.reduce(
     (sum, trade) =>
       sum + Number(trade.pnl || 0),
     0
   );
 
+  // ขาดทุนรวมเฉพาะเทรดที่แพ้ (เป็นค่าติดลบ)
   const totalLoss = losingTrades.reduce(
     (sum, trade) =>
       sum + Number(trade.pnl || 0),
     0
   );
 
+  // กำไรสุทธิ = กำไรรวม + ขาดทุนรวม (ทุกเทรด)
   const totalPnl = trades.reduce(
     (sum, trade) =>
       sum + Number(trade.pnl || 0),
@@ -272,6 +307,7 @@ async function getStatistics(userId) {
   // Win Rate
   // ==========================================
 
+  // Win Rate (%) = เทรดที่ชนะ ÷ เทรดทั้งหมด × 100 (ไม่มีเทรด = 0)
   const winRate =
     totalTrades > 0
       ? (wins / totalTrades) * 100
@@ -282,6 +318,8 @@ async function getStatistics(userId) {
   // Profit Factor
   // ==========================================
 
+  // Profit Factor = กำไรรวม ÷ |ขาดทุนรวม| (มากกว่า 1 = ได้มากกว่าเสีย)
+  // ถ้าไม่มีขาดทุนเลยแต่มีกำไร ให้เป็น Infinity
   let profitFactor = 0;
 
   if (totalLoss < 0) {
@@ -296,6 +334,7 @@ async function getStatistics(userId) {
   // Average Win / Average Loss
   // ==========================================
 
+  // กำไรเฉลี่ยต่อเทรดที่ชนะ และขาดทุนเฉลี่ยต่อเทรดที่แพ้
   const avgWin =
     wins > 0
       ? totalProfit / wins
@@ -311,6 +350,7 @@ async function getStatistics(userId) {
   // Best Trade / Worst Trade
   // ==========================================
 
+  // เทรดที่ได้กำไรมากที่สุด และขาดทุนมากที่สุด (วนเทียบทีละเทรด เก็บตัวที่สูง/ต่ำสุด)
   let bestTrade = null;
   let worstTrade = null;
 
@@ -339,6 +379,7 @@ async function getStatistics(userId) {
   // Statistics By Symbol
   // ==========================================
 
+  // รวมสถิติแยกรายคู่เงิน: นับจำนวนเทรด ชนะ แพ้ และกำไรรวมของแต่ละ symbol
   const symbolMap = {};
 
   for (const trade of trades) {
@@ -370,6 +411,7 @@ async function getStatistics(userId) {
   }
 
 
+  // แปลงเป็นรายการ พร้อมคำนวณ Win Rate ของแต่ละคู่เงิน
   const bySymbol =
     Object.values(symbolMap).map(
       (item) => {
@@ -394,6 +436,7 @@ async function getStatistics(userId) {
   // Return
   // ==========================================
 
+  // ส่งผลสถิติทั้งหมดกลับไปให้ API (แปลงเป็น JSON ให้หน้าเว็บ)
   return {
     totalTrades: totalTrades,
 
@@ -425,6 +468,7 @@ async function getStatistics(userId) {
    EXPORT
 ===================================================== */
 
+// ส่งออกให้ server.js, api.js และ scheduler.js เรียกใช้
 module.exports = {
   recordTrade,
   getPosition,

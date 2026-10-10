@@ -1,3 +1,8 @@
+// trade-history.js — สคริปต์ของหน้า "ประวัติการเทรด" (trade-history.html)
+// โหลดเทรดล่าสุดสูงสุด 1,000 รายการจากเซิร์ฟเวอร์ → แสดงในตารางแบ่งหน้า (10 แถวต่อหน้า)
+// มีค้นหาตามคู่เงิน / กรอง BUY-SELL / กรองตามวัน, การ์ดสรุป (ทั้งหมด ชนะ แพ้ Win Rate)
+// และปุ่มส่งออกเป็นไฟล์ CSV
+// การกรองและแบ่งหน้าทำในหน้าเว็บทั้งหมด ไม่ต้องเรียก API ซ้ำ
 /*
 |--------------------------------------------------------------------------
 | Trade History - Real API
@@ -30,6 +35,8 @@ function toNumber(value) {
     return Number.isFinite(n) ? n : 0;
 }
 
+// [กลุ่มฟังก์ชัน get* ด้านล่าง] ดึงค่าจากข้อมูลเทรดแบบรองรับชื่อฟิลด์หลายแบบ
+// (กันกรณีชื่อคอลัมน์ต่างกัน) แล้วจัดรูปแบบสำหรับแสดงผล
 // ดึงชื่อ Symbol จากหลายๆ รูปแบบคีย์ข้อมูล
 function getSymbol(trade) {
     return trade.symbol ?? trade.instrument ?? trade.ticker ?? '-';
@@ -173,6 +180,9 @@ function getTradeDate(value) {
    API
 ========================= */
 
+// [สรุป] โหลดข้อมูลตอนเปิดหน้า: ไม่มี token → ไปหน้า login / เรียก GET /api/trades?limit=1000
+// → (ถ้า 403 ออกจากระบบ) → โหลดโปรไฟล์มาแสดงชื่อ-อวตาร → เก็บเทรดทั้งหมด → แสดงสรุป ตาราง
+// และปุ่มแบ่งหน้า
 // ฟังก์ชันโหลดข้อมูลประวัติการเทรดจาก Node.js API
 async function loadTrades() {
     const token = getAuthToken();
@@ -263,6 +273,8 @@ if (userAvatar) {
    Summary
 ========================= */
 
+// ใส่ตัวเลขสรุป 4 ช่อง: จำนวนเทรด / ชนะ / แพ้ / Win Rate — คำนวณจากรายการที่กำลังแสดงอยู่
+// (จึงเปลี่ยนไปตามตัวกรอง)
 // คำนวณสรุปผลกำไร/ขาดทุน และ Win Rate
 function updateSummary(trades) {
     const total = trades.length;
@@ -303,6 +315,9 @@ function updateSummary(trades) {
    Table
 ========================= */
 
+// [สรุป] วาดตารางเฉพาะ "หน้าปัจจุบัน" (ตัดรายการด้วย rowsPerPage) ค่าทุกช่องผ่าน escapeHtml
+// เพื่อกัน XSS
+// ถ้าไม่มีข้อมูลจะแสดงข้อความ "ไม่พบข้อมูลการเทรด"
 // เรนเดอร์ข้อมูลลงในตาราง HTML
 function renderTable() {
     const tbody = document.getElementById('tradeTableBody');
@@ -467,6 +482,9 @@ function updateTableCount() {
    Filter
 ========================= */
 
+// [สรุป] กรองรายการเทรดด้วยเงื่อนไข 3 อย่างพร้อมกัน (ต้องตรงทั้งหมด): ชื่อคู่เงินที่พิมพ์ค้นหา,
+// ประเภท BUY/SELL, และวันที่เลือก
+// จากนั้นกลับไปหน้า 1 แล้วอัปเดตสรุป ตาราง และปุ่มแบ่งหน้า
 // ฟังก์ชันกรองข้อมูล (ค้นหา Symbol, ประเภท, วันที่)
 function filterTrades() {
     const searchInput =
@@ -572,6 +590,9 @@ function resetFilters() {
    Pagination
 ========================= */
 
+// สร้างปุ่ม ก่อนหน้า / เลขหน้า (แสดงสูงสุด 5 ปุ่มรอบหน้าปัจจุบัน) / ถัดไป
+// ปุ่มแต่ละอันมี data-action="goToPage" และ data-args ให้ common.js เรียก goToPage
+// ให้เมื่อถูกกด (ไม่ใช้ onclick เพราะ CSP ห้าม)
 // อัปเดตปุ่มแบ่งหน้า (Pagination)
 function updatePagination() {
     const pagination =
@@ -636,6 +657,7 @@ function updatePagination() {
     pagination.innerHTML = html;
 }
 
+// ถ้าเลขหน้าอยู่ในช่วงที่มีจริง → เปลี่ยนหน้าแล้ววาดตารางและปุ่มใหม่
 // เปลี่ยนหน้าตาราง
 function goToPage(page) {
     const totalPages = Math.max(
@@ -658,6 +680,9 @@ function goToPage(page) {
    Export CSV
 ========================= */
 
+// [สรุป] ส่งออกเทรดที่กรองอยู่เป็นไฟล์ CSV: ประกอบข้อความ CSV (ครอบทุกค่าด้วย " ) → ใส่ BOM
+// เพื่อให้ Excel อ่านภาษาไทยถูก
+// → สร้างไฟล์ชั่วคราวในหน่วยความจำ (Blob) → สร้างลิงก์ดาวน์โหลดแล้วคลิกให้เอง
 // ฟังก์ชันดาวน์โหลดรายงานเป็นไฟล์ CSV
 function exportTradesCSV() {
     if (filteredTrades.length === 0) {
@@ -727,6 +752,8 @@ function exportTradesCSV() {
    Events
 ========================= */
 
+// เมื่อหน้าพร้อม: ผูกปุ่มส่งออก CSV, ให้กด Enter ในช่องค้นหาเพื่อกรองได้
+// แล้วเริ่มโหลดข้อมูลเทรด
 // ดักจับ Event เมื่อโหลดหน้าเว็บเสร็จ
 document.addEventListener('DOMContentLoaded', () => {
 

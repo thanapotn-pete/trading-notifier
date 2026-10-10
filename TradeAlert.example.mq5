@@ -1,8 +1,30 @@
+// TradeAlert.example.mq5 — Expert Advisor (EA) ที่ติดตั้งใน MetaTrader 5 (ฝั่ง
+// "ต้นทางของข้อมูลเทรด")
+// ทำ 3 อย่าง:
+// 1) ดักเหตุการณ์การเทรดผ่าน OnTradeTransaction: เปิดออเดอร์ / ปิดออเดอร์ (ชน TP, ชน SL
+// หรือปิดเอง) / แก้ TP-SL / pending order
+// 2) ส่งข้อมูลเทรดไปที่เซิร์ฟเวอร์ (POST /webhook/mt5) เซิร์ฟเวอร์จะบันทึกลงฐานข้อมูล
+// ตรวจการตั้งค่าของผู้ใช้ แล้วส่ง Telegram ให้
+// 3) ตรวจ Drawdown ของบัญชีเป็นระยะ แล้วรายงานไปที่ /webhook/mt5/drawdown
+// (เซิร์ฟเวอร์ตัดสินว่าต้องเตือนไหม)
+// แผนสำรอง: ถ้าส่งไปเซิร์ฟเวอร์ไม่สำเร็จ หรือผู้ใช้ยังไม่ได้ตั้ง Chat ID บนเซิร์ฟเวอร์ EA จะส่ง
+// Telegram เอง (ต้องกรอก bot_token / chat_id)
+// ก่อนใช้งาน: เพิ่ม URL ของเซิร์ฟเวอร์ที่ Tools → Options → Expert Advisors → Allow WebRequest
+// หมายเหตุ: ไฟล์นี้เป็นแม่แบบ — คัดลอกเป็น TradeAlert.mq5 แล้วใส่ค่าจริง (ไฟล์จริงมีรหัสลับ
+// จึงไม่ขึ้น Git)
 //+------------------------------------------------------------------+
 //|                    Telegram Trade Alert MT5                      |
 //+------------------------------------------------------------------+
 #property strict
 
+// [ค่าที่ผู้ใช้ตั้งตอนใส่ EA]
+// • bot_token / chat_id = ใช้ส่ง Telegram เองเป็นแผนสำรอง (เว้นว่างได้)  • webhook_url =
+// ที่อยู่เซิร์ฟเวอร์
+// • webhook_secret = รหัสเฉพาะของผู้ใช้ (ได้จากหน้าจัดการบัญชี) ใช้บอกเซิร์ฟเวอร์ว่าเป็นของใคร
+// • webrequest_timeout = รอเซิร์ฟเวอร์ตอบกี่มิลลิวินาที  • send_delay_ms = หน่วงระหว่างส่งหลาย
+// chat
+// • send_pending_alerts = แจ้งเตือน pending order  • drawdown_check_sec / drawdown_report_min =
+// ความถี่และเกณฑ์ขั้นต่ำของการรายงาน Drawdown
 input string bot_token           = "YOUR_TELEGRAM_BOT_TOKEN";
 input string chat_id             = "YOUR_TELEGRAM_CHAT_ID";
 input string webhook_url         = "https://trading-notifier-vrdb.onrender.com/webhook/mt5";
@@ -16,6 +38,7 @@ input double drawdown_report_min = 0.5;  // ส่งค่า Drawdown ให�
 // Disclaimer ต่อท้ายข้อความสัญญาณเทรดทุกอัน (HTML bold ตามที่ parse_mode=HTML ของ Telegram รองรับ)
 string DISCLAIMER = "This signal is for analytical and informational purposes only and <b>\"does not constitute investment advice\"</b>.\nPlease practice proper risk management to protect your own interests.";
 
+// ต่อข้อความ disclaimer ท้ายข้อความ (ถ้าข้อความว่างไม่เติม)
 string WithDisclaimer(string msg)
 {
    if(StringLen(TrimStr(msg))==0) return(msg);
@@ -32,6 +55,8 @@ double g_po_tp[];
 // (พบบ่อยตอนเปิดออเดอร์ตลาด หรือตอน TP/SL ทำงาน)
 ulong g_processed_deals[];
 
+// เช็กว่า deal (รายการซื้อขาย) นี้เคยประมวลผลแล้วหรือยัง โดยจำ ticket ไว้ —
+// กันส่งแจ้งเตือนซ้ำเมื่อ MT5 ยิงเหตุการณ์ซ้ำ
 bool AlreadyProcessedDeal(ulong deal_ticket)
 {
    for(int i=0; i<ArraySize(g_processed_deals); i++)
@@ -49,6 +74,7 @@ bool AlreadyProcessedDeal(ulong deal_ticket)
    return(false);
 }
 
+// ตัดช่องว่างหน้า-หลังข้อความ
 string TrimStr(string s)
 {
    int i=0, j=StringLen(s)-1;
@@ -129,6 +155,8 @@ bool SendWebhook(string action, string symbol, double price, double lot, double 
    return(true);
 }
 
+// ส่งข้อความ Telegram ตรงจาก EA (ไม่ผ่านเซิร์ฟเวอร์) ไปยัง chat id หนึ่งอัน — คืน true ถ้า
+// Telegram ตอบว่าส่งสำเร็จ
 bool SendTelegramToId(string id, string message)
 {
    string url = "https://api.telegram.org/bot" + bot_token + "/sendMessage";
@@ -154,6 +182,8 @@ bool SendTelegramToId(string id, string message)
    return(false);
 }
 
+// ส่งข้อความไปทุก chat id ที่กรอกไว้ (คั่นด้วยจุลภาคได้หลายอัน) หน่วงเล็กน้อยระหว่างอัน —
+// ใช้เป็นแผนสำรองเมื่อเซิร์ฟเวอร์ไม่ได้ส่งให้
 void SendTelegram(string message)
 {
    if(StringLen(TrimStr(message))==0) return;
@@ -282,6 +312,8 @@ void ResetPeakEquity()
    GlobalVariableSet(PeakKey(), AccountInfoDouble(ACCOUNT_EQUITY));
 }
 
+// ส่งค่า Drawdown ปัจจุบัน (%) พร้อม equity, จุดสูงสุด และ balance ไปที่ /webhook/mt5/drawdown
+// — เซิร์ฟเวอร์เป็นผู้ตัดสินว่าต้องเตือนผู้ใช้ไหม
 bool SendDrawdown(double dd, double equity, double peak)
 {
    if(StringLen(webhook_url) == 0) return(false);
@@ -309,6 +341,10 @@ bool SendDrawdown(double dd, double equity, double peak)
    return(res >= 200 && res < 300);
 }
 
+// [สรุป] คำนวณ Drawdown = (จุดสูงสุดของ equity − equity ปัจจุบัน) ÷ จุดสูงสุด × 100
+// แล้วรายงานเซิร์ฟเวอร์:
+// • ครั้งแรกหลังเริ่ม EA  • เมื่อถึงเกณฑ์ขั้นต่ำและค่าขยับ ≥ 0.5 จุด  • ตอนกลับต่ำกว่าเกณฑ์
+// (ให้เซิร์ฟเวอร์ปลดการเตือนค้างไว้)
 void CheckDrawdown()
 {
    double equity = AccountInfoDouble(ACCOUNT_EQUITY);
@@ -345,17 +381,21 @@ void CheckDrawdown()
    }
 }
 
+// ทำงานตอนใส่ EA ลงกราฟ: ตั้งตัวจับเวลาให้เรียก OnTimer ทุก drawdown_check_sec วินาที
+// (ถ้าตั้งไว้มากกว่า 0)
 int OnInit()
 {
    if(drawdown_check_sec > 0) EventSetTimer(drawdown_check_sec);
    return(INIT_SUCCEEDED);
 }
 
+// ทำงานตอนถอด EA: หยุดตัวจับเวลา
 void OnDeinit(const int reason)
 {
    EventKillTimer();
 }
 
+// ถูกเรียกตามเวลาที่ตั้งไว้ → ตรวจและรายงาน Drawdown
 void OnTimer()
 {
    CheckDrawdown();
@@ -373,6 +413,12 @@ void GetPositionSLTP(string symbol, string &sl_str, string &tp_str, int digits)
    if(tp != 0.0) tp_str = DoubleToString(tp, digits);
 }
 
+// [สรุป] ฟังก์ชันหลัก — MT5 เรียกทุกครั้งที่มีเหตุการณ์การเทรด แบ่งเป็น 3 กลุ่ม:
+// (1) แก้ SL/TP ของออเดอร์ที่เปิดอยู่  (2) pending order ถูกตั้ง / แก้ไข / ยกเลิก (แจ้ง
+// Telegram ตรงจาก EA)
+// (3) เกิด deal: เปิดออเดอร์ (DEAL_ENTRY_IN) → ส่ง webhook "buy"/"sell", ปิดออเดอร์
+// (DEAL_ENTRY_OUT) → ส่ง webhook "close" / "tp" / "sl"
+// ตามเหตุผลที่ปิด — ถ้าส่งเซิร์ฟเวอร์ไม่สำเร็จ EA ส่ง Telegram เองสำรอง
 // Main handler using history deal fields
 void OnTradeTransaction(
    const MqlTradeTransaction &trans,
@@ -538,7 +584,7 @@ void OnTradeTransaction(
          raw_tp = PositionGetDouble(POSITION_TP);
       }
       // server ส่ง Telegram ให้ตามการตั้งค่าบนเว็บ — EA ส่งเองเฉพาะเมื่อ server ไม่รับเรื่อง
-      if(!SendWebhook(typ == "BUY" ? "buy" : "sell", symbol, deal_price, deal_volume, 0.0, pos_id, raw_tp, raw_sl, order_seq))
+      if(!SendWebhook(typ == "BUY" ? "buy" : "sell", symbol, deal_price, deal_volume, 0.0, pos_id, raw_tp, raw_sl, order_seq))  // ส่งเซิร์ฟเวอร์ก่อน ถ้าไม่สำเร็จ (คืน false) EA ส่ง Telegram เองเป็นแผนสำรอง
          SendTelegram(WithDisclaimer(msg));
       return;
    }
@@ -565,7 +611,7 @@ void OnTradeTransaction(
       string close_action = "close";
       if(deal_reason == DEAL_REASON_TP) close_action = "tp";
       else if(deal_reason == DEAL_REASON_SL || deal_reason == DEAL_REASON_SO) close_action = "sl";
-      if(!SendWebhook(close_action, symbol, deal_price, deal_volume, deal_profit, pos_id, 0.0, 0.0, order_seq))
+      if(!SendWebhook(close_action, symbol, deal_price, deal_volume, deal_profit, pos_id, 0.0, 0.0, order_seq))  // ส่งเซิร์ฟเวอร์ก่อน ถ้าไม่สำเร็จ EA ส่ง Telegram เองเป็นแผนสำรอง
          SendTelegram(WithDisclaimer(msg));
       // ปิดสนิทแล้ว (ไม่มี position เหลือ) → คืนเลขลำดับ กัน GlobalVariable สะสม
       if(!PositionSelectByTicket(pos_id)) ReleaseOrderSeq(pos_id);

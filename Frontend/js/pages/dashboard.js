@@ -1,3 +1,8 @@
+// dashboard.js — สคริปต์ของหน้า Dashboard (dashboard.html) ภาพรวมการเทรดของผู้ใช้
+// ดึงเทรด + โปรไฟล์ + การตั้งค่าแจ้งเตือนพร้อมกัน → คำนวณสถิติจากเทรดที่ "ปิดแล้ว" ตามช่วงเวลา
+// (1W / 1M / 3M)
+// → แสดงการ์ดกำไรสุทธิ / Win Rate / Profit Factor / ระดับความเสี่ยง, ออเดอร์ล่าสุด 4 รายการ,
+// กราฟ Equity Curve (กำไรสะสม) และสถานะการแจ้งเตือน Telegram
 /*
 |--------------------------------------------------------------------------
 | Dashboard Script - จัดการการโหลดข้อมูลและเรนเดอร์ UI
@@ -16,6 +21,7 @@ let dashboardNotificationSettings = null; // ตัวแปรเก็บก�
 // GET TOKEN (ฟังก์ชันดึง Auth Token จาก LocalStorage)
 // =====================================================
 
+// อ่าน token ที่เก็บไว้ในเบราว์เซอร์
 function getAuthToken() {
     return localStorage.getItem('auth_token');
 }
@@ -25,6 +31,11 @@ function getAuthToken() {
 // LOAD DASHBOARD DATA (ฟังก์ชันดึงข้อมูลทั้งหมดสำหรับ Dashboard แบบ Parallel ด้วย Promise.all)
 // =====================================================
 
+// [สรุป] โหลดข้อมูลของ Dashboard พร้อมกัน 3 อย่าง (Promise.all): เทรด (สูงสุด 1,000) / โปรไฟล์
+// / การตั้งค่าแจ้งเตือน
+// ผ่าน App.apiFetch (แนบ token และจัดการ session หมดอายุให้) → เก็บในตัวแปรของหน้า →
+// อัปเดตชื่อผู้ใช้
+// สถานะการแจ้งเตือน ป้าย Telegram แล้ววาดทั้งหน้า (updateDashboard)
 async function loadDashboard() {
 
     const token = getAuthToken();
@@ -104,6 +115,7 @@ async function loadDashboard() {
 // GET PNL (ดึงค่ากำไร/ขาดทุนจากออเดอร์)
 // =====================================================
 
+// ดึงกำไร/ขาดทุน (P/L) ของเทรด รองรับชื่อฟิลด์หลายแบบ
 function getPnl(trade) {
 
     const value =
@@ -125,6 +137,7 @@ function getPnl(trade) {
 // GET SYMBOL (ดึงชื่อคู่เงินหรือ Symbol)
 // =====================================================
 
+// ดึงชื่อคู่เงิน / symbol ของเทรด
 function getSymbol(trade) {
 
     return (
@@ -140,6 +153,7 @@ function getSymbol(trade) {
 // GET ACTION (ดึงประเภทคำสั่ง BUY/SELL)
 // =====================================================
 
+// ดึงประเภทคำสั่ง (BUY / SELL) ของเทรด
 function getAction(trade) {
 
     const action =
@@ -157,6 +171,7 @@ function getAction(trade) {
 // GET LOT (ดึงขนาด Lot ของออเดอร์)
 // =====================================================
 
+// ดึงขนาด lot ของเทรด
 function getLot(trade) {
 
     const lot = Number(
@@ -177,6 +192,7 @@ function getLot(trade) {
 // GET STATUS (ดึงสถานะออเดอร์)
 // =====================================================
 
+// ดึงสถานะของเทรด (เช่น open / closed)
 function getStatus(trade) {
 
     return (
@@ -191,6 +207,7 @@ function getStatus(trade) {
 // CLOSED TRADE CHECK (ตรวจสอบว่าออเดอร์ปิดไปแล้วหรือยัง)
 // =====================================================
 
+// ตรวจว่าเทรดนี้ "ปิดแล้ว" หรือยัง — สถิติทุกตัวบน Dashboard นับเฉพาะเทรดที่ปิดแล้ว
 function isClosedTrade(trade) {
 
     const status = String(
@@ -211,6 +228,7 @@ function isClosedTrade(trade) {
 // USER INFO (อัปเดตชื่อผู้ใช้และตัวอักษรย่อใน Avatar)
 // =====================================================
 
+// แสดงชื่อผู้ใช้ในข้อความต้อนรับ และตัวอักษรแรกของชื่อในวงกลมอวตาร
 function updateUserInfo() {
 
 
@@ -271,6 +289,9 @@ function updateTelegramConnectionLabel() {
 }
 
 
+// แสดงสถานะ เปิด/ปิด ของการแจ้งเตือน 3 แบบ (เปิดออเดอร์ / ปิดออเดอร์ / Risk Alert)
+// ตามการตั้งค่าของผู้ใช้
+// (ถ้าสวิตช์หลักถูกปิด จะแสดงว่าปิดทั้งหมด)
 function updateNotificationStatus() {
 
     const settings =
@@ -332,6 +353,7 @@ function updateNotificationStatus() {
 // GET DATE (ดึงวันที่จากออเดอร์)
 // =====================================================
 
+// ดึงเวลาของเทรด รองรับชื่อฟิลด์หลายแบบ
 function getTradeDate(trade) {
 
     return (
@@ -350,6 +372,8 @@ function getTradeDate(trade) {
 // GET FILTERED TRADES (กรองข้อมูลตามช่วงเวลา 1W, 1M, 3M)
 // =====================================================
 
+// กรองเทรดตามช่วงเวลาที่เลือกด้วยปุ่ม (1W / 1M / 3M = ย้อนหลัง 7 / 30 / 90 วัน, "all" =
+// ทั้งหมด)
 function getFilteredTrades() {
 
     if (currentPeriod === 'all') {
@@ -388,6 +412,8 @@ function getFilteredTrades() {
 // CALCULATE STATISTICS (คำนวณสถิติภาพรวม เช่น Win Rate, Profit Factor)
 // =====================================================
 
+// [สรุป] คำนวณสถิติจาก "เทรดที่ปิดแล้ว" เท่านั้น: จำนวนเทรด ชนะ/แพ้ กำไรรวม/ขาดทุนรวม กำไรสุทธิ
+// Win Rate และ Profit Factor
 function calculateStatistics(trades) {
 
     // สถิติบน Dashboard จะอิงจากออเดอร์ที่ปิดแล้วเท่านั้น
@@ -429,6 +455,8 @@ function calculateStatistics(trades) {
             ? (wins.length / totalTrades) * 100
             : 0;
 
+    // Profit Factor = กำไรรวม ÷ |ขาดทุนรวม| (มากกว่า 1 = ได้มากกว่าเสีย)
+    // ถ้าไม่มีขาดทุนแต่มีกำไรให้เป็น ∞
     let profitFactor = 0;
 
     if (totalLoss < 0) {
@@ -461,6 +489,9 @@ function calculateStatistics(trades) {
 // UPDATE DASHBOARD (อัปเดตข้อมูลแสดงผลทั้งหมดบน Dashboard)
 // =====================================================
 
+// [สรุป] อัปเดตทุกส่วนของ Dashboard ตามช่วงเวลาที่เลือก: กรองเทรด → คำนวณสถิติ → กำไรสุทธิ
+// (เขียว/แดง)
+// Win Rate, Profit Factor, จำนวนชนะ/แพ้ → ระดับความเสี่ยง → ออเดอร์ล่าสุด → กราฟ Equity Curve
 function updateDashboard() {
 
     const filteredTrades =
@@ -556,6 +587,8 @@ function updateDashboard() {
 // RISK SCORE (คำนวณ Max Drawdown เพื่อประเมินระดับความเสี่ยง)
 // =====================================================
 
+// คำนวณ Max Drawdown (เป็นเงิน) จากเทรดที่ปิดแล้วเรียงตามเวลา: ไล่บวกกำไรสะสม จำจุดสูงสุดไว้
+// แล้วหาว่าตกลงจากจุดสูงสุดมากที่สุดเท่าไร
 function calculateMaxDrawdown(trades) {
 
     const sortedTrades =
@@ -592,6 +625,10 @@ function calculateMaxDrawdown(trades) {
 }
 
 
+// [สรุป] ประเมินระดับความเสี่ยงแบบง่าย: HIGH ถ้า Win Rate < 40% หรือ Max Drawdown ≥ $100,
+// MEDIUM ถ้า Win Rate < 55% หรือ Max Drawdown ≥ $50, นอกนั้น LOW (ถ้ายังไม่มีเทรดแสดง LOW
+// "ยังไม่มีข้อมูล")
+// (เกณฑ์ตัวเลขกำหนดตายตัวในโค้ด เป็นการประเมินคร่าว ๆ ไม่ใช่คำแนะนำการลงทุน)
 function updateRiskScore(stats) {
 
     const riskElement =
@@ -649,6 +686,7 @@ function updateRiskScore(stats) {
 // RENDER RECENT TRADES (เรนเดอร์รายการออเดอร์ล่าสุด 4 รายการ)
 // =====================================================
 
+// แสดงออเดอร์ล่าสุด 4 รายการ (เรียงใหม่ → เก่า) ค่าทุกช่องผ่าน escapeHtml เพื่อกัน XSS
 function renderRecentTrades() {
 
     const container =
@@ -770,6 +808,9 @@ function renderRecentTrades() {
 // EQUITY CURVE (วาดกราฟเส้น Cumulative P/L ด้วย Chart.js)
 // =====================================================
 
+// [สรุป] วาดกราฟ Equity Curve = กำไรสะสมของเทรดที่ปิดแล้ว: เรียงตามเวลาแล้วบวกสะสมทีละเทรด ด้วย
+// Chart.js
+// สีและรูปแบบแกนเหมือนกราฟของหน้าอื่น (ป้ายแกน X ซ่อนวันที่ที่ซ้ำ)
 function renderEquityChart(trades) {
 
     const closedTrades =
@@ -985,6 +1026,8 @@ function renderEquityChart(trades) {
 // PERIOD BUTTONS (ดักจับ Event การเปลี่ยนช่วงเวลาดูกราฟ 1W, 1M, 3M)
 // =====================================================
 
+// ปุ่มเลือกช่วงเวลา (1W / 1M / 3M): เมื่อกด → ไฮไลต์ปุ่มที่เลือก เก็บช่วงเวลา (จาก data-period)
+// แล้ววาด Dashboard ใหม่
 document
     .querySelectorAll('.period')
     .forEach(button => {
@@ -1019,6 +1062,9 @@ document
 
 
 // =====================================================
+// [หมายเหตุ] หัวข้อ ESCAPE HTML / LOGOUT / PROFILE DROPDOWN ด้านล่างนี้ ย้ายไปอยู่ใน common.js
+// แล้ว
+// เหลือไว้แต่หัวข้อเดิมในไฟล์นี้ (ไม่มีโค้ดของส่วนเหล่านี้ที่นี่)
 // ESCAPE HTML (ฟังก์ชันป้องกัน Cross-Site Scripting - XSS)
 // =====================================================
 
@@ -1037,6 +1083,7 @@ document
 // LOAD WHEN PAGE READY (เริ่มต้นโหลดข้อมูลเมื่อหน้าเว็บพร้อมใช้งาน)
 // =====================================================
 
+// เมื่อหน้าพร้อม เริ่มโหลดข้อมูลทั้งหมดของ Dashboard
 document.addEventListener(
     'DOMContentLoaded',
     function() {
