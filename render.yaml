@@ -13,10 +13,6 @@ services:
         value: 3000
       - key: TIMEZONE
         value: Asia/Bangkok
-      - key: DAILY_SUMMARY_CRON
-        value: "0 23 * * *"
-      - key: WEEKLY_SUMMARY_CRON
-        value: "0 23 * * 0"
       - key: JWT_SECRET
         sync: false
       - key: TELEGRAM_BOT_TOKEN
