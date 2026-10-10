@@ -974,6 +974,7 @@ textarea {
     flex-direction: column;
     gap: 10px;
     max-width: min(380px, calc(100vw - 36px));
+    pointer-events: none; /* ไม่บังการคลิกปุ่มที่อยู่ใต้ข้อความ */
 }
 
 .toast {
@@ -984,7 +985,8 @@ textarea {
     font-size: 13px;
     line-height: 1.5;
     white-space: pre-line;
-    cursor: pointer;
+    cursor: default;
+    pointer-events: none;
     box-shadow: 0 8px 28px rgba(15, 23, 42, 0.18);
     border-left: 4px solid #6b7c76;
 }

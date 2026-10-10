@@ -153,6 +153,7 @@
         const lastName = document.getElementById('lastName').value.trim();
         const email = document.getElementById('email').value.trim();
         const button = document.querySelector('.primary-button[data-action="saveProfile"]');
+        const original = window.originalProfile || { firstName: '', lastName: '', email: '' };
 
         if (!firstName) {
             App.toast('กรุณากรอกชื่อ');
@@ -169,14 +170,31 @@
             return;
         }
 
-        if (!email.includes('@')) {
-            App.toast('อีเมลต้องมีเครื่องหมาย @');
-            return;
+        // ตรวจรูปแบบอีเมลเฉพาะเมื่อแก้ไข: บัญชีเก่าที่มีอีเมลนอกกฎ ASCII ยังแก้ชื่อได้
+        // (server เทียบอีเมลแบบไม่สนตัวพิมพ์เล็กใหญ่ จึงเทียบแบบเดียวกัน)
+        const emailChanged = email.toLowerCase() !== String(original.email || '').toLowerCase();
+
+        if (emailChanged) {
+            if (!email.includes('@')) {
+                App.toast('อีเมลต้องมีเครื่องหมาย @');
+                return;
+            }
+
+            // ASCII เท่านั้น: ตัวอักษรอังกฤษ ตัวเลข และสัญลักษณ์ ต้องมี @ ตัวเดียวและมีจุดในโดเมน
+            if (!/^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(email)) {
+                App.toast('อีเมลต้องเป็นตัวอักษรภาษาอังกฤษ ตัวเลข หรือสัญลักษณ์เท่านั้น และอยู่ในรูปแบบ name@example.com');
+                return;
+            }
         }
 
-        // ASCII เท่านั้น: ตัวอักษรอังกฤษ ตัวเลข และสัญลักษณ์ ต้องมี @ ตัวเดียวและมีจุดในโดเมน
-        if (!/^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(email)) {
-            App.toast('อีเมลต้องเป็นตัวอักษรภาษาอังกฤษ ตัวเลข หรือสัญลักษณ์เท่านั้น และอยู่ในรูปแบบ name@example.com');
+        // ส่งเฉพาะฟิลด์ที่เปลี่ยน
+        const changes = {};
+        if (firstName !== original.firstName) changes.first_name = firstName;
+        if (lastName !== original.lastName) changes.last_name = lastName;
+        if (emailChanged) changes.email = email;
+
+        if (Object.keys(changes).length === 0) {
+            App.toast('ไม่มีข้อมูลที่เปลี่ยนแปลง', 'info');
             return;
         }
 
@@ -188,15 +206,10 @@
 
             const data = await apiRequest('/profile', {
                 method: 'PATCH',
-                body: JSON.stringify({
-                    first_name: firstName,
-                    last_name: lastName,
-                    email
-                })
+                body: JSON.stringify(changes)
             });
 
             setUserToPage(data);
-            document.getElementById('profilePassword').value = '';
             App.toast('บันทึกข้อมูลบัญชีเรียบร้อยแล้ว ✓');
         } catch (error) {
             console.error('[Profile] Save error:', error);
@@ -222,7 +235,6 @@
         document.getElementById('firstName').value = original.firstName;
         document.getElementById('lastName').value = original.lastName;
         document.getElementById('email').value = original.email;
-        document.getElementById('profilePassword').value = '';
     }
 
     /* =====================================================
