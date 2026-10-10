@@ -123,10 +123,6 @@ router.post('/login', loginIpLimiter, loginEmailLimiter, async (req, res) => {
 
     const user = await findUserByEmail(email);
 
-    if (user && user.is_active === false) {
-      return res.status(401).json({ error: 'This account is disabled. Contact an administrator.' });
-    }
-
     const ok =
       user &&
       (await verifyPassword(
@@ -138,6 +134,12 @@ router.post('/login', loginIpLimiter, loginEmailLimiter, async (req, res) => {
       return res.status(401).json({
         error: 'Invalid email or password'
       });
+    }
+
+    // Only someone who knows the password learns the account is suspended —
+    // checking earlier would let anyone probe which emails exist.
+    if (user.is_active === false) {
+      return res.status(401).json({ error: 'This account is disabled. Contact an administrator.' });
     }
 
     console.log(
@@ -610,6 +612,18 @@ router.patch('/profile', async (req, res) => {
       }
 
       profileFields.email = email;
+    }
+
+    if (password !== undefined && password !== null && password !== '') {
+      if (
+        typeof password !== 'string' ||
+        password.length < 8 ||
+        password.length > 72
+      ) {
+        return res.status(400).json({
+          error: 'Password must be between 8 and 72 characters'
+        });
+      }
     }
 
     if (password) {

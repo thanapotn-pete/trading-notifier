@@ -3,3 +3,5 @@ node_modules/
 data/trades.json
 user_dashboard.html
 claude.md
+# real EA with credentials; commit only TradeAlert.example.mq5
+TradeAlert.mq5
