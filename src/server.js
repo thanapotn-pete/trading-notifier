@@ -1,5 +1,24 @@
 require('dotenv').config();
 
+// Fail at start-up instead of failing on the first request: without these the
+// server can't log anyone in or reach the database, and the error would only
+// show up later as a confusing 500.
+const REQUIRED_ENV = ['JWT_SECRET', 'SUPABASE_URL', 'SUPABASE_SERVICE_KEY'];
+const missingEnv = REQUIRED_ENV.filter((name) => !process.env[name]);
+
+if (missingEnv.length > 0) {
+  console.error(
+    `[Server] Missing required environment variable(s): ${missingEnv.join(', ')}`
+  );
+  process.exit(1);
+}
+
+if (!process.env.TELEGRAM_BOT_TOKEN) {
+  console.warn(
+    '[Server] TELEGRAM_BOT_TOKEN is not set — Telegram alerts will fail (the EA falls back to its own).'
+  );
+}
+
 const path = require('path');
 const express = require('express');
 const helmet = require('helmet');

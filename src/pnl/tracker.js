@@ -49,7 +49,9 @@ function startOfDayInTimezone(tz) {
     parts.second
   );
 
-  const offsetMs = wallClockAsUTC - now.getTime();
+  // `parts` is whole seconds, so compare against the whole-second instant
+  // (otherwise the day boundary drifts by the current milliseconds)
+  const offsetMs = wallClockAsUTC - Math.floor(now.getTime() / 1000) * 1000;
 
   const midnightWallClockAsUTC = Date.UTC(
     parts.year,
@@ -131,24 +133,25 @@ async function getPosition(userId, positionId) {
 }
 
 
-async function getDailySummary(userId) {
+// Closed-trade totals for the last `days` calendar days in the trader's
+// timezone (days = 1 -> today only, 7 -> today and the 6 days before).
+async function getPeriodSummary(userId, days = 1) {
   const supabase = getClient();
   const tz = process.env.TIMEZONE || 'Asia/Bangkok';
 
-  const today = new Date().toLocaleDateString(
-    'en-GB',
-    {
-      timeZone: tz,
-    }
-  );
+  const formatDay = (date) =>
+    date.toLocaleDateString('en-GB', { timeZone: tz });
 
-  const startOfDay = startOfDayInTimezone(tz);
+  const startOfToday = startOfDayInTimezone(tz);
+  const startOfPeriod = new Date(
+    startOfToday.getTime() - (days - 1) * 24 * 60 * 60 * 1000
+  );
 
   const { data, error } = await supabase
     .from('trades')
     .select('*')
     .eq('user_id', userId)
-    .gte('closed_at', startOfDay.toISOString())
+    .gte('closed_at', startOfPeriod.toISOString())
     .not('pnl', 'is', null);
 
   if (error) {
@@ -160,21 +163,25 @@ async function getDailySummary(userId) {
     0
   );
 
-  const wins = data.filter(
-    (t) => t.pnl > 0
-  ).length;
+  const wins = data.filter((t) => t.pnl > 0).length;
+  const losses = data.filter((t) => t.pnl < 0).length;
 
-  const losses = data.filter(
-    (t) => t.pnl < 0
-  ).length;
+  const today = formatDay(new Date());
 
   return {
     date: today,
+    from: formatDay(startOfPeriod),
+    days,
     totalTrades: data.length,
     wins,
     losses,
     totalPnl,
   };
+}
+
+
+async function getDailySummary(userId) {
+  return getPeriodSummary(userId, 1);
 }
 
 
@@ -422,6 +429,7 @@ module.exports = {
   recordTrade,
   getPosition,
   getDailySummary,
+  getPeriodSummary,
   listTrades,
   getStatistics,
 };
