@@ -117,13 +117,11 @@
         );
     }
 
-    // ป้ายแกนเวลาของกราฟ: "21 ก.ย. 14:30" (มีเวลาด้วย เพราะเทรดหลายรายการอยู่ในวันเดียวกัน)
+    // ป้ายแกนเวลาของกราฟ: แสดงเฉพาะวันที่และเดือน เช่น "21 ก.ย."
     function formatChartLabel(value) {
         const d = value instanceof Date ? value : new Date(value);
         if (Number.isNaN(d.getTime())) return '';
-        const day = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-        const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
-        return `${day} ${time}`;
+        return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
     }
 
     // ---------- เมนู "จัดการบัญชี" (แสดงเฉพาะ admin) ----------
