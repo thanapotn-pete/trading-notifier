@@ -29,9 +29,51 @@
             .replace(/'/g, '&#039;');
     }
 
-    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml };
+    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml, buildSidebarHtml };
     // หน้าเดิมเรียก escapeHtml() แบบ global อยู่แล้ว
     window.escapeHtml = escapeHtml;
+
+    // ---------- Sidebar (สร้างจากที่เดียว ใช้ร่วมทุกหน้า) ----------
+    // เพิ่ม/แก้เมนูที่ MENU_ITEMS แล้วทุกหน้าเปลี่ยนตาม; เมนูที่ตรงกับไฟล์ปัจจุบันจะถูกไฮไลต์
+    const MENU_ITEMS = [
+        { href: 'dashboard.html', icon: 'bi-grid', label: 'Dashboard' },
+        { href: 'trade-history.html', icon: 'bi-clock-history', label: 'ประวัติการเทรด' },
+        { href: 'statistics.html', icon: 'bi-bar-chart', label: 'สถิติการเทรด' },
+        { href: 'reports.html', icon: 'bi-file-earmark-text', label: 'รายงาน' },
+        { title: 'การตั้งค่า' },
+        { href: 'notifications.html', icon: 'bi-telegram', label: 'การแจ้งเตือน' },
+        { href: 'profile.html', icon: 'bi-person', label: 'บัญชีผู้ใช้งาน' }
+    ];
+
+    function menuLink({ href, icon, label }, currentFile, extra) {
+        const active = href === currentFile ? ' active' : '';
+        return `<a href="${href}" class="menu-item${active}"${extra || ''}>` +
+            `<i class="bi ${icon}"></i><span>${label}</span></a>`;
+    }
+
+    function buildSidebarHtml(currentFile) {
+        const items = MENU_ITEMS.map((item) =>
+            item.title ? `<div class="menu-title">${item.title}</div>` : menuLink(item, currentFile)
+        ).join('');
+
+        // เมนูของ admin: ซ่อนไว้ก่อน แล้ว syncAdminMenu() จะแสดงเมื่อบัญชีเป็น admin
+        const admin = menuLink(
+            { href: 'admin.html', icon: 'bi-shield-lock', label: 'จัดการบัญชี' },
+            currentFile,
+            ' id="adminMenuItem" style="display:none"'
+        );
+
+        return '<div class="logo"><i class="bi bi-graph-up-arrow"></i><span>TradeAnalytics</span></div>' +
+            items + admin +
+            '<div class="logout"><a href="#"><i class="bi bi-box-arrow-right"></i><span>ออกจากระบบ</span></a></div>';
+    }
+
+    function renderSidebar() {
+        const aside = document.querySelector('aside.sidebar');
+        if (!aside) return;
+        const currentFile = window.location.pathname.split('/').pop();
+        aside.innerHTML = buildSidebarHtml(currentFile);
+    }
 
     // ---------- เมนู "จัดการบัญชี" (แสดงเฉพาะ admin) ----------
     function setAdminMenu(visible) {
@@ -80,6 +122,7 @@
     }
 
     function init() {
+        renderSidebar();
         wireChrome();
         syncAdminMenu();
     }
