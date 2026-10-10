@@ -88,7 +88,7 @@ async function sendSummaries(kind) {
 
 function startScheduler() {
   const timezone = process.env.TIMEZONE || 'Asia/Bangkok';
-  const dailyCron = process.env.DAILY_SUMMARY_CRON || '0 22 * * *';
+  const dailyCron = process.env.DAILY_SUMMARY_CRON || '0 23 * * *';
   const weeklyCron = process.env.WEEKLY_SUMMARY_CRON || '0 23 * * 0'; // Sunday 23:00
 
   cron.schedule(dailyCron, () => {
