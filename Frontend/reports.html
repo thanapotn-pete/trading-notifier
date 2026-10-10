@@ -1248,10 +1248,7 @@ function getLot(t) { return t?.volume ?? t?.lot ?? t?.lots ?? ''; }
 function getStatus(t) { return t?.status || t?.close_reason || t?.reason || (getPnl(t) == null ? 'OPEN' : 'CLOSED'); }
 
 async function apiFetch(path) {
-    const token=getToken();
-    if(!token) { window.location.href='login.html'; throw new Error('ไม่พบ token กรุณาเข้าสู่ระบบ'); }
-    const res=await fetch(API_BASE_URL+path,{headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}});
-    if(res.status===401){ localStorage.removeItem(TOKEN_KEY); window.location.href='login.html'; throw new Error('Session หมดอายุ'); }
+    const res=await App.apiFetch(path);
     const data=await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
     return data;
@@ -1347,7 +1344,7 @@ function updateTradeTable(trades) {
 function updateChart(trades) {
     const completed=trades.filter(t=>getPnl(t)!==null && getTradeDate(t)).sort((a,b)=>getTradeDate(a)-getTradeDate(b));
     let cumulative=0; const labels=[],values=[];
-    completed.forEach(t=>{cumulative+=getPnl(t);labels.push(getTradeDate(t).toLocaleDateString('th-TH',{day:'numeric',month:'short'}));values.push(Number(cumulative.toFixed(2)));});
+    completed.forEach(t=>{cumulative+=getPnl(t);labels.push(App.formatChartLabel(getTradeDate(t)));values.push(Number(cumulative.toFixed(2)));});
     if(profitChart) profitChart.destroy();
     profitChart=new Chart(document.getElementById('profitChart'),{type:'line',data:{labels:labels.length?labels:['ไม่มีข้อมูล'],datasets:[{label:'กำไรสะสม',data:values.length?values:[0],borderWidth:2,pointRadius:3,pointHoverRadius:5,tension:.35,fill:true,borderColor:'#087f68',backgroundColor:'rgba(8,127,104,.10)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'IBM Plex Sans Thai',size:10}}},y:{grid:{color:'#edf1ef'},ticks:{color:'#94a3b8',font:{family:'IBM Plex Sans Thai',size:10},callback:v=>App.formatMoney(v)}}}}});
 }

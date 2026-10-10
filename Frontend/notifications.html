@@ -2089,21 +2089,8 @@ function getToken() {
 }
 
 function apiFetch(path, options = {}) {
-    const token = getToken();
-
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-    };
-
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-
-    return fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers
-    });
+    // แนบ token และจัดการ session หมดอายุ (401) ที่ App.apiFetch ที่เดียว
+    return App.apiFetch(path, options);
 }
 
 /* =========================================================

@@ -940,3 +940,25 @@ textarea {
 .profile-dropdown a:hover {
     background: #f1f5f9;
 }
+
+/* ================= STATUS BADGE STATES (js/common.js) ================= */
+
+.status-badge.is-off {
+    background: #f1f4f3;
+    color: #7b8985;
+}
+
+.status-badge.is-off .status-dot {
+    background: #aab6b2;
+    box-shadow: 0 0 0 3px rgba(170, 182, 178, 0.15);
+}
+
+.status-badge.is-warn {
+    background: #fff7e6;
+    color: #b7791f;
+}
+
+.status-badge.is-warn .status-dot {
+    background: #e59a18;
+    box-shadow: 0 0 0 3px rgba(229, 154, 24, 0.12);
+}

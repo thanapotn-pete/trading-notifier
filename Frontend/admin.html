@@ -274,20 +274,8 @@ let users = [];
 let editingId = null;
 
 async function api(path, options = {}) {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-            ...(options.headers || {})
-        }
-    });
+    const response = await App.apiFetch(path, options);
     const data = await response.json().catch(() => ({}));
-    if (response.status === 401) {
-        localStorage.removeItem(TOKEN_KEY);
-        window.location.href = 'login.html';
-        throw new Error('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
-    }
     if (response.status === 403) throw new Error('บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ');
     if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
     return data;
@@ -556,15 +544,8 @@ document.getElementById('copySecret').addEventListener('click', async () => {
 async function initialize() {
     if (!token) { window.location.href = 'login.html'; return; }
     try {
-        const response = await fetch(`${API_BASE_URL}/api/profile`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await App.apiFetch('/api/profile');
         const profile = await response.json().catch(() => ({}));
-        if (response.status === 401) {
-            localStorage.removeItem(TOKEN_KEY);
-            window.location.href = 'login.html';
-            return;
-        }
         if (!response.ok || profile.role !== 'admin') {
             window.location.href = 'dashboard.html';
             return;

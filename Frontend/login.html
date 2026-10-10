@@ -254,6 +254,32 @@
      */
     const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
 
+    // ล็อกอินค้างอยู่แล้ว → ข้ามหน้านี้ (ตรวจกับ server ก่อน เพื่อไม่ให้วนลูปเมื่อ token หมดอายุ)
+    (async function redirectIfSignedIn() {
+        let token = null;
+        try { token = localStorage.getItem('auth_token'); } catch (_) { return; }
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user_role');
+                return;
+            }
+            if (!response.ok) return;
+
+            const profile = await response.json();
+            localStorage.setItem('user_role', profile.role || 'user');
+            window.location.replace(profile.role === 'admin' ? 'admin.html' : 'dashboard.html');
+        } catch (_) {
+            // API ไม่ตอบ: อยู่หน้า login ต่อไป
+        }
+    })();
+
     const loginForm = document.getElementById('loginForm');
     const loginButton = document.getElementById('loginButton');
 

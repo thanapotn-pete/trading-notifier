@@ -1317,7 +1317,6 @@
 |--------------------------------------------------------------------------
 */
 
-const TRADE_HISTORY_API_BASE_URL = window.APP_CONFIG.API_BASE_URL; // กำหนด URL ของ Node.js API
 const TRADE_HISTORY_TOKEN_KEY = 'auth_token'; // คีย์ Token ใน LocalStorage
 
 let allTrades = []; // ตัวแปรเก็บข้อมูลเทรดทั้งหมด
@@ -1496,16 +1495,7 @@ async function loadTrades() {
 
     try {
         // ยิง Request ไปดึงประวัติการเทรด
-        const response = await fetch(
-            `${TRADE_HISTORY_API_BASE_URL}/api/trades?limit=1000`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
+        const response = await App.apiFetch('/api/trades?limit=1000');
 
         // ถ้า Token หมดอายุหรือไม่มีสิทธิ์ ให้ลบ Token ทิ้งแล้วพาไปหน้า Login
         if (response.status === 401 || response.status === 403) {
@@ -1522,16 +1512,7 @@ async function loadTrades() {
 
         // ดึงข้อมูลโปรไฟล์ผู้ใช้งานมาแสดงที่ Topbar
         try {
-            const profileResponse = await fetch(
-                `${TRADE_HISTORY_API_BASE_URL}/api/profile`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
+            const profileResponse = await App.apiFetch('/api/profile');
 
             if (profileResponse.ok) {
                 const profileData = await profileResponse.json();

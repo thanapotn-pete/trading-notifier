@@ -1624,13 +1624,7 @@
         return localStorage.getItem('auth_token');
     }
 
-    function authHeaders(json = false) {
-        const token = getAuthToken();
-        const headers = {};
-        if (json) headers['Content-Type'] = 'application/json';
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        return headers;
-    }
+
 
     async function apiRequest(path, options = {}) {
         const token = getAuthToken();
@@ -1639,13 +1633,7 @@
             throw new Error('ไม่พบ session token');
         }
 
-        const response = await fetch(`${API_BASE_URL}${path}`, {
-            ...options,
-            headers: {
-                ...authHeaders(Boolean(options.body)),
-                ...(options.headers || {})
-            }
-        });
+        const response = await App.apiFetch(`/api${path}`, options);
 
         let data = {};
         try {

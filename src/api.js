@@ -620,7 +620,7 @@ router.patch('/profile', async (req, res) => {
         );
 
       if (!ok) {
-        return res.status(401).json({
+        return res.status(400).json({
           error: 'Invalid current password'
         });
       }

@@ -41,7 +41,7 @@
         return (rounded < 0 ? '-' : '') + '$' + text;
     }
 
-    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml, formatMoney, buildSidebarHtml };
+    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml, formatMoney, formatChartLabel, apiFetch, buildSidebarHtml };
     // หน้าเดิมเรียก escapeHtml() แบบ global อยู่แล้ว
     window.escapeHtml = escapeHtml;
 
@@ -87,29 +87,125 @@
         aside.innerHTML = buildSidebarHtml(currentFile);
     }
 
+    // ---------- เรียก API (แนบ token + จัดการ session หมดอายุที่เดียว) ----------
+    // คืนค่าเป็น Response เหมือน fetch(); path ขึ้นต้นด้วย /api/...
+    // ไม่มี token หรือได้ 401 → ล้าง session แล้วไปหน้า login (promise จะไม่จบ
+    // เพราะหน้ากำลังเปลี่ยน จึงไม่มี error ขึ้นกะพริบ)
+    // อย่าใช้กับหน้า login เอง เพราะ 401 ตรงนั้นแปลว่า "รหัสผ่านผิด"
+    let redirectingToLogin = false;
+
+    function goToLogin() {
+        clearSession();
+        if (!redirectingToLogin) {
+            redirectingToLogin = true;
+            window.location.href = 'login.html';
+        }
+        return new Promise(() => {});
+    }
+
+    function apiFetch(path, options = {}) {
+        const token = getToken();
+        if (!token) return goToLogin();
+
+        const headers = { Authorization: `Bearer ${token}`, ...(options.headers || {}) };
+        if (options.body !== undefined && !headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        return fetch(`${API_BASE_URL}${path}`, { ...options, headers }).then((response) =>
+            response.status === 401 ? goToLogin() : response
+        );
+    }
+
+    // ป้ายแกนเวลาของกราฟ: "21 ก.ย. 14:30" (มีเวลาด้วย เพราะเทรดหลายรายการอยู่ในวันเดียวกัน)
+    function formatChartLabel(value) {
+        const d = value instanceof Date ? value : new Date(value);
+        if (Number.isNaN(d.getTime())) return '';
+        const day = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+        const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
+        return `${day} ${time}`;
+    }
+
     // ---------- เมนู "จัดการบัญชี" (แสดงเฉพาะ admin) ----------
     function setAdminMenu(visible) {
         const item = document.getElementById('adminMenuItem');
         if (item) item.style.display = visible ? 'flex' : 'none';
     }
 
-    async function syncAdminMenu() {
-        const token = getToken();
-        if (!token) return;
+    // ---------- ป้ายสถานะมุมขวาบน (MT5 / Telegram) จากข้อมูลจริง ----------
+    // state: 'ok' (เขียว) | 'warn' (เหลือง) | 'off' (เทา)
+    function setBadge(element, state, text) {
+        if (!element) return;
+        element.classList.remove('is-off', 'is-warn');
+        if (state === 'off') element.classList.add('is-off');
+        if (state === 'warn') element.classList.add('is-warn');
+        const dot = element.querySelector('.status-dot') || Object.assign(document.createElement('span'), { className: 'status-dot' });
+        element.textContent = '';
+        element.appendChild(dot);
+        element.appendChild(document.createTextNode(text));
+    }
+
+    function getStatusBadges() {
+        const badges = document.querySelectorAll('.topbar-right .status-badge');
+        return badges.length >= 2 ? { mt5: badges[0], telegram: badges[1] } : null;
+    }
+
+    function updateTelegramBadge(badges, profile) {
+        if (profile && profile.telegram_chat_id) setBadge(badges.telegram, 'ok', 'Telegram Active');
+        else setBadge(badges.telegram, 'warn', 'ยังไม่ได้ตั้ง Telegram');
+    }
+
+    function updateMt5Badge(badges, trade) {
+        const when = trade && (trade.timestamp || trade.closed_at || trade.created_at);
+        const date = when ? new Date(when) : null;
+
+        if (!date || Number.isNaN(date.getTime())) {
+            setBadge(badges.mt5, 'off', 'MT5 · ยังไม่มีข้อมูล');
+            return;
+        }
+
+        const label = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+        const recent = Date.now() - date.getTime() < 7 * 24 * 60 * 60 * 1000;
+        setBadge(badges.mt5, recent ? 'ok' : 'off', `MT5 · เทรดล่าสุด ${label}`);
+    }
+
+    async function loadSessionInfo() {
+        if (!getToken()) return;
 
         try {
             setAdminMenu(localStorage.getItem(ROLE_KEY) === 'admin');
         } catch { /* ignore */ }
 
+        const badges = getStatusBadges();
+        if (badges) {
+            setBadge(badges.mt5, 'off', 'MT5 · กำลังตรวจสอบ');
+            setBadge(badges.telegram, 'off', 'Telegram · กำลังตรวจสอบ');
+        }
+
         try {
-            const response = await fetch(`${API_BASE_URL}/api/profile`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!response.ok) return;
-            const profile = await response.json();
-            try { localStorage.setItem(ROLE_KEY, profile.role || 'user'); } catch { /* ignore */ }
-            setAdminMenu(profile.role === 'admin');
-        } catch { /* API unreachable: keep cached state */ }
+            const response = await apiFetch('/api/profile');
+            if (response.ok) {
+                const profile = await response.json();
+                try { localStorage.setItem(ROLE_KEY, profile.role || 'user'); } catch { /* ignore */ }
+                setAdminMenu(profile.role === 'admin');
+                if (badges) updateTelegramBadge(badges, profile);
+            } else if (badges) {
+                setBadge(badges.telegram, 'off', 'Telegram · ไม่ทราบสถานะ');
+            }
+        } catch {
+            if (badges) setBadge(badges.telegram, 'off', 'Telegram · ไม่ทราบสถานะ');
+        }
+
+        if (!badges) return;
+
+        try {
+            const response = await apiFetch('/api/trades?limit=1');
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            updateMt5Badge(badges, Array.isArray(data.trades) ? data.trades[0] : null);
+        } catch {
+            setBadge(badges.mt5, 'off', 'MT5 · ไม่ทราบสถานะ');
+        }
     }
 
     // ---------- เมนูโปรไฟล์มุมขวาบน + ปุ่มออกจากระบบ ----------
@@ -136,7 +232,7 @@
     function init() {
         renderSidebar();
         wireChrome();
-        syncAdminMenu();
+        loadSessionInfo();
     }
 
     if (document.readyState === 'loading') {

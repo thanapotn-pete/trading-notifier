@@ -565,7 +565,6 @@
 |--------------------------------------------------------------------------
 */
 
-const DASHBOARD_API_BASE_URL = window.APP_CONFIG.API_BASE_URL; // กำหนด URL ของ Node.js API Server
 
 let dashboardTrades = [];          // ตัวแปรเก็บรายการเทรดทั้งหมด
 let dashboardEquityChart = null;   // ตัวแปรเก็บอินสแตนซ์ของกราฟ Equity Curve
@@ -601,49 +600,14 @@ async function loadDashboard() {
 
         console.log('[Dashboard] Loading dashboard data...');
 
-        const headers = {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        };
-
-        // ยิง API 3 ตัวพร้อมกันเพื่อประสิทธิภาพที่ดีขึ้น (Trades, Profile, Notification Settings)
+        // ยิง API 3 ตัวพร้อมกัน (Trades, Profile, Notification Settings)
+        // App.apiFetch แนบ token และพาไปหน้า login เองเมื่อ session หมดอายุ
         const [tradesResponse, profileResponse, settingsResponse] =
             await Promise.all([
-                fetch(
-                    `${DASHBOARD_API_BASE_URL}/api/trades?limit=1000`,
-                    {
-                        method: 'GET',
-                        headers
-                    }
-                ),
-                fetch(
-                    `${DASHBOARD_API_BASE_URL}/api/profile`,
-                    {
-                        method: 'GET',
-                        headers
-                    }
-                ),
-                fetch(
-                    `${DASHBOARD_API_BASE_URL}/api/notification-settings`,
-                    {
-                        method: 'GET',
-                        headers
-                    }
-                )
+                App.apiFetch('/api/trades?limit=1000'),
+                App.apiFetch('/api/profile'),
+                App.apiFetch('/api/notification-settings')
             ]);
-
-        // ตรวจสอบว่าถ้า Token หมดอายุหรือไม่มีสิทธิ์เข้าถึง (401) ให้ลบ Token ทิ้งแล้วไปหน้า Login
-        if (
-            tradesResponse.status === 401 ||
-            profileResponse.status === 401 ||
-            settingsResponse.status === 401
-        ) {
-            console.warn('[Dashboard] Session expired');
-
-            localStorage.removeItem('auth_token');
-            window.location.href = 'login.html';
-            return;
-        }
 
         if (!tradesResponse.ok) {
             throw new Error(`Trades API HTTP ${tradesResponse.status}`);
@@ -1395,14 +1359,7 @@ function renderEquityChart(trades) {
             labels.push(
 
                 date
-                    ? new Date(date)
-                        .toLocaleDateString(
-                            'th-TH',
-                            {
-                                day: 'numeric',
-                                month: 'short'
-                            }
-                        )
+                    ? App.formatChartLabel(date)
                     : `Trade ${index + 1}`
 
             );
