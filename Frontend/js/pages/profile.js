@@ -89,16 +89,58 @@
     }
 
     /* =====================================================
+       CONNECTION STATUS (ข้อมูลจริงจากบัญชีและเทรดล่าสุด)
+    ===================================================== */
+    function setConnection(prefix, state, detail, label) {
+        const detailEl = document.getElementById(`${prefix}Detail`);
+        const statusEl = document.getElementById(`${prefix}Status`);
+
+        if (detailEl) detailEl.textContent = detail;
+
+        if (statusEl) {
+            statusEl.textContent = label;
+            statusEl.classList.remove('is-off', 'is-warn');
+            if (state === 'warn') statusEl.classList.add('is-warn');
+            if (state === 'off') statusEl.classList.add('is-off');
+        }
+    }
+
+    async function renderConnections(user) {
+        if (user.telegram_chat_id) {
+            setConnection('telegram', 'ok', `Chat ID · ${user.telegram_chat_id}`, 'Connected');
+        } else {
+            setConnection('telegram', 'warn', 'ยังไม่ได้ตั้งค่า Chat ID', 'Not set');
+        }
+
+        // ไม่มีสัญญาณ "เชื่อมต่อ" จาก EA โดยตรง จึงใช้เวลาของเทรดล่าสุดที่ server ได้รับ
+        try {
+            const response = await App.apiFetch('/api/trades?limit=1');
+            const data = response.ok ? await response.json() : null;
+            const latest = data && Array.isArray(data.trades) ? data.trades[0] : null;
+            const when = latest && (latest.timestamp || latest.closed_at);
+
+            if (when) {
+                setConnection('mt5', 'ok', `เทรดล่าสุด · ${formatDate(when)}`, 'Receiving');
+            } else {
+                setConnection('mt5', 'off', 'ยังไม่มีข้อมูลเทรดจาก MT5', 'No data');
+            }
+        } catch (error) {
+            setConnection('mt5', 'off', 'ไม่ทราบสถานะ', 'Unknown');
+        }
+    }
+
+    /* =====================================================
        LOAD PROFILE
     ===================================================== */
     async function loadProfile() {
         try {
             const data = await apiRequest('/profile');
             setUserToPage(data);
+            renderConnections(data);
         } catch (error) {
             if (error.message !== 'Unauthorized') {
                 console.error('[Profile] Load error:', error);
-                alert(`โหลดข้อมูลโปรไฟล์ไม่สำเร็จ\n${error.message}`);
+                App.toast(`โหลดข้อมูลโปรไฟล์ไม่สำเร็จ\n${error.message}`);
             }
         }
     }
@@ -110,25 +152,25 @@
         const firstName = document.getElementById('firstName').value.trim();
         const lastName = document.getElementById('lastName').value.trim();
         const email = document.getElementById('email').value.trim();
-        const button = document.querySelector('.primary-button[onclick="saveProfile()"]');
+        const button = document.querySelector('.primary-button[data-action="saveProfile"]');
 
         if (!firstName) {
-            alert('กรุณากรอกชื่อ');
+            App.toast('กรุณากรอกชื่อ');
             return;
         }
 
         if (!lastName) {
-            alert('กรุณากรอกนามสกุล');
+            App.toast('กรุณากรอกนามสกุล');
             return;
         }
 
         if (!email) {
-            alert('กรุณากรอกอีเมล');
+            App.toast('กรุณากรอกอีเมล');
             return;
         }
 
         if (!/^\S+@\S+\.\S+$/.test(email)) {
-            alert('รูปแบบอีเมลไม่ถูกต้อง');
+            App.toast('รูปแบบอีเมลไม่ถูกต้อง');
             return;
         }
 
@@ -149,10 +191,10 @@
 
             setUserToPage(data);
             document.getElementById('profilePassword').value = '';
-            alert('บันทึกข้อมูลบัญชีเรียบร้อยแล้ว ✓');
+            App.toast('บันทึกข้อมูลบัญชีเรียบร้อยแล้ว ✓');
         } catch (error) {
             console.error('[Profile] Save error:', error);
-            alert(`บันทึกข้อมูลไม่สำเร็จ\n${error.message}`);
+            App.toast(`บันทึกข้อมูลไม่สำเร็จ\n${error.message}`);
         } finally {
             if (button) {
                 button.disabled = false;
@@ -200,35 +242,36 @@
         const current = document.getElementById('currentPassword').value;
         const newPassword = document.getElementById('newPassword').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
-        const button = document.querySelector('.primary-button[onclick="changePassword()"]');
+        const button = document.querySelector('.primary-button[data-action="changePassword"]');
 
         if (!current) {
-            alert('กรุณากรอกรหัสผ่านปัจจุบัน');
+            App.toast('กรุณากรอกรหัสผ่านปัจจุบัน');
             return;
         }
 
         if (!newPassword) {
-            alert('กรุณากรอกรหัสผ่านใหม่');
+            App.toast('กรุณากรอกรหัสผ่านใหม่');
             return;
         }
 
         if (newPassword.length < 8) {
-            alert('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร');
+            App.toast('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร');
             return;
         }
 
-        if (newPassword.length > 72) {
-            alert('รหัสผ่านใหม่ต้องไม่เกิน 72 ตัวอักษร');
+        // bcrypt จำกัดที่ 72 "ไบต์" (อักษรไทย 1 ตัว = 3 ไบต์) ไม่ใช่ 72 ตัวอักษร
+        if (new TextEncoder().encode(newPassword).length > 72) {
+            App.toast('รหัสผ่านใหม่ยาวเกินไป: ต้องไม่เกิน 72 ไบต์ (อักษรไทย 1 ตัวนับ 3 ไบต์ ใส่ได้ไม่เกิน 24 ตัว)');
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            alert('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
+            App.toast('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
             return;
         }
 
         if (current === newPassword) {
-            alert('รหัสผ่านใหม่ต้องไม่เหมือนรหัสผ่านปัจจุบัน');
+            App.toast('รหัสผ่านใหม่ต้องไม่เหมือนรหัสผ่านปัจจุบัน');
             return;
         }
 
@@ -246,13 +289,13 @@
                 })
             });
 
-            alert('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว ✓');
+            App.toast('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว ✓');
             document.getElementById('currentPassword').value = '';
             document.getElementById('newPassword').value = '';
             document.getElementById('confirmPassword').value = '';
         } catch (error) {
             console.error('[Profile] Password error:', error);
-            alert(`เปลี่ยนรหัสผ่านไม่สำเร็จ\n${error.message}`);
+            App.toast(`เปลี่ยนรหัสผ่านไม่สำเร็จ\n${error.message}`);
         } finally {
             if (button) {
                 button.disabled = false;
@@ -264,13 +307,12 @@
     /* =====================================================
        LOGOUT
     ===================================================== */
-    function logout() {
-        const confirmLogout = confirm('คุณต้องการออกจากระบบใช่หรือไม่?');
+    async function logout() {
+        const confirmed = await App.confirm('คุณต้องการออกจากระบบใช่หรือไม่?', { okLabel: 'ออกจากระบบ' });
 
-        if (!confirmLogout) return;
+        if (!confirmed) return;
 
-        localStorage.removeItem('auth_token');
-        window.location.href = 'login.html';
+        App.logout();
     }
 
     /* =====================================================

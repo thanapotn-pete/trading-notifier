@@ -41,7 +41,7 @@
         return (rounded < 0 ? '-' : '') + '$' + text;
     }
 
-    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml, formatMoney, formatChartLabel, apiFetch, buildSidebarHtml };
+    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml, formatMoney, formatChartLabel, dedupeTickLabel, toast, confirm: confirmDialog, apiFetch, buildSidebarHtml };
     // หน้าเดิมเรียก escapeHtml() แบบ global อยู่แล้ว
     window.escapeHtml = escapeHtml;
 
@@ -122,6 +122,118 @@
         const d = value instanceof Date ? value : new Date(value);
         if (Number.isNaN(d.getTime())) return '';
         return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+    }
+
+    // ---------- ข้อความแจ้งผล (แทน alert) ----------
+    // type: 'success' | 'error' | 'warning' | 'info'; ไม่ระบุ → เดาจากข้อความ
+    function guessToastType(message) {
+        const text = String(message);
+        if (text.includes('✓')) return 'success';
+        if (text.includes('ไม่สำเร็จ') || text.includes('ล้มเหลว') || text.includes('เซิร์ฟเวอร์ยัง')) return 'error';
+        if (text.includes('กรุณา') || text.includes('ต้อง') || text.includes('ไม่ถูกต้อง') || text.includes('ไม่มีข้อมูล')) return 'warning';
+        return 'info';
+    }
+
+    function toast(message, type) {
+        let host = document.getElementById('toastHost');
+        if (!host) {
+            host = document.createElement('div');
+            host.id = 'toastHost';
+            host.className = 'toast-host';
+            host.setAttribute('aria-live', 'polite');
+            document.body.appendChild(host);
+        }
+
+        const kind = type || guessToastType(message);
+        const item = document.createElement('div');
+        item.className = `toast toast-${kind}`;
+        item.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+        item.textContent = String(message).replace(/\s*✓\s*$/, '');
+
+        const dismiss = () => item.remove();
+        item.addEventListener('click', dismiss);
+        host.appendChild(item);
+        setTimeout(dismiss, kind === 'error' ? 8000 : 4500);
+    }
+
+    // ---------- กล่องยืนยัน (แทน confirm) → Promise<boolean> ----------
+    function confirmDialog(message, options = {}) {
+        return new Promise((resolve) => {
+            const dialog = document.createElement('dialog');
+            dialog.className = 'app-confirm';
+
+            const text = document.createElement('p');
+            text.textContent = message;
+
+            const actions = document.createElement('div');
+            actions.className = 'app-confirm-actions';
+
+            const cancel = document.createElement('button');
+            cancel.type = 'button';
+            cancel.className = 'app-confirm-cancel';
+            cancel.textContent = options.cancelLabel || 'ยกเลิก';
+
+            const ok = document.createElement('button');
+            ok.type = 'button';
+            ok.className = 'app-confirm-ok';
+            ok.textContent = options.okLabel || 'ยืนยัน';
+
+            actions.append(cancel, ok);
+            dialog.append(text, actions);
+            document.body.appendChild(dialog);
+
+            let result = false;
+            cancel.addEventListener('click', () => dialog.close());
+            ok.addEventListener('click', () => { result = true; dialog.close(); });
+            dialog.addEventListener('close', () => { dialog.remove(); resolve(result); });
+            dialog.showModal();
+        });
+    }
+
+    // ---------- แทน onclick/onchange ในหน้า (CSP ไม่อนุญาต inline handler) ----------
+    //   data-href="page.html"           คลิกแล้วไปหน้านั้น
+    //   data-action="fn" [data-args='[1,"a"]']   คลิกแล้วเรียก window.fn(...args[, element])
+    //   data-change="fn"                เปลี่ยนค่าแล้วเรียก window.fn()
+    function callGlobal(name, args, element) {
+        const fn = window[name];
+        if (typeof fn !== 'function') {
+            console.error(`[common] ไม่พบฟังก์ชัน ${name}`);
+            return;
+        }
+        // ส่ง element เป็นอาร์กิวเมนต์สุดท้ายเมื่อฟังก์ชันรับเพิ่ม (เช่น togglePassword(inputId, button))
+        fn(...args, ...(fn.length > args.length ? [element] : []));
+    }
+
+    function wireActions() {
+        document.addEventListener('click', (event) => {
+            const target = event.target.closest('[data-action], [data-href]');
+            if (!target) return;
+
+            if (target.dataset.href) {
+                window.location.href = target.dataset.href;
+                return;
+            }
+
+            let args = [];
+            if (target.dataset.args) {
+                try { args = JSON.parse(target.dataset.args); } catch { args = []; }
+            }
+            callGlobal(target.dataset.action, args, target);
+        });
+
+        document.addEventListener('change', (event) => {
+            const target = event.target.closest('[data-change]');
+            if (target) callGlobal(target.dataset.change, [], target);
+        });
+    }
+
+    // ป้ายแกน X ของกราฟ: ซ่อนวันที่ที่ซ้ำกับป้ายก่อนหน้า (เทรดหลายรายการในวันเดียวกัน)
+    // ต้องเป็น function ธรรมดา: Chart.js เรียกโดยให้ this = scale
+    function dedupeTickLabel(value, index, ticks) {
+        const label = this.getLabelForValue(value);
+        if (index === 0) return label;
+        const previous = this.getLabelForValue(ticks[index - 1].value);
+        return label === previous ? '' : label;
     }
 
     // ---------- เมนู "จัดการบัญชี" (แสดงเฉพาะ admin) ----------
@@ -228,6 +340,7 @@
     }
 
     function init() {
+        wireActions();
         renderSidebar();
         wireChrome();
         loadSessionInfo();

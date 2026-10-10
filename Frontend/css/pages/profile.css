@@ -797,3 +797,13 @@
             }
 
         }
+
+.connected-badge.is-off {
+    background: #f1f4f3;
+    color: #7b8985;
+}
+
+.connected-badge.is-warn {
+    background: #fff7e6;
+    color: #b7791f;
+}

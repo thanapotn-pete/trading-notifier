@@ -909,6 +909,12 @@ function renderEquityChart(trades) {
 
                     scales: {
 
+                        x: {
+                            ticks: {
+                                callback: App.dedupeTickLabel
+                            }
+                        },
+
                         y: {
 
                             beginAtZero:

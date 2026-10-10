@@ -145,7 +145,7 @@ async function saveNotificationSettings(showSuccess = false, includeDrawdown = t
         if (!Number.isFinite(settings.max_drawdown) ||
             settings.max_drawdown < 0 ||
             settings.max_drawdown > 100) {
-            alert('Maximum Drawdown ต้องอยู่ระหว่าง 0 ถึง 100%');
+            App.toast('Maximum Drawdown ต้องอยู่ระหว่าง 0 ถึง 100%');
             return;
         }
     }
@@ -173,7 +173,7 @@ async function saveNotificationSettings(showSuccess = false, includeDrawdown = t
         updateDrawdownButton();
 
         if (showSuccess) {
-            alert('บันทึกการตั้งค่าเรียบร้อยแล้ว ✓');
+            App.toast('บันทึกการตั้งค่าเรียบร้อยแล้ว ✓');
         }
 
         console.log(
@@ -187,7 +187,7 @@ async function saveNotificationSettings(showSuccess = false, includeDrawdown = t
             error
         );
 
-        alert(
+        App.toast(
             'บันทึกการตั้งค่าไม่สำเร็จ\n\n' +
             error.message
         );
@@ -391,16 +391,6 @@ async function loadChatId() {
             error
         );
 
-        // fallback สำหรับข้อมูลเก่าที่เคยเก็บไว้ใน browser
-        const oldChatId =
-            localStorage.getItem('telegram_chat_id');
-
-        const input =
-            document.getElementById('chatId');
-
-        if (oldChatId && input && !input.value) {
-            input.value = oldChatId;
-        }
     }
 }
 
@@ -412,7 +402,7 @@ async function saveChatId() {
         input ? input.value.trim() : '';
 
     if (!chatId) {
-        alert('กรุณากรอก Telegram Chat ID');
+        App.toast('กรุณากรอก Telegram Chat ID');
 
         if (input) input.focus();
 
@@ -420,7 +410,7 @@ async function saveChatId() {
     }
 
     if (!/^-?\d+$/.test(chatId)) {
-        alert('Telegram Chat ID ต้องเป็นตัวเลข');
+        App.toast('Telegram Chat ID ต้องเป็นตัวเลข');
 
         if (input) input.focus();
 
@@ -444,12 +434,14 @@ async function saveChatId() {
             );
         }
 
-        localStorage.setItem(
-            'telegram_chat_id',
-            chatId
-        );
+        // แสดงว่าสำเร็จก็ต่อเมื่อ server ตอบค่าที่บันทึกกลับมาตรงกับที่ส่ง
+        if (String(data.telegram_chat_id ?? '') !== chatId) {
+            throw new Error(
+                'เซิร์ฟเวอร์ยังไม่ได้บันทึก Chat ID — ติดต่อผู้ดูแลระบบ'
+            );
+        }
 
-        alert(
+        App.toast(
             'บันทึก Telegram Chat ID ลงฐานข้อมูลเรียบร้อยแล้ว ✓'
         );
 
@@ -459,7 +451,7 @@ async function saveChatId() {
             error
         );
 
-        alert(
+        App.toast(
             'บันทึก Telegram Chat ID ไม่สำเร็จ\n\n' +
             error.message
         );
@@ -486,7 +478,7 @@ async function testTelegram() {
         const token = getToken();
 
         if (!token) {
-            alert(
+            App.toast(
                 'ไม่พบ Session กรุณาเข้าสู่ระบบใหม่'
             );
 
@@ -506,7 +498,7 @@ async function testTelegram() {
             'ระบบแจ้งเตือนเชื่อมต่อแล้ว'
         );
 
-        alert(
+        App.toast(
             'เชื่อมต่อระบบแจ้งเตือนสำเร็จ ✓'
         );
 
@@ -521,7 +513,7 @@ async function testTelegram() {
             'ไม่สามารถเชื่อมต่อระบบแจ้งเตือน'
         );
 
-        alert(
+        App.toast(
             'ไม่สามารถเชื่อมต่อระบบแจ้งเตือนได้\n' +
             'กรุณาตรวจสอบว่า Node.js Backend กำลังทำงานอยู่'
         );
@@ -587,7 +579,7 @@ async function sendTestMessage() {
         const token = getToken();
 
         if (!token) {
-            alert(
+            App.toast(
                 'ไม่พบ Session กรุณาเข้าสู่ระบบใหม่'
             );
 
@@ -619,7 +611,7 @@ async function sendTestMessage() {
             );
         }
 
-        alert(
+        App.toast(
             'ส่งข้อความทดสอบไปยัง Telegram สำเร็จ ✓'
         );
 
@@ -629,7 +621,7 @@ async function sendTestMessage() {
             error
         );
 
-        alert(
+        App.toast(
             'ส่งข้อความทดสอบไม่สำเร็จ\n\n' +
             error.message
         );

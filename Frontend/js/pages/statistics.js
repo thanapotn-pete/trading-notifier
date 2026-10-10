@@ -409,7 +409,8 @@ function buildPerformanceData(trades) {
                                     family: 'IBM Plex Sans Thai',
                                     size: 10
                                 },
-                                color: '#8a9793'
+                                color: '#8a9793',
+                                callback: App.dedupeTickLabel
                             }
                         },
 

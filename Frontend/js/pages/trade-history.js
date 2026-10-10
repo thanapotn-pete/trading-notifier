@@ -590,7 +590,7 @@ function updatePagination() {
         <button
             type="button"
             class="page-button ${currentPage === 1 ? 'disabled' : ''}"
-            onclick="goToPage(${currentPage - 1})"
+            data-action="goToPage" data-args="[${currentPage - 1}]"
             ${currentPage === 1 ? 'disabled' : ''}
         >
             <i class="bi bi-chevron-left"></i>
@@ -615,7 +615,7 @@ function updatePagination() {
             <button
                 type="button"
                 class="page-button ${page === currentPage ? 'active' : ''}"
-                onclick="goToPage(${page})"
+                data-action="goToPage" data-args="[${page}]"
             >
                 ${page}
             </button>
@@ -626,7 +626,7 @@ function updatePagination() {
         <button
             type="button"
             class="page-button ${currentPage === totalPages ? 'disabled' : ''}"
-            onclick="goToPage(${currentPage + 1})"
+            data-action="goToPage" data-args="[${currentPage + 1}]"
             ${currentPage === totalPages ? 'disabled' : ''}
         >
             <i class="bi bi-chevron-right"></i>
@@ -661,7 +661,7 @@ function goToPage(page) {
 // ฟังก์ชันดาวน์โหลดรายงานเป็นไฟล์ CSV
 function exportTradesCSV() {
     if (filteredTrades.length === 0) {
-        alert('ไม่มีข้อมูลการเทรดสำหรับ Export');
+        App.toast('ไม่มีข้อมูลการเทรดสำหรับ Export');
         return;
     }
 
