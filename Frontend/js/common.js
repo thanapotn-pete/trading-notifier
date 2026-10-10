@@ -58,9 +58,12 @@
     ];
 
     function menuLink({ href, icon, label }, currentFile, extra) {
-        const active = href === currentFile ? ' active' : '';
-        return `<a href="${href}" class="menu-item${active}"${extra || ''}>` +
-            `<i class="bi ${icon}"></i><span>${label}</span></a>`;
+        const isActive = href === currentFile;
+        const active = isActive ? ' active' : '';
+        // title/aria-label: บนมือถือ sidebar เหลือแต่ไอคอน จึงต้องมีชื่อให้เห็น (tooltip) และให้โปรแกรมอ่านหน้าจออ่านได้
+        return `<a href="${href}" class="menu-item${active}" title="${label}" aria-label="${label}"` +
+            `${isActive ? ' aria-current="page"' : ''}${extra || ''}>` +
+            `<i class="bi ${icon}" aria-hidden="true"></i><span>${label}</span></a>`;
     }
 
     function buildSidebarHtml(currentFile) {
@@ -75,9 +78,9 @@
             ' id="adminMenuItem" style="display:none"'
         );
 
-        return '<div class="logo"><i class="bi bi-graph-up-arrow"></i><span>TradeAnalytics</span></div>' +
+        return '<div class="logo"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i><span>TradeAnalytics</span></div>' +
             items + admin +
-            '<div class="logout"><a href="#"><i class="bi bi-box-arrow-right"></i><span>ออกจากระบบ</span></a></div>';
+            '<div class="logout"><a href="#" title="ออกจากระบบ" aria-label="ออกจากระบบ"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>ออกจากระบบ</span></a></div>';
     }
 
     function renderSidebar() {

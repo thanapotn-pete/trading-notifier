@@ -78,6 +78,7 @@ async function loadDashboard() {
         // เรียกฟังก์ชันอัปเดตข้อมูลบนหน้าจอ
         updateUserInfo();
         updateNotificationStatus();
+        updateTelegramConnectionLabel();
         updateDashboard();
 
     } catch (error) {
@@ -248,6 +249,27 @@ function updateUserInfo() {
 // =====================================================
 // NOTIFICATION STATUS (อัปเดตสถานะการแจ้งเตือนบนหน้า Dashboard)
 // =====================================================
+
+// =====================================================
+// TELEGRAM CONNECTION LABEL (ตามข้อมูลบัญชีจริง ไม่ใช่ข้อความตายตัว)
+// =====================================================
+
+function updateTelegramConnectionLabel() {
+
+    const label =
+        document.getElementById('telegramConnectionText');
+
+    if (!label) {
+        return;
+    }
+
+    label.textContent =
+        dashboardProfile && dashboardProfile.telegram_chat_id
+            ? 'เชื่อมต่อแล้ว'
+            : 'ยังไม่ได้ตั้งค่า Telegram';
+
+}
+
 
 function updateNotificationStatus() {
 
@@ -850,7 +872,13 @@ function renderEquityChart(trades) {
                                 true,
 
                             pointRadius:
-                                2
+                                3,
+
+                            pointHoverRadius: 5,
+
+                            borderColor: '#087f68',
+
+                            backgroundColor: 'rgba(8, 127, 104, 0.10)'
 
                         }
 
@@ -887,6 +915,10 @@ function renderEquityChart(trades) {
 
                         tooltip: {
 
+                            backgroundColor: '#17211f',
+                            padding: 10,
+                            displayColors: false,
+
                             callbacks: {
 
                                 label:
@@ -910,17 +942,24 @@ function renderEquityChart(trades) {
                     scales: {
 
                         x: {
+                            grid: { display: false },
                             ticks: {
+                                color: '#94a3b8',
+                                font: { family: 'IBM Plex Sans Thai', size: 10 },
                                 callback: App.dedupeTickLabel
                             }
                         },
 
                         y: {
 
+                            grid: { color: '#edf1ef' },
+
                             beginAtZero:
                                 false,
 
                             ticks: {
+                                color: '#94a3b8',
+                                font: { family: 'IBM Plex Sans Thai', size: 10 },
 
                                 callback:
                                     function(value) {
