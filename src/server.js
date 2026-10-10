@@ -52,16 +52,16 @@ app.set('trust proxy', 1);
 
 // Security headers (X-Frame-Options, nosniff, Referrer-Policy, no X-Powered-By...).
 // The CSP lists exactly what the pages load: their own files, Bootstrap Icons /
-// Chart.js from jsDelivr and Google Fonts. Pages still use inline onclick="..."
-// handlers and style="..." attributes, hence the two 'unsafe-inline' entries —
-// injected <script> blocks and external scripts remain blocked.
+// Chart.js from jsDelivr and Google Fonts. The pages have no inline scripts or
+// event handlers, so script-src-attr is 'none'; only style="..." attributes
+// remain, hence 'unsafe-inline' for styles.
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: false,
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
-      scriptSrcAttr: ["'unsafe-inline'"],
+      scriptSrcAttr: ["'none'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:'],
