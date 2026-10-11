@@ -115,6 +115,18 @@ async function loadDashboard() {
 // GET PNL (ดึงค่ากำไร/ขาดทุนจากออเดอร์)
 // =====================================================
 
+// แสดงจำนวนเงินเป็นดอลลาร์ ทศนิยม 2 ตำแหน่งเสมอ และมีจุลภาคคั่นหลักพัน (เช่น +$4,797.92)
+// withSign = true จะใส่ + หน้าค่าที่ไม่ติดลบ ให้รูปแบบตรงกับหน้าสถิติและรายงาน
+function formatUsd(value, withSign = false) {
+    const number = Number(value) || 0;
+    const text = Math.abs(number).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    const sign = number < 0 ? '-' : (withSign ? '+' : '');
+    return `${sign}$${text}`;
+}
+
 // ดึงกำไร/ขาดทุน (P/L) ของเทรด รองรับชื่อฟิลด์หลายแบบ
 function getPnl(trade) {
 
@@ -511,7 +523,7 @@ function updateDashboard() {
         );
 
     netProfitElement.textContent =
-        `${stats.netProfit >= 0 ? '+' : '-'}$${Math.abs(stats.netProfit).toFixed(2)}`;
+        formatUsd(stats.netProfit, true);
 
     netProfitElement.classList.toggle(
         'profit',
@@ -678,7 +690,7 @@ function updateRiskScore(stats) {
         risk;
 
     descriptionElement.textContent =
-        `Win Rate ${stats.winRate.toFixed(1)}% · Max DD $${maxDrawdown.toFixed(2)}`;
+        `Win Rate ${stats.winRate.toFixed(1)}% · Max DD ${formatUsd(maxDrawdown)}`;
 }
 
 
@@ -793,7 +805,7 @@ function renderRecentTrades() {
                         <strong
                             class="${pnl >= 0 ? 'profit' : 'loss'}"
                         >
-                            ${pnl >= 0 ? '+' : '-'}$${Math.abs(pnl).toFixed(2)}
+                            ${formatUsd(pnl, true)}
                         </strong>
 
                     </div>
@@ -970,7 +982,7 @@ function renderEquityChart(trades) {
                                                 context.raw || 0
                                             );
 
-                                        return ` กำไรสุทธิ: ${value >= 0 ? '+' : '-'}$${Math.abs(value).toFixed(2)}`;
+                                        return ` กำไรสุทธิ: ${formatUsd(value, true)}`;
 
                                     }
 
