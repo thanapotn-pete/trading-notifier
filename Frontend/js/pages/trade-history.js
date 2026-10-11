@@ -296,8 +296,11 @@ function updateSummary(trades) {
         }
     });
 
-    const winRate = total > 0
-        ? (wins / total) * 100
+    // Win Rate = ชนะ / (ชนะ + แพ้) นับเฉพาะออเดอร์ที่ปิดแล้วและมี P/L
+    // (ให้ตรงกับหน้า Dashboard / สถิติ / รายงาน) ไม่นับออเดอร์ที่ยังเปิดอยู่
+    const closedCount = wins + losses;
+    const winRate = closedCount > 0
+        ? (wins / closedCount) * 100
         : 0;
 
     const summaryValues =
