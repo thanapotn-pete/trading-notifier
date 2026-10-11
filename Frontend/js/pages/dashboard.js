@@ -12,7 +12,7 @@
 
 let dashboardTrades = [];          // ตัวแปรเก็บรายการเทรดทั้งหมด
 let dashboardEquityChart = null;   // ตัวแปรเก็บอินสแตนซ์ของกราฟ Equity Curve
-let currentPeriod = 7;             // กำหนดช่วงเวลาเริ่มต้นดูกราฟ (7 วัน)
+let currentPeriod = 30;            // ช่วงเวลาเริ่มต้น (30 วัน) ต้องตรงกับปุ่ม 1M ที่ active ใน dashboard.html
 let dashboardProfile = null;       // ตัวแปรเก็บข้อมูลโปรไฟล์ผู้ใช้
 let dashboardNotificationSettings = null; // ตัวแปรเก็บการตั้งค่า Telegram Notification
 
