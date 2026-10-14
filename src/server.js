@@ -261,6 +261,30 @@ app.post(
 // MT5 WEBHOOK
 // =====================================================
 
+// กันแจ้งเตือนซ้ำ: ถ้า EA สองตัว (เช่น เวอร์ชันเก่า+ใหม่) ส่งเหตุการณ์เดียวกันมา
+// (user + position_id + action เดียวกัน) ภายใน 5 นาที ให้ข้ามตัวหลัง ไม่บันทึกและไม่ส่ง Telegram
+// Drops a repeat of the same open/close event (e.g. two EAs on one account).
+const DEDUPE_ACTIONS = ['buy', 'sell', 'close', 'tp', 'sl'];
+const DEDUPE_TTL_MS = 5 * 60 * 1000;
+const recentTradeEvents = new Map();  // key → เวลาที่เห็นล่าสุด
+
+function isDuplicateTradeEvent(userId, positionId, action) {
+  const a = String(action || '').toLowerCase();
+  if (!DEDUPE_ACTIONS.includes(a)) return false;
+
+  const now = Date.now();
+  for (const [k, t] of recentTradeEvents) {  // ล้างรายการที่หมดอายุ
+    if (now - t > DEDUPE_TTL_MS) recentTradeEvents.delete(k);
+  }
+
+  const key = `${userId}|${positionId}|${a}`;
+  if (recentTradeEvents.has(key)) return true;
+
+  recentTradeEvents.set(key, now);
+  return false;
+}
+
+
 // [สรุป] POST /webhook/mt5 — EA ใน MT5 ยิงมาทุกครั้งที่เปิด/ปิดออเดอร์
 // ขั้นตอน: 1) ตรวจ secret  2) ตรวจข้อมูลที่จำเป็น  3) บันทึกเทรดลงฐานข้อมูล
 // 4) ถ้าผู้ใช้ยังไม่มี Telegram chat id → ตอบ EA ให้ส่งข้อความเอง  5)
@@ -302,6 +326,23 @@ app.post(
         return res.status(400).json({
           error:
             'action, symbol and position_id required'
+        });
+
+      }
+
+
+      // เหตุการณ์ซ้ำ (เช่น EA เก่า+ใหม่ส่งมาคู่กัน) → ข้าม ไม่บันทึก ไม่ส่งซ้ำ
+      if (isDuplicateTradeEvent(req.user.id, position_id, action)) {
+
+        console.log(
+          `[MT5 Webhook] Duplicate ignored: ${action} ${position_id}`
+        );
+
+        return res.json({
+          ok: true,
+          notification_sent: false,
+          reason: 'duplicate',
+          message: 'Duplicate event ignored.'
         });
 
       }
