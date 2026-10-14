@@ -29,7 +29,7 @@ input string bot_token           = "YOUR_TELEGRAM_BOT_TOKEN";
 input string chat_id             = "YOUR_TELEGRAM_CHAT_ID";
 input string webhook_url         = "https://trading-notifier-vrdb.onrender.com/webhook/mt5";
 input string webhook_secret      = "YOUR_WEBHOOK_SECRET";
-input int    webrequest_timeout  = 5000; // ms
+input int    webrequest_timeout  = 15000; // ms (Render อาจตื่นช้า ตั้งน้อยเกินไปจะหมดเวลาแล้วส่งซ้ำ)
 input int    send_delay_ms       = 150;  // ms
 input bool   send_pending_alerts = true; // แจ้งเตือน Pending order (ตั้ง/ยกเลิก)
 input int    drawdown_check_sec  = 30;   // ตรวจ Drawdown ทุกกี่วินาที (0 = ปิด) — server ตัดสินว่าถึงเกณฑ์หรือยัง
@@ -141,12 +141,34 @@ bool SendWebhook(string action, string symbol, double price, double lot, double 
    string headers = "Content-Type: application/json\r\n";
    string result_headers = "";
    PrintFormat("SendWebhook calling url=%s action=%s symbol=%s", webhook_url, action, symbol);
-   int res = WebRequest("POST", webhook_url, headers, webrequest_timeout, data, result, result_headers);
-   if(res == -1)
+   // ลองสูงสุด 2 ครั้ง: ถ้าหมดเวลา (เช่น Render ตื่นช้า) เซิร์ฟเวอร์อาจประมวลผลไปแล้ว
+   // การส่งซ้ำปลอดภัยเพราะเซิร์ฟเวอร์ข้ามเหตุการณ์ซ้ำเอง (reason "duplicate") ดีกว่าให้ EA ส่ง
+   // Telegram สำรองซ้ำซ้อน
+   int res = -1;
+   for(int attempt = 1; attempt <= 2; attempt++)
    {
-      PrintFormat("SendWebhook error=%d (4014=URL not allowed in Options)", GetLastError());
       ResetLastError();
-      return(false);
+      res = WebRequest("POST", webhook_url, headers, webrequest_timeout, data, result, result_headers);
+      if(res != -1) break;
+      int err = GetLastError();
+      PrintFormat("SendWebhook error=%d attempt=%d (4014=URL not allowed in Options)", err, attempt);
+      ResetLastError();
+      if(err == 4014) return(false);   // URL ไม่ได้อนุญาต: ลองซ้ำก็ไม่หาย
+      if(attempt == 2) return(false);
+      Sleep(1000);
+   }
+   // 5xx (เซิร์ฟเวอร์ล่ม/กำลังตื่น) ลองอีกครั้งเดียว
+   if(res >= 500)
+   {
+      Sleep(1000);
+      ArrayFree(result);
+      res = WebRequest("POST", webhook_url, headers, webrequest_timeout, data, result, result_headers);
+      if(res == -1)
+      {
+         PrintFormat("SendWebhook retry error=%d", GetLastError());
+         ResetLastError();
+         return(false);
+      }
    }
    PrintFormat("SendWebhook ok status=%d", res);
    if(res < 200 || res >= 300) return(false);

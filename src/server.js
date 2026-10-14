@@ -285,6 +285,14 @@ function isDuplicateTradeEvent(userId, positionId, action) {
 }
 
 
+// ลืมเหตุการณ์ที่เคยจดไว้ (ใช้เมื่อประมวลผลล้มเหลว เพื่อให้ส่งซ้ำได้)
+function forgetTradeEvent(userId, positionId, action) {
+  recentTradeEvents.delete(
+    `${userId}|${positionId}|${String(action || '').toLowerCase()}`
+  );
+}
+
+
 // [สรุป] POST /webhook/mt5 — EA ใน MT5 ยิงมาทุกครั้งที่เปิด/ปิดออเดอร์
 // ขั้นตอน: 1) ตรวจ secret  2) ตรวจข้อมูลที่จำเป็น  3) บันทึกเทรดลงฐานข้อมูล
 // 4) ถ้าผู้ใช้ยังไม่มี Telegram chat id → ตอบ EA ให้ส่งข้อความเอง  5)
@@ -555,6 +563,13 @@ app.post(
       console.error(
         '[MT5 Webhook] Error:',
         err.message
+      );
+
+      // ล้มเหลวก่อนส่งเสร็จ → ปล่อยคีย์กันซ้ำ เพื่อให้ EA ส่งซ้ำ (retry) แล้วยังผ่านได้
+      forgetTradeEvent(
+        req.user?.id,
+        req.body?.position_id,
+        req.body?.action
       );
 
       res.status(500).json({
