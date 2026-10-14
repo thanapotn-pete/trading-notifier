@@ -50,6 +50,7 @@
 
     // ตัวอักษรแรกของชื่อ (พิมพ์ใหญ่) ใช้เป็นข้อความในวงกลมอวตาร
     function getInitial(user) {
+        // ใช้ฟังก์ชันกลาง (ตัวแรกของ first_name) ให้ตรงกับทุกหน้า
         return window.App.getUserInitial(user);
     }
 

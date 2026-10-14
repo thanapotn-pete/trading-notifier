@@ -887,6 +887,7 @@ async function loadProfile() {
             document.querySelector('.avatar');
 
         if (avatar) {
+            // ตัวอักษรในอวตาร = ตัวแรกของชื่อ (first_name) ใช้ฟังก์ชันกลางให้ทุกหน้าตรงกัน
             avatar.textContent =
                 window.App.getUserInitial(profile);
         }

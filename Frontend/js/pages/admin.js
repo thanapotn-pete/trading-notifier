@@ -332,6 +332,7 @@ async function initialize() {
         }
         const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.name || profile.email || 'ผู้ดูแลระบบ';
         document.getElementById('welcomeText').textContent = `ยินดีต้อนรับ, ${fullName}`;
+        // ตัวอักษรในอวตาร = ตัวแรกของชื่อ (first_name) ใช้ฟังก์ชันกลางให้ทุกหน้าตรงกัน
         document.getElementById('userAvatar').textContent = App.getUserInitial(profile);
         await loadUsers();
     } catch {

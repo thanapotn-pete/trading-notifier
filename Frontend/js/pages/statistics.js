@@ -544,6 +544,7 @@ function buildPerformanceData(trades) {
             const userAvatar = document.getElementById('userAvatar');
 
 if (userAvatar) {
+    // ตัวอักษรในอวตาร = ตัวแรกของชื่อ (first_name) ใช้ฟังก์ชันกลางให้ทุกหน้าตรงกัน
     userAvatar.textContent = window.App.getUserInitial(profile);
 }
 

@@ -270,6 +270,7 @@ function updateUserInfo() {
     }
 
     if (avatarElement) {
+        // ตัวอักษรในอวตาร = ตัวแรกของชื่อ (first_name) ใช้ฟังก์ชันกลางให้ทุกหน้าตรงกัน
         avatarElement.textContent =
             window.App.getUserInitial(dashboardProfile);
     }
