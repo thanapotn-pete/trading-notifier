@@ -50,8 +50,7 @@
 
     // ตัวอักษรแรกของชื่อ (พิมพ์ใหญ่) ใช้เป็นข้อความในวงกลมอวตาร
     function getInitial(user) {
-        const fullName = getFullName(user).trim();
-        return fullName ? fullName.charAt(0).toUpperCase() : 'U';
+        return window.App.getUserInitial(user);
     }
 
     // แปลงวันที่เป็นรูปแบบไทย วว/ดด/ปปปป (ปี พ.ศ.)

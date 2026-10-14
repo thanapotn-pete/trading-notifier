@@ -271,7 +271,7 @@ function updateUserInfo() {
 
     if (avatarElement) {
         avatarElement.textContent =
-            displayName.charAt(0).toUpperCase();
+            window.App.getUserInitial(dashboardProfile);
     }
 }
 

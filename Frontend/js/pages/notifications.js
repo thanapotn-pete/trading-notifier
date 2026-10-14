@@ -888,7 +888,7 @@ async function loadProfile() {
 
         if (avatar) {
             avatar.textContent =
-                name.charAt(0).toUpperCase();
+                window.App.getUserInitial(profile);
         }
 
         loadChatIdFromProfile(profile);

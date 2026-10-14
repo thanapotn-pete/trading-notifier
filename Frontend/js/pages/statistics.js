@@ -544,7 +544,7 @@ function buildPerformanceData(trades) {
             const userAvatar = document.getElementById('userAvatar');
 
 if (userAvatar) {
-    userAvatar.textContent = name.charAt(0).toUpperCase();
+    userAvatar.textContent = window.App.getUserInitial(profile);
 }
 
             allTrades = Array.isArray(trades)

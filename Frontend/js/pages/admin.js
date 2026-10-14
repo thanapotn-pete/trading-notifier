@@ -332,7 +332,7 @@ async function initialize() {
         }
         const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.name || profile.email || 'ผู้ดูแลระบบ';
         document.getElementById('welcomeText').textContent = `ยินดีต้อนรับ, ${fullName}`;
-        document.getElementById('userAvatar').textContent = fullName.charAt(0).toUpperCase();
+        document.getElementById('userAvatar').textContent = App.getUserInitial(profile);
         await loadUsers();
     } catch {
         showNotice('เชื่อมต่อ API ไม่สำเร็จ กรุณาตรวจสอบว่า Backend กำลังทำงาน', 'error');

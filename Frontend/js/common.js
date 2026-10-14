@@ -57,9 +57,21 @@
         return (rounded < 0 ? '-' : '') + '$' + text;
     }
 
+    // ตัวอักษรในวงกลมอวตารมุมขวาบน: ใช้ตัวแรกของ "ชื่อ" (first_name) ทุกหน้าให้เหมือนกัน
+    // ถ้าไม่มีชื่อค่อยใช้ชื่อเต็ม/ชื่อที่แสดง → username → อีเมล (ไม่มีเลยแสดง U)
+    function getUserInitial(profile) {
+        const p = profile || {};
+        const candidates = [p.first_name, p.firstName, p.full_name, p.fullName, p.name, p.username, p.email];
+        for (const value of candidates) {
+            const text = String(value ?? '').trim();
+            if (text) return text.charAt(0).toUpperCase();
+        }
+        return 'U';
+    }
+
     // รวมฟังก์ชันที่ให้หน้าอื่นเรียกใช้ไว้ที่ window.App (เช่น App.apiFetch, App.toast,
-    // App.confirm, App.formatMoney)
-    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml, formatMoney, formatChartLabel, dedupeTickLabel, toast, confirm: confirmDialog, apiFetch, buildSidebarHtml };
+    // App.confirm, App.formatMoney, App.getUserInitial)
+    window.App = { API_BASE_URL, TOKEN_KEY, ROLE_KEY, getToken, clearSession, logout, escapeHtml, formatMoney, formatChartLabel, dedupeTickLabel, toast, confirm: confirmDialog, apiFetch, buildSidebarHtml, getUserInitial };
     // หน้าเดิมเรียก escapeHtml() แบบ global อยู่แล้ว
     window.escapeHtml = escapeHtml;
 
