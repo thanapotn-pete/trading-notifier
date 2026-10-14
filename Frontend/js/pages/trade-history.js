@@ -284,8 +284,15 @@ function updateSummary(trades) {
     let totalProfit = 0;
     let totalLoss = 0;
 
+    let closedCount = 0;   // ออเดอร์ที่ปิดแล้ว (มีค่า P/L รวมรายการที่ P/L เป็น 0)
+
     trades.forEach(trade => {
         const pnl = getPnl(trade);
+
+        const rawPnl = trade.pnl ?? trade.profit ?? trade.net_profit ?? trade.netProfit;
+        if (rawPnl !== null && rawPnl !== undefined && rawPnl !== '' && Number.isFinite(Number(rawPnl))) {
+            closedCount++;
+        }
 
         if (pnl > 0) {
             wins++;
@@ -296,9 +303,8 @@ function updateSummary(trades) {
         }
     });
 
-    // Win Rate = ชนะ / (ชนะ + แพ้) นับเฉพาะออเดอร์ที่ปิดแล้วและมี P/L
-    // (ให้ตรงกับหน้า Dashboard / สถิติ / รายงาน) ไม่นับออเดอร์ที่ยังเปิดอยู่
-    const closedCount = wins + losses;
+    // Win Rate = ชนะ / ออเดอร์ที่ปิดแล้วทั้งหมด (รวมรายการที่ P/L เป็น 0)
+    // ให้ตรงกับหน้า Dashboard / สถิติ / รายงาน ไม่นับออเดอร์ที่ยังเปิดอยู่
     const winRate = closedCount > 0
         ? (wins / closedCount) * 100
         : 0;
