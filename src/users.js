@@ -13,7 +13,7 @@ function getClient() {
   return createClient(url, key);
 }
 
-// หาผู้ใช้จาก webhook secret — ใช้ตอนรับ webhook จาก EA/TradingView เพื่อรู้ว่าเป็นของใคร
+// หาผู้ใช้จาก webhook secret — ใช้ตอนรับ webhook จาก EA เพื่อรู้ว่าเป็นของใคร
 // เฉพาะบัญชีที่ active (บัญชีที่ถูกระงับยิง webhook ไม่ได้) ไม่พบ → null
 async function findUserBySecret(secret) {
   const supabase = getClient();

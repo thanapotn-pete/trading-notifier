@@ -1,5 +1,5 @@
 // server.js — จุดเริ่มต้นของเซิร์ฟเวอร์ (Express) ทำ 4 หน้าที่
-// 1) รับ webhook จาก EA ใน MT5 (/webhook/mt5, /webhook/mt5/drawdown) และจาก TradingView
+// 1) รับ webhook จาก EA ใน MT5 (/webhook/mt5, /webhook/mt5/drawdown)
 // 2) ให้บริการ REST API แก่หน้าเว็บ (ทุกอย่างใต้ /api → ไฟล์ api.js)
 // 3) เสิร์ฟไฟล์หน้าเว็บในโฟลเดอร์ Frontend/  4) เริ่มงานตั้งเวลา (scheduler.js)
 // ลำดับ webhook ของ MT5: ตรวจ secret → บันทึกเทรด → ตรวจการตั้งค่าผู้ใช้ → สร้างข้อความ → ส่ง
@@ -34,10 +34,6 @@ if (!process.env.TELEGRAM_BOT_TOKEN) {
 const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
-
-const {
-  handleTradingViewAlert  // แปลง alert ของ TradingView เป็นข้อความ Telegram
-} = require('./handlers/tradingview');
 
 const {
   recordTrade,  // บันทึกเทรดลงฐานข้อมูล
@@ -164,7 +160,7 @@ app.use('/api', apiRouter);
 // WEBHOOK USER LOOKUP
 // =====================================================
 
-// [สรุป] middleware ตรวจ "webhook secret" ของคำขอที่มาจาก EA/TradingView
+// [สรุป] middleware ตรวจ "webhook secret" ของคำขอที่มาจาก EA
 // อ่าน secret จากหัว x-webhook-secret (หรือ field secret ใน body) แล้วหาผู้ใช้เจ้าของ secret
 // ไม่พบหรือบัญชีถูกระงับ → ตอบ 401, พบ → แนบผู้ใช้ไว้ที่ req.user แล้วไปต่อ
 async function lookupUser(req, res, next) {
@@ -214,47 +210,6 @@ async function lookupUser(req, res, next) {
 
   }
 }
-
-
-// =====================================================
-// TRADINGVIEW WEBHOOK
-// =====================================================
-
-// [สรุป] POST /webhook/tradingview — รับ alert จาก TradingView: ตรวจ secret แล้วส่งเป็นข้อความ
-// Telegram
-// (ไม่บันทึกเทรดลงฐานข้อมูล)
-app.post(
-  '/webhook/tradingview',
-  lookupUser,
-  async (req, res) => {
-
-    try {
-
-      await handleTradingViewAlert(
-        req.body,
-        req.user
-      );
-
-      // ตอบกลับ EA ว่า "บันทึกเทรดและส่ง Telegram แล้ว"
-      res.json({
-        ok: true
-      });
-
-    } catch (err) {
-
-      console.error(
-        '[Webhook] Error:',
-        err.message
-      );
-
-      res.status(500).json({
-        error: err.message
-      });
-
-    }
-
-  }
-);
 
 
 // =====================================================

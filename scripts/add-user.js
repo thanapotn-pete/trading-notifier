@@ -25,7 +25,7 @@ async function main() {
   if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY must be set');
   const supabase = createClient(url, key);  // ใช้ service key (ข้าม RLS ได้) เพราะสคริปต์นี้รันบนเครื่องผู้ดูแลเท่านั้น
 
-  const webhookSecret = crypto.randomBytes(16).toString('hex');  // สุ่ม secret 32 ตัวอักษร (hex) — ใช้ระบุตัวผู้ใช้เวลา EA/TradingView ยิง webhook
+  const webhookSecret = crypto.randomBytes(16).toString('hex');  // สุ่ม secret 32 ตัวอักษร (hex) — ใช้ระบุตัวผู้ใช้เวลา EA ยิง webhook
   const row = { name, telegram_chat_id: chatId, webhook_secret: webhookSecret };
   if (email && password) {
     row.email = email;

@@ -12,7 +12,7 @@ MT5 (TradeAlert.mq5) ──webhook──▶ Node/Express (Render) ──▶ Supa
 
 | โฟลเดอร์/ไฟล์ | หน้าที่ |
 |---|---|
-| `src/server.js` | Express: webhook (`/webhook/mt5`, `/webhook/mt5/drawdown`, `/webhook/tradingview`), เสิร์ฟหน้าเว็บ, security headers |
+| `src/server.js` | Express: webhook (`/webhook/mt5`, `/webhook/mt5/drawdown`), เสิร์ฟหน้าเว็บ, security headers |
 | `src/api.js` | REST API ของเว็บ (`/api/*`): login, โปรไฟล์, เทรด, สถิติ, การแจ้งเตือน, จัดการบัญชี (admin) |
 | `src/trade-message.js`, `src/risk-alert.js` | ข้อความ Telegram และตรรกะ Risk Alert (drawdown) |
 | `Frontend/` | หน้าเว็บ (HTML + `css/pages/` + `js/pages/`) เสิร์ฟโดย Express ที่ origin เดียวกับ API |
