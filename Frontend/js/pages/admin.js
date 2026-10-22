@@ -95,6 +95,8 @@ function openCreateDialog() {
     document.getElementById('email').disabled = false;
     document.getElementById('initialPasswordField').hidden = false;
     document.getElementById('initialPassword').required = true;
+    document.getElementById('confirmPasswordField').hidden = false; // แสดงช่องยืนยันรหัสผ่าน
+    document.getElementById('confirmPassword').required = true; // บังคับกรอกยืนยัน
     document.getElementById('formError').className = 'notice';
     userDialog.showModal();
 }
@@ -112,6 +114,8 @@ function openEditDialog(user) {
     document.getElementById('email').disabled = false;
     document.getElementById('initialPasswordField').hidden = true;
     document.getElementById('initialPassword').required = false;
+    document.getElementById('confirmPasswordField').hidden = true; // ตอนแก้ไขไม่ต้องยืนยันรหัสผ่าน
+    document.getElementById('confirmPassword').required = false;
     document.getElementById('chatId').value = user.telegram_chat_id || '';
     document.getElementById('role').value = user.role || 'user';
     document.getElementById('isActive').checked = Boolean(user.is_active);
@@ -135,6 +139,13 @@ document.getElementById('searchInput').addEventListener('input', renderUsers);
 // สำเร็จแล้วโหลดตารางใหม่ / ถ้า error แสดงข้อความในกล่อง
 userForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+    // ตรวจว่ารหัสผ่านรอบที่ 2 ตรงกับรอบแรก (เฉพาะตอนสร้างบัญชีใหม่) ถ้าไม่ตรงให้แจ้งเตือนและไม่ส่งข้อมูล
+    if (!editingId && document.getElementById('confirmPassword').value !== document.getElementById('initialPassword').value) {
+        const formError = document.getElementById('formError');
+        formError.textContent = 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน';
+        formError.className = 'notice error';
+        return;
+    }
     const button = document.getElementById('saveButton');
     button.disabled = true;
     const common = {

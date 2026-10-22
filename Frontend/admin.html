@@ -156,6 +156,8 @@
             </div>
             <div class="field"><label for="email">Email</label><input id="email" type="email" maxlength="254" required></div>
             <div class="field" id="initialPasswordField"><label for="initialPassword">รหัสผ่านเริ่มต้น</label><input id="initialPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password"><p class="help">กำหนดรหัสผ่านเริ่มต้นให้ผู้ใช้ (8–72 ตัว ภาษาอังกฤษ ตัวเลข สัญลักษณ์เท่านั้น) แล้วส่งข้อมูลเข้าสู่ระบบให้ผู้ใช้ผ่านช่องทางที่ปลอดภัย</p></div>
+            <!-- ช่องยืนยันรหัสผ่าน: ให้กรอกซ้ำอีกรอบเพื่อตรวจว่าตรงกับรหัสแรก (แสดงเฉพาะตอนเพิ่มบัญชีใหม่) -->
+            <div class="field" id="confirmPasswordField"><label for="confirmPassword">ยืนยันรหัสผ่านเริ่มต้น</label><input id="confirmPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password"></div>
             <div class="field"><label for="chatId">Telegram Chat ID <span class="help">(ไม่บังคับ)</span></label><input id="chatId" inputmode="numeric" placeholder="เช่น 123456789"></div>
             <div id="editFields" hidden>
                 <div class="form-grid">
