@@ -340,6 +340,7 @@
 // เตรียมข้อมูลกราฟกำไรสะสม: เรียงเทรดที่ปิดแล้วตามเวลา แล้วบวกสะสมทีละเทรด ได้ป้ายแกน X
 // (วันที่) กับค่าแกน Y
 function buildPerformanceData(trades) {
+        // 1) เอาเฉพาะเทรดที่ปิดแล้ว (มี pnl) และมีวันที่ถูกต้อง แล้วเรียงจากเก่าไปใหม่
         const completed = trades
             .filter((trade) => trade.pnl !== null && trade.pnl !== undefined)
             .map((trade) => ({
@@ -349,23 +350,25 @@ function buildPerformanceData(trades) {
             .filter((trade) => trade.date)
             .sort((a, b) => a.date - b.date);
 
-        let cumulative = 0;
+        let cumulative = 0;   // กำไรสะสมรวมถึงเทรดปัจจุบัน
 
-        const labels = [];
-        const values = [];
+        const labels = [];    // ป้ายแกน X (วันที่ เช่น "13 ต.ค.")
+        const values = [];    // ค่าแกน Y (กำไรสะสม ณ เทรดนั้น)
 
+        // 2) วนบวกกำไร/ขาดทุนทีละเทรด แต่ละเทรดคือหนึ่งจุดบนเส้นกราฟ
         completed.forEach((trade) => {
             cumulative += Number(trade.pnl || 0);
 
             labels.push(App.formatChartLabel(trade.date));
 
-            values.push(Number(cumulative.toFixed(2)));
+            values.push(Number(cumulative.toFixed(2)));   // ปัดเป็น 2 ตำแหน่งกันเลขทศนิยมเพี้ยน
         });
 
         return { labels, values };
     }
 
     // วาดกราฟเส้นกำไรสะสม (ทำลายกราฟเดิมก่อนวาดใหม่ กันกราฟซ้อนกัน)
+    // เป็นกราฟในการ์ด "Performance Overview" ของหน้า Statistics (canvas id="performanceChart")
     function updatePerformanceChart(trades) {
         const { labels, values } = buildPerformanceData(trades);
 
@@ -374,30 +377,32 @@ function buildPerformanceData(trades) {
         }
 
         performanceChart = new Chart(
-            document.getElementById('performanceChart'),
+            document.getElementById('performanceChart'),   // canvas ใน statistics.html
             {
-                type: 'line',
+                type: 'line',   // ชนิดกราฟ: เส้น
 
                 data: {
+                    // ถ้ายังไม่มีเทรดที่ปิด ให้แสดงจุดเดียวค่า 0 แทนกราฟว่าง
                     labels: labels.length ? labels : ['ไม่มีข้อมูล'],
 
                     datasets: [{
                         label: 'กำไรสะสม',
                         data: values.length ? values : [0],
-                        borderColor: '#087f68',
-                        backgroundColor: 'rgba(8, 127, 104, 0.10)',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5,
-                        tension: 0.35,
-                        fill: true
+                        borderColor: '#087f68',                       // สีเส้น (เขียวธีมหลัก)
+                        backgroundColor: 'rgba(8, 127, 104, 0.10)',   // สีพื้นใต้เส้น
+                        borderWidth: 2,          // ความหนาเส้น
+                        pointRadius: 3,          // ขนาดจุดปกติ
+                        pointHoverRadius: 5,     // ขนาดจุดตอนเอาเมาส์ชี้
+                        tension: 0.35,           // ความโค้งของเส้น (0 = เส้นตรงหักมุม)
+                        fill: true               // ระบายสีพื้นที่ใต้เส้น
                     }]
                 },
 
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true,            // ปรับขนาดตามหน้าจอ
+                    maintainAspectRatio: false,  // ใช้ความสูงตามกรอบ .statistics-chart ใน CSS
 
+                    // ชี้เมาส์ใกล้จุดไหนก็แสดง tooltip ของจุดนั้น ไม่ต้องชี้ตรงเป๊ะ
                     interaction: {
                         intersect: false,
                         mode: 'index'
@@ -405,9 +410,10 @@ function buildPerformanceData(trades) {
 
                     plugins: {
                         legend: {
-                            display: false
+                            display: false   // ซ่อนป้ายชื่อชุดข้อมูล เพราะมีเส้นเดียว
                         },
 
+                        // กล่องข้อความที่เด้งขึ้นตอนเอาเมาส์ชี้จุด (เช่น "กำไรสะสม: $-3.25")
                         tooltip: {
                             backgroundColor: '#17211f',
                             titleFont: {
@@ -417,9 +423,10 @@ function buildPerformanceData(trades) {
                                 family: 'IBM Plex Sans Thai'
                             },
                             padding: 10,
-                            displayColors: false,
+                            displayColors: false,   // ไม่แสดงช่องสีหน้าข้อความ
 
                             callbacks: {
+                                // กำหนดข้อความบรรทัดในกล่อง tooltip
                                 label: function(context) {
                                     return 'กำไรสะสม: $' +
                                         formatNumber(context.parsed.y, 2);
@@ -429,9 +436,10 @@ function buildPerformanceData(trades) {
                     },
 
                     scales: {
+                        // แกน X: วันที่
                         x: {
                             grid: {
-                                display: false
+                                display: false   // ไม่แสดงเส้นกริดแนวตั้ง
                             },
 
                             ticks: {
@@ -440,13 +448,14 @@ function buildPerformanceData(trades) {
                                     size: 10
                                 },
                                 color: '#8a9793',
-                                callback: App.dedupeTickLabel
+                                callback: App.dedupeTickLabel   // ซ่อนวันที่ซ้ำ (common.js)
                             }
                         },
 
+                        // แกน Y: กำไรสะสม (ดอลลาร์)
                         y: {
                             grid: {
-                                color: '#eef2f1'
+                                color: '#eef2f1'   // สีเส้นกริดแนวนอน
                             },
 
                             ticks: {
@@ -457,6 +466,7 @@ function buildPerformanceData(trades) {
 
                                 color: '#8a9793',
 
+                                // แสดงค่าเป็นรูปเงิน เช่น "-$2" (App.formatMoney ใน common.js)
                                 callback: function(value) {
                                     return App.formatMoney(value);
                                 }
