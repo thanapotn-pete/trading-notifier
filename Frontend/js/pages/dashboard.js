@@ -15,6 +15,10 @@ let dashboardEquityChart = null;   // ตัวแปรเก็บอินส
 let currentPeriod = 30;            // ช่วงเวลาเริ่มต้น (30 วัน) ต้องตรงกับปุ่ม 1M ที่ active ใน dashboard.html
 let dashboardProfile = null;       // ตัวแปรเก็บข้อมูลโปรไฟล์ผู้ใช้
 let dashboardNotificationSettings = null; // ตัวแปรเก็บการตั้งค่า Telegram Notification
+let dashboardDataSignature = '';   // "ลายเซ็น" ของข้อมูลเทรดล่าสุด ใช้เช็กว่าข้อมูลเปลี่ยนหรือยัง
+let dashboardLoading = false;      // กันการโหลดซ้อนกัน (ถ้ารอบก่อนยังไม่เสร็จ ไม่ยิงรอบใหม่)
+
+const DASHBOARD_REFRESH_MS = 30000; // อัปเดตข้อมูลอัตโนมัติทุก 30 วินาที
 
 
 // =====================================================
@@ -36,7 +40,11 @@ function getAuthToken() {
 // ผ่าน App.apiFetch (แนบ token และจัดการ session หมดอายุให้) → เก็บในตัวแปรของหน้า →
 // อัปเดตชื่อผู้ใช้
 // สถานะการแจ้งเตือน ป้าย Telegram แล้ววาดทั้งหน้า (updateDashboard)
-async function loadDashboard() {
+// silent = true คือการอัปเดตอัตโนมัติเบื้องหลัง: ถ้าข้อมูลไม่เปลี่ยนจะไม่วาดหน้าใหม่ (กราฟไม่กระตุก)
+// และถ้าโหลดพลาดจะเก็บข้อมูลเดิมไว้ ไม่แสดงข้อความ error ทับ
+async function loadDashboard(silent = false) {
+
+    if (dashboardLoading) return;
 
     const token = getAuthToken();
 
@@ -46,9 +54,11 @@ async function loadDashboard() {
         return;
     }
 
+    dashboardLoading = true;
+
     try {
 
-        console.log('[Dashboard] Loading dashboard data...');
+        if (!silent) console.log('[Dashboard] Loading dashboard data...');
 
         // ยิง API 3 ตัวพร้อมกัน (Trades, Profile, Notification Settings)
         // App.apiFetch แนบ token และพาไปหน้า login เองเมื่อ session หมดอายุ
@@ -81,6 +91,17 @@ async function loadDashboard() {
                 settingsData.settings || settingsData || null;
         }
 
+        // เทียบกับข้อมูลรอบก่อน: ถ้าเป็นการอัปเดตเบื้องหลังและไม่มีอะไรเปลี่ยน ไม่ต้องวาดใหม่
+        const signature = JSON.stringify([
+            dashboardTrades,
+            dashboardProfile,
+            dashboardNotificationSettings
+        ]);
+
+        if (silent && signature === dashboardDataSignature) return;
+
+        dashboardDataSignature = signature;
+
         console.log(
             '[Dashboard] Trades:',
             dashboardTrades.length
@@ -99,6 +120,9 @@ async function loadDashboard() {
             error
         );
 
+        // อัปเดตเบื้องหลังพลาด: เก็บข้อมูลเดิมไว้ แล้วลองใหม่รอบถัดไป
+        if (silent) return;
+
         // แสดงข้อความแจ้งเตือนหากโหลดข้อมูลไม่สำเร็จ
         document.getElementById(
             'recentTrades'
@@ -107,7 +131,29 @@ async function loadDashboard() {
                 ไม่สามารถโหลดข้อมูลการเทรดได้
             </div>
         `;
+
+    } finally {
+
+        dashboardLoading = false;
     }
+}
+
+
+// =====================================================
+// AUTO REFRESH (อัปเดต Dashboard อัตโนมัติ)
+// =====================================================
+
+// โหลดข้อมูลใหม่ทุก 30 วินาที เพื่อให้เทรดใหม่จาก MT5 ขึ้นเองโดยไม่ต้องกดรีเฟรช
+// ข้ามรอบที่แท็บถูกซ่อนอยู่ (ไม่ยิง API ทิ้ง) และโหลดทันทีเมื่อผู้ใช้กลับมาที่แท็บนี้
+function startDashboardAutoRefresh() {
+
+    setInterval(() => {
+        if (!document.hidden) loadDashboard(true);
+    }, DASHBOARD_REFRESH_MS);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) loadDashboard(true);
+    });
 }
 
 
@@ -1102,6 +1148,7 @@ document.addEventListener(
     function() {
 
         loadDashboard();
+        startDashboardAutoRefresh();
 
     }
 );
