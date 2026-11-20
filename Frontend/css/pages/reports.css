@@ -339,6 +339,9 @@
 
         .report-card {
 
+            /* ให้การ์ดหดตามคอลัมน์ได้ (ค่าเริ่มต้นของ grid item คือไม่หดเล็กกว่าเนื้อหา) */
+            min-width: 0;
+
             background: white;
 
             border:
@@ -931,9 +934,10 @@
             }
 
 
+            /* minmax(0, 1fr) แทน 1fr: ให้คอลัมน์หดได้เล็กกว่าความกว้างของกราฟ ไม่ล้นจอมือถือ (เช่น 390px) */
             .report-grid {
 
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
 
             }
 
