@@ -752,9 +752,7 @@
                      RECENT NOTIFICATIONS
                 ================================================== -->
 
-                <!-- [รายการแจ้งเตือนล่าสุด] ตอนนี้ 4 รายการด้านล่างเป็น "ข้อมูลตัวอย่างตายตัว" (ไม่ใช่ข้อมูลจริง) -->
-                <!-- notifications.js มีโค้ดดึงรายการจริงจาก /api/notifications มาแทนที่ (loadRecentNotifications) -->
-                <!-- แต่ต้องมี element ที่มี id="recentNotifications" ซึ่งหน้านี้ยังไม่มี จึงยังไม่ทำงาน -->
+                <!-- [รายการแจ้งเตือนล่าสุด] แสดง 5 รายการล่าสุดจากเทรดจริงของผู้ใช้ -->
                 <div class="settings-card">
 
 
@@ -776,129 +774,17 @@
 
 
 
-                    <!-- ITEM -->
-                    <!-- รายการแจ้งเตือนตัวอย่าง 1 รายการ (แสดงชั่วคราว ระบบจะแทนด้วยรายการล่าสุดจาก loadRecentNotifications() ใน notifications.js) -->
+                    <!-- รายการจริงจาก GET /api/notifications: notifications.js (loadRecentNotifications)
+                         เป็นคนเติมรายการลงในกล่องนี้ ระหว่างรอแสดงข้อความ "กำลังโหลด" -->
+                    <div id="recentNotifications">
 
-                    <div class="recent-item">
-
-
-                        <div class="recent-icon">
-                            ↑
+                        <div class="recent-item">
+                            <div class="recent-icon">…</div>
+                            <div>
+                                <div class="recent-name">กำลังโหลด...</div>
+                                <div class="recent-message">กำลังดึงการแจ้งเตือนล่าสุด</div>
+                            </div>
                         </div>
-
-
-                        <div>
-
-                            <div class="recent-name">
-                                เปิดออเดอร์ EURUSD
-                            </div>
-
-                            <div class="recent-message">
-                                Buy · 0.10 lot · Price 1.08520
-                            </div>
-
-                            <div class="recent-time">
-                                วันนี้ 09:42
-                            </div>
-
-                        </div>
-
-
-                    </div>
-
-
-
-                    <!-- ITEM -->
-                    <!-- รายการแจ้งเตือนตัวอย่าง 1 รายการ (แสดงชั่วคราว ระบบจะแทนด้วยรายการล่าสุดจาก loadRecentNotifications() ใน notifications.js) -->
-
-                    <div class="recent-item">
-
-
-                        <div class="recent-icon">
-                            ✓
-                        </div>
-
-
-                        <div>
-
-                            <div class="recent-name">
-                                Take Profit Hit
-                            </div>
-
-                            <div class="recent-message">
-                                EURUSD · Profit +$48.20
-                            </div>
-
-                            <div class="recent-time">
-                                วันนี้ 09:40
-                            </div>
-
-                        </div>
-
-
-                    </div>
-
-
-
-                    <!-- ITEM -->
-                    <!-- รายการแจ้งเตือนตัวอย่าง 1 รายการ (แสดงชั่วคราว ระบบจะแทนด้วยรายการล่าสุดจาก loadRecentNotifications() ใน notifications.js) -->
-
-                    <div class="recent-item">
-
-
-                        <div class="recent-icon loss">
-                            ↓
-                        </div>
-
-
-                        <div>
-
-                            <div class="recent-name">
-                                Stop Loss Hit
-                            </div>
-
-                            <div class="recent-message">
-                                GBPUSD · Loss -$12.50
-                            </div>
-
-                            <div class="recent-time">
-                                วันนี้ 08:35
-                            </div>
-
-                        </div>
-
-
-                    </div>
-
-
-
-                    <!-- ITEM -->
-                    <!-- รายการแจ้งเตือนตัวอย่าง 1 รายการ (แสดงชั่วคราว ระบบจะแทนด้วยรายการล่าสุดจาก loadRecentNotifications() ใน notifications.js) -->
-
-                    <div class="recent-item">
-
-
-                        <div class="recent-icon warning">
-                            !
-                        </div>
-
-
-                        <div>
-
-                            <div class="recent-name">
-                                Risk Alert
-                            </div>
-
-                            <div class="recent-message">
-                                Drawdown สูงถึง 8.2%
-                            </div>
-
-                            <div class="recent-time">
-                                เมื่อวาน 16:21
-                            </div>
-
-                        </div>
-
 
                     </div>
 

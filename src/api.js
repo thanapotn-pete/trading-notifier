@@ -810,6 +810,8 @@ router.get('/notifications', async (req, res) => {
         type: t.action,
         status: t.status,
         symbol: t.symbol,
+        price: t.price,
+        pnl: t.pnl,
         message: notificationMessage(t),
         timestamp:
           t.status === 'closed'

@@ -770,18 +770,30 @@ function renderRecentNotifications(
 
     container.innerHTML =
         latest.map(item => {
+            const symbol = item.symbol || '';
+            const action = String(item.type || '').toUpperCase();
+            const closed = item.status === 'closed';
+            const pnl = Number(item.pnl);
+            const hasPnl = item.pnl != null && Number.isFinite(pnl);
+
+            // หัวข้อสั้น ๆ: เปิด/ปิดออเดอร์ + สัญลักษณ์ (ถ้าไม่มีข้อมูลโครงสร้าง ใช้ title เดิม)
             const title =
                 item.title ||
-                item.name ||
-                item.event ||
-                item.type ||
-                'การแจ้งเตือน';
+                (symbol
+                    ? `${closed ? 'ปิดออเดอร์' : 'เปิดออเดอร์'} ${symbol}`
+                    : 'การแจ้งเตือน');
 
+            // รายละเอียด 1 บรรทัด: BUY · Price 1.08520 · P/L +$48.20
+            const parts = [];
+            if (action) parts.push(action);
+            if (item.price != null) parts.push(`Price ${item.price}`);
+            if (closed && hasPnl) {
+                parts.push(`P/L ${pnl < 0 ? '-' : '+'}$${Math.abs(pnl).toFixed(2)}`);
+            }
             const message =
-                item.message ||
-                item.description ||
-                item.text ||
-                '';
+                parts.length
+                    ? parts.join(' · ')
+                    : (item.description || item.text || '');
 
             const time =
                 item.created_at ||
@@ -790,42 +802,17 @@ function renderRecentNotifications(
                 item.time ||
                 '';
 
-            const lower =
-                `${title} ${message}`.toLowerCase();
-
-            let icon = 'i';
+            // ไอคอน: ↑ เปิดออเดอร์ / ✓ ปิดกำไร / ↓ ปิดขาดทุน
+            let icon = '↑';
             let iconClass = '';
 
-            if (
-                lower.includes('loss') ||
-                lower.includes('sl') ||
-                lower.includes('แพ้') ||
-                lower.includes('ขาดทุน')
-            ) {
-                icon = '↓';
-                iconClass = 'loss';
-
-            } else if (
-                lower.includes('risk') ||
-                lower.includes('drawdown') ||
-                lower.includes('เสี่ยง')
-            ) {
-                icon = '!';
-                iconClass = 'warning';
-
-            } else if (
-                lower.includes('profit') ||
-                lower.includes('tp') ||
-                lower.includes('ชนะ') ||
-                lower.includes('กำไร')
-            ) {
-                icon = '✓';
-
-            } else if (
-                lower.includes('open') ||
-                lower.includes('เปิด')
-            ) {
-                icon = '↑';
+            if (closed) {
+                if (hasPnl && pnl < 0) {
+                    icon = '↓';
+                    iconClass = 'loss';
+                } else {
+                    icon = '✓';
+                }
             }
 
             return `
